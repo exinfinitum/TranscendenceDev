@@ -102,7 +102,7 @@ class CDeviceSystem
 
 		int FindFreeSlot (void);
 		int FindNamedIndex (const CItem &Item) const;
-		int FindNextIndex (CSpaceObject *pObj, int iStart, ItemCategories Category, int iDir = 1) const;
+		int FindNextIndex (CSpaceObject *pObj, int iStart, ItemCategories Category, int iDir = 1, bool switchWeapons = false) const;
 		int FindRandomIndex (bool bEnabledOnly) const;
 		bool FindWeaponByItem (const CItem &Item, int *retiIndex = NULL, int *retiVariant = NULL) const;
 		inline int GetCount (void) const { return m_Devices.GetCount(); }
@@ -119,7 +119,8 @@ class CDeviceSystem
         void ReadFromStream (SLoadCtx &Ctx, CSpaceObject *pObj);
 		void ReadyFirstMissile (CSpaceObject *pObj);
 		void ReadyFirstWeapon (CSpaceObject *pObj);
-		void ReadyNextMissile (CSpaceObject *pObj, int iDir = 1);
+		void ReadyNextLauncher (CSpaceObject *pObj, int iDir = 1);
+		void ReadyNextMissile (CSpaceObject * pObj, int iDir = 1, bool bUsedLastAmmo = false);
 		void ReadyNextWeapon (CSpaceObject *pObj, int iDir = 1);
 		DeviceNames SelectWeapon (CSpaceObject *pObj, int iIndex, int iVariant);
 		void SetCursorAtDevice (CItemListManipulator &ItemList, int iIndex) const;
