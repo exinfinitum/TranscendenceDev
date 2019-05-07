@@ -2217,7 +2217,8 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'incCharges charges\n"
 			"   'linkedFireOptions list-of-options\n"
 			"   'pos (angle radius [z])\n"
-			"   'secondary [True|Nil]",
+			"   'secondary [True|Nil]"
+			"   'cycleFire [True|Nil]",
 
 			"ivs*",	PPFLAG_SIDEEFFECTS,	},
 
