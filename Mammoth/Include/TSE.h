@@ -1015,6 +1015,7 @@ class CSpaceObject
 
 #define FLAG_INCLUDE_NON_AGGRESSORS		0x00000001
 #define FLAG_INCLUDE_STATIONS			0x00000002
+#define FLAG_INCLUDE_MISSILES			0x00000004
 		int GetNearestVisibleEnemies (int iMaxEnemies, 
 									  Metric rMaxDist, 
 									  TArray<CSpaceObject *> *pretList, 
@@ -1487,6 +1488,7 @@ class CSpaceObject
 		virtual const CDamageSource &GetDamageSource (void) const { return CDamageSource::Null(); }
 		virtual CWeaponFireDesc *GetWeaponFireDesc (void) { return NULL; }
 		virtual CSpaceObject *GetSecondarySource (void) { return NULL; }
+		virtual bool IsTargetableProjectile (void) const { return true; }
 
 		//	...for ships
 
