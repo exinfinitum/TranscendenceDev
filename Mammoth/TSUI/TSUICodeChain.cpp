@@ -142,7 +142,7 @@ ICCItem *fnUI (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			//	Add to list
 
 			pList->AppendInteger((x + 1) - (iScreenResolutionX / 2));
-			pList->AppendInteger((y + 1) - (iScreenResolutionY / 2));
+			pList->AppendInteger(-((y + 1) - (iScreenResolutionY / 2)));
 
 			return pResult;
 			}
