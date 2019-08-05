@@ -240,6 +240,8 @@ ICCItem *fnObjActivateItem(CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 #define FN_OBJ_HAS_SERVICE			133
 #define FN_OBJ_CONDITION			134
 #define FN_OBJ_ABANDON				135
+#define FN_OBJ_INC_PROPERTY			136
+#define FN_OBJ_INC_OVERLAY_PROPERTY	137
 
 #define NAMED_ITEM_SELECTED_WEAPON		CONSTLIT("selectedWeapon")
 #define NAMED_ITEM_SELECTED_LAUNCHER	CONSTLIT("selectedLauncher")
@@ -390,6 +392,7 @@ ICCItem *fnRollDice (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData);
 ICCItem *fnSystemCreateEffect (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData);
 ICCItem *fnSystemCreateMarker (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData);
 ICCItem *fnSystemCreateShip (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData);
+ICCItem *fnSystemCreateStargate (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData);
 ICCItem *fnSystemCreateStation (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData);
 
 #define FN_SYS_FIND						0
@@ -2087,6 +2090,14 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(objIncOverlayData obj overlayID attrib [increment]) -> new value",
 			"iis*",	PPFLAG_SIDEEFFECTS,	},
 
+		{	"objIncOverlayProperty",		fnObjGet,		FN_OBJ_INC_OVERLAY_PROPERTY,
+			"(objIncOverlayProperty obj overlayID property [increment]) -> new value",
+			"iis*",	PPFLAG_SIDEEFFECTS,	},
+
+		{	"objIncProperty",				fnObjSet,		FN_OBJ_INC_PROPERTY,
+			"(objIncProperty obj property [increment]) -> new value",
+			"is*",	PPFLAG_SIDEEFFECTS,	},
+
 		{	"objIncVel",					fnObjSet,		FN_OBJ_INCREMENT_VELOCITY,	
 			"(objIncVel obj velVector) -> velVector\n\n"
 
@@ -2555,6 +2566,10 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(msnIncData missionObj attrib [increment]) -> new value",
 			NULL,	PPFLAG_SIDEEFFECTS,	},
 
+		{	"msnIncProperty",				fnObjSet,		FN_OBJ_INC_PROPERTY,
+			"(msnIncProperty obj property [increment]) -> new value",
+			"is*",	PPFLAG_SIDEEFFECTS,	},
+
 		{	"msnRefreshSummary",			fnMissionSet,		FN_MISSION_REFRESH_SUMMARY,
 			"(msnRefreshSummary missionObj)",
 			"i",	PPFLAG_SIDEEFFECTS,	},
@@ -2757,7 +2772,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 
 			"ivi",	PPFLAG_SIDEEFFECTS,	},
 
-		{	"sysCreateStargate",			fnSystemCreateStation,	FN_SYS_CREATE_STARGATE,
+		{	"sysCreateStargate",			fnSystemCreateStargate,	FN_SYS_CREATE_STARGATE,
 			"(sysCreateStargate unid pos gateID [destNodeID destGateID]) -> obj",
 			"ivs*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3615,6 +3630,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(unvGetProperty property)\n\n"
 				
 			"   'apiVersion        Engine API version\n"
+			"   'defaultCurrency   Default currency\n"
 			"   'minAPIVersion     Lowest API version used by extensions\n",
 
 			"s",	0,	},
@@ -4497,9 +4513,9 @@ ICCItem *fnDesignGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			{
 			CString sProperty = pArgs->GetElement(1)->GetStringValue();
 			if (sProperty.IsBlank())
-				return pCC->CreateNil();
+				return pCtx->CreateDebugError(CONSTLIT("Invalid property"), pArgs->GetElement(1))->Reference();
 
-			return pType->IncTypeProperty(sProperty, pArgs->GetElement(2))->Reference();
+			return pCtx->DebugError(pType->IncTypeProperty(sProperty, pArgs->GetElement(2)))->Reference();
 			}
 
 		case FN_DESIGN_MARK_IMAGES:
@@ -6993,6 +7009,22 @@ ICCItem *fnObjGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
             return pOverlays->IncData(dwID, sAttrib, (pArgs->GetCount() > 3 ? pArgs->GetElement(3) : NULL))->Reference();
 			}
 
+		case FN_OBJ_INC_OVERLAY_PROPERTY:
+			{
+			DWORD dwID = (DWORD)pArgs->GetElement(1)->GetIntegerValue();
+			CString sAttrib = pArgs->GetElement(2)->GetStringValue();
+
+            COverlayList *pOverlays = pObj->GetOverlays();
+            if (pOverlays == NULL)
+                return pCC->CreateNil();
+
+			ICCItemPtr pResult;
+			if (!pOverlays->IncProperty(*pObj, dwID, sAttrib, pArgs->GetElement(3), pResult))
+				return pCtx->CreateDebugError(CONSTLIT("Invalid property"), pArgs->GetElement(2))->Reference();
+
+			return pResult->Reference();
+			}
+
 		case FN_OBJ_IS_ANGRY_AT:
 			{
 			CSpaceObject *pTargetObj = CreateObjFromItem(pArgs->GetElement(1));
@@ -7027,6 +7059,18 @@ ICCItem *fnObjGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 			CString sFilter = pArgs->GetElement(2)->GetStringValue();
 			CSpaceObjectCriteria Criteria(pSource, sFilter);
+
+			//	We force including intangibles. We need to do this because this
+			//	is often called inside of <OnObjDestroyed>, and since the object
+			//	has been destroyed, it will fail the match unless we include
+			//	intangibles.
+			//
+			//	To exclude destroyed objects, callers should ask for active
+			//	objects.
+
+			Criteria.SetIncludeIntangible(true);
+
+			//	Match
 
 			CSpaceObjectCriteria::SCtx Ctx(Criteria);
 			return pCC->CreateBool(pObj->MatchesCriteria(Ctx, Criteria));
@@ -8140,6 +8184,15 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			//	Return the newly changed item
 
 			return CreateListFromItem(Item);
+			}
+
+		case FN_OBJ_INC_PROPERTY:
+			{
+			ICCItemPtr pResult;
+			if (!pObj->IncProperty(pArgs->GetElement(1)->GetStringValue(), pArgs->GetElement(2), pResult))
+				return pCtx->CreateDebugError(CONSTLIT("Invalid property"), pArgs->GetElement(1))->Reference();
+
+			return pResult->Reference();
 			}
 
 		case FN_OBJ_INCREMENT_VELOCITY:
@@ -12317,11 +12370,179 @@ ICCItem *fnSystemCreateShip (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwDat
 		}
 	}
 
+ICCItem *fnSystemCreateStargate (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
+
+//	fnSystemCreateStargate
+//
+//	(sysCreateStargate unid pos gateID [destNodeID destGateID]) -> obj
+
+	{
+	ALERROR error;
+	CCodeChain *pCC = pEvalCtx->pCC;
+	CCodeChainCtx *pCtx = (CCodeChainCtx *)pEvalCtx->pExternalCtx;
+	if (pCtx == NULL)
+		return pCC->CreateError(ERR_NO_CODE_CHAIN_CTX);
+
+	SSystemCreateCtx *pSysCreateCtx = pCtx->GetSystemCreateCtx();
+
+	CSystem *pSystem = pCtx->GetUniverse().GetCurrentSystem();
+	if (pSystem == NULL)
+		return StdErrorNoSystem(*pCC);
+
+	//	Get the station type
+
+	CStationType *pType = pCtx->GetUniverse().FindStationType(pArgs->GetElement(0)->GetIntegerValue());
+	if (pType == NULL)
+		return pCC->CreateError(CONSTLIT("Unknown station type"), pArgs->GetElement(0));
+
+	//	Get the position
+
+	CVector vPos;
+	int iLocID;
+	if (error = GetPosOrObject(pEvalCtx, pArgs->GetElement(1), &vPos, NULL, &iLocID))
+		{
+		//	If we couldn't find a location, then we abort, but return Nil
+		//	so that callers can recover.
+
+		if (error == ERR_NOTFOUND)
+			{
+			if (pCtx->GetUniverse().InDebugMode())
+				::kernelDebugLogPattern("WARNING: Unable to create station at %s (in %s)", pArgs->GetElement(1)->Print(), pSystem->GetName());
+			return pCC->CreateNil();
+			}
+
+		//	Otherwise, this is a real error.
+
+		else
+			return pCC->CreateError(CONSTLIT("Invalid pos"), pArgs->GetElement(1));
+		}
+
+	//	Get stargate-specific information
+
+	CString sStargateName = pArgs->GetElement(2)->GetStringValue();
+	if (sStargateName.IsBlank())
+		return pCC->CreateError(CONSTLIT("Stargate must have a name"), pArgs->GetElement(2));
+
+	//	Look for the stargate in the topology
+
+	CString sDestName;
+	CTopologyNode *pDestNode = pSystem->GetStargateDestination(sStargateName, &sDestName);
+		
+	//	If the stargate doesn't exist yet, then see if we have enough parameters
+	//	to create it.
+
+	CString sDestNode;
+	if (pDestNode == NULL)
+		{
+		if (pArgs->GetCount() < 5)
+			return pCC->CreateError(CONSTLIT("Topology does not have stargate of that name"), pArgs->GetElement(2));
+
+		sDestNode = pArgs->GetElement(3)->GetStringValue();
+		if (sDestNode.IsBlank())
+			return pCC->CreateError(CONSTLIT("Invalid destination node"), pArgs->GetElement(3));
+
+		sDestName = pArgs->GetElement(4)->GetStringValue();
+		if (sDestName.IsBlank())
+			return pCC->CreateError(CONSTLIT("Invalid destination stargate"), pArgs->GetElement(4));
+		}
+	else
+		sDestNode = pDestNode->GetID();
+
+	//	Make sure we can encounter the station
+
+	if (!pType->CanBeEncountered(pSystem))
+		return pCC->CreateNil();
+
+	//	Create the station (or ship encounter). If we are in the middle of system
+	//	create, then we can use the proper context. Otherwise, we do without.
+
+	CSpaceObject *pStation;
+	if (pSysCreateCtx && iLocID != -1)
+		{
+		CLocationDef &Loc = pSystem->GetLocation(iLocID);
+
+		SObjCreateCtx CreateCtx(*pSysCreateCtx);
+		CreateCtx.vPos = vPos;
+		CreateCtx.pLoc = &Loc;
+		CreateCtx.pOrbit = &Loc.GetOrbit();
+		CreateCtx.bCreateSatellites = true;
+
+		if (pSystem->CreateStation(pSysCreateCtx,
+				pType,
+				CreateCtx,
+				&pStation) != NOERROR)
+			return pCC->CreateError(CONSTLIT("Unable to create station"), NULL);
+		}
+
+	//	Otherwise, we do without a context
+
+	else
+		{
+		if (pSystem->CreateStation(pType, NULL, vPos, &pStation) != NOERROR)
+			return pCC->CreateError(CONSTLIT("Unable to create station"), NULL);
+		}
+
+	//	If we have a location, remove it from the list of available locations
+
+	if (iLocID != -1 && pStation)
+		pSystem->SetLocationObjID(iLocID, pStation->GetID());
+
+	//	If we're creating a stargate, do some extra stuff
+
+	CStation *pStargate = (pStation ? pStation->AsStation() : NULL);
+
+	//	Must have a station
+
+	if (pStargate == NULL)
+		return pCC->CreateError(CONSTLIT("Stargate must be a station"), NULL);
+
+	//	If we don't have a destination node, then we need to add the stargate
+
+	if (pDestNode == NULL)
+		{
+		CTopologyNode *pNode = pSystem->GetTopology();
+		if (pNode == NULL)
+			return pCC->CreateError(CONSTLIT("No topology for current system"), NULL);
+
+		CTopologyNode::SStargateDesc GateDesc;
+		GateDesc.sName = sStargateName;
+		GateDesc.sDestNode = sDestNode;
+		GateDesc.sDestName = sDestName;
+		if (pNode->AddStargateAndReturn(GateDesc) != NOERROR)
+			return pCC->CreateError(CONSTLIT("Unable to add stargate to topology node"), NULL);
+
+		pDestNode = pCtx->GetUniverse().FindTopologyNode(sDestNode);
+		if (pDestNode == NULL)
+			return pCC->CreateError(CONSTLIT("Unknown topology node"), NULL);
+		}
+
+	//	Add a named object
+
+	pSystem->NameObject(sStargateName, pStargate);
+
+	//	Set stargate properties (note: CreateStation also looks at objName and adds the name
+	//	to the named-objects system table.)
+
+	pStargate->SetStargate(sDestNode, sDestName);
+
+	//	If we haven't already set the name, set the name of the stargate
+	//	to include the name of the destination system
+
+	if (!pStargate->IsNameSet())
+		pStargate->SetName(strPatternSubst(CONSTLIT("%s Stargate"), pDestNode->GetSystemName()), nounDefiniteArticle);
+
+	//	Done
+
+	if (pStation)
+		return pCC->CreateInteger((int)pStation);
+	else
+		return pCC->CreateNil();
+	}
+
 ICCItem *fnSystemCreateStation (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 //	fnSystemCreateStation
 //
-//	(sysCreateStargate unid pos gateID [destNodeID destGateID]) -> obj
 //	(sysCreateStation unid pos) -> station
 
 	{
@@ -12365,50 +12586,14 @@ ICCItem *fnSystemCreateStation (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dw
 			return pCC->CreateError(CONSTLIT("Invalid pos"), pArgs->GetElement(1));
 		}
 
-	//	If we're creating a stargate, get some extra information
+	//	Get options
 
 	CDesignType *pEventHandler = NULL;
-	CString sStargateName;
-	CTopologyNode *pDestNode = NULL;
-	CString sDestNode;
-	CString sDestName;
-	if (dwData == FN_SYS_CREATE_STARGATE)
+	if (pArgs->GetCount() >= 3)
 		{
-		sStargateName = pArgs->GetElement(2)->GetStringValue();
-		if (sStargateName.IsBlank())
-			return pCC->CreateError(CONSTLIT("Stargate must have a name"), pArgs->GetElement(2));
-
-		//	Look for the stargate in the topology
-
-		pDestNode = pSystem->GetStargateDestination(sStargateName, &sDestName);
-		
-		//	If the stargate doesn't exist yet, then see if we have enough parameters
-		//	to create it.
-
-		if (pDestNode == NULL)
-			{
-			if (pArgs->GetCount() < 5)
-				return pCC->CreateError(CONSTLIT("Topology does not have stargate of that name"), pArgs->GetElement(2));
-
-			sDestNode = pArgs->GetElement(3)->GetStringValue();
-			if (sDestNode.IsBlank())
-				return pCC->CreateError(CONSTLIT("Invalid destination node"), pArgs->GetElement(3));
-
-			sDestName = pArgs->GetElement(4)->GetStringValue();
-			if (sDestName.IsBlank())
-				return pCC->CreateError(CONSTLIT("Invalid destination stargate"), pArgs->GetElement(4));
-			}
-		else
-			sDestNode = pDestNode->GetID();
-		}
-	else
-		{
-		if (pArgs->GetCount() >= 3)
-			{
-			pEventHandler = pCtx->GetUniverse().FindDesignType(pArgs->GetElement(2)->GetIntegerValue());
-			if (pEventHandler == NULL)
-				return pCC->CreateError(CONSTLIT("Invalid event handler"), pArgs->GetElement(2));
-			}
+		pEventHandler = pCtx->GetUniverse().FindDesignType(pArgs->GetElement(2)->GetIntegerValue());
+		if (pEventHandler == NULL)
+			return pCC->CreateError(CONSTLIT("Invalid event handler"), pArgs->GetElement(2));
 		}
 
 	//	Make sure we can encounter the station
@@ -12450,53 +12635,6 @@ ICCItem *fnSystemCreateStation (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dw
 
 	if (iLocID != -1 && pStation)
 		pSystem->SetLocationObjID(iLocID, pStation->GetID());
-
-	//	If we're creating a stargate, do some extra stuff
-
-	if (dwData == FN_SYS_CREATE_STARGATE)
-		{
-		CStation *pStargate = (pStation ? pStation->AsStation() : NULL);
-
-		//	Must have a station
-
-		if (pStargate == NULL)
-			return pCC->CreateError(CONSTLIT("Stargate must be a station"), NULL);
-
-		//	If we don't have a destination node, then we need to add the stargate
-
-		if (pDestNode == NULL)
-			{
-			CTopologyNode *pNode = pSystem->GetTopology();
-			if (pNode == NULL)
-				return pCC->CreateError(CONSTLIT("No topology for current system"), NULL);
-
-			CTopologyNode::SStargateDesc GateDesc;
-			GateDesc.sName = sStargateName;
-			GateDesc.sDestNode = sDestNode;
-			GateDesc.sDestName = sDestName;
-			if (pNode->AddStargateAndReturn(GateDesc) != NOERROR)
-				return pCC->CreateError(CONSTLIT("Unable to add stargate to topology node"), NULL);
-
-			pDestNode = pCtx->GetUniverse().FindTopologyNode(sDestNode);
-			if (pDestNode == NULL)
-				return pCC->CreateError(CONSTLIT("Unknown topology node"), NULL);
-			}
-
-		//	Add a named object
-
-		pSystem->NameObject(sStargateName, pStargate);
-
-		//	Set stargate properties (note: CreateStation also looks at objName and adds the name
-		//	to the named-objects system table.)
-
-		pStargate->SetStargate(sDestNode, sDestName);
-
-		//	If we haven't already set the name, set the name of the stargate
-		//	to include the name of the destination system
-
-		if (!pStargate->IsNameSet())
-			pStargate->SetName(strPatternSubst(CONSTLIT("%s Stargate"), pDestNode->GetSystemName()), nounDefiniteArticle);
-		}
 
 	//	Done
 
