@@ -4,6 +4,7 @@
 //	Copyright (c) 2015 by Kronosaur Productions, LLC. All Rights Reserved.
 
 #pragma once
+#include "OpenGL.h"
 
 struct SDXLayerCreate
 	{
@@ -31,6 +32,7 @@ class CDXScreen
 
 			FLAG_NO_TEXTURES =				0x00000001,
 			FLAG_FORCE_GDI =				0x00000002,
+			FLAG_FORCE_OPENGL =				0x00000004,
 			};
 
 		CDXScreen (void);
@@ -100,6 +102,7 @@ class CDXScreen
 		HWND m_hWnd;						//	Window
 		IDirect3D9 *m_pD3D;					//	Used to create the D3DDevice
 		IDirect3DDevice9 *m_pD3DDevice;		//	Our rendering device
+		OpenGLContext *m_pOGLContext;		//  OpenGL context
 		D3DPRESENT_PARAMETERS m_Present;	//	Present parameters
 		D3DCAPS9 m_DeviceCaps;				//	Device caps for current device
 
@@ -110,6 +113,7 @@ class CDXScreen
 		int m_cySource;
 
 		bool m_bUseGDI;						//	Use GDI instead of Direct3D
+		bool m_bUseOpenGL;					//  Use OpenGL instead of Direct3D
 		bool m_bNoGPUAcceleration;			//	Do not use textures, even if available
 		bool m_bUseTextures;				//	Use textures for layers.
 		bool m_bEndSceneNeeded;				//	If TRUE, we need an EndScene call
