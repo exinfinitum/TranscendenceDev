@@ -240,6 +240,7 @@ ALERROR CScreenMgr3D::Init (SScreenMgrOptions &Options, CString *retsError)
 	DWORD dwFlags = 0;
 	dwFlags |= (Options.m_bNoGPUAcceleration ? CDXScreen::FLAG_NO_TEXTURES : 0);
 	dwFlags |= (Options.m_bForceNonDX ? CDXScreen::FLAG_FORCE_GDI : 0);
+	dwFlags |= (Options.m_bForceOpenGL ? CDXScreen::FLAG_FORCE_OPENGL : 0);
 
 	if (!m_DX.Init(m_hWnd, m_cxScreen, m_cyScreen, dwFlags, retsError))
 		return ERR_FAIL;

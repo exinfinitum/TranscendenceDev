@@ -11,6 +11,7 @@ CDXScreen::CDXScreen (void) :
 		m_hWnd(NULL),
 		m_pD3D(NULL),
 		m_pD3DDevice(NULL),
+		m_pOGLContext(NULL),
 		m_bDeviceLost(false)
 
 //	CDXScreen constructor
@@ -385,56 +386,61 @@ bool CDXScreen::Init (HWND hWnd, int cxWidth, int cyHeight, DWORD dwFlags, CStri
 	m_cyTarget = RectHeight(rcClient);
 
 	//	Options
+	//  We should use OpenGL if we're neither using DirectX nor GDI
 
 	m_bUseGDI = ((dwFlags & FLAG_FORCE_GDI) ? true : false);
 	m_bNoGPUAcceleration = m_bUseGDI || ((dwFlags & FLAG_NO_TEXTURES) ? true : false);
+	m_bUseOpenGL = ((dwFlags & FLAG_FORCE_OPENGL) ? true : false);
 	m_bEndSceneNeeded = false;
 	m_bErrorReported = false;
 
     //	Create the D3D object, which is needed to create the D3DDevice.
 
-    if ((m_pD3D = ::Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
+	if (!m_bUseOpenGL)
 		{
-		if (retsError) *retsError = CONSTLIT("Unable to create D3D object.");
-        return false;
-		}
+		if ((m_pD3D = ::Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
+			{
+			if (retsError) *retsError = CONSTLIT("Unable to create D3D object.");
+			return false;
+			}
 
-    //	Set up the structure used to create the D3DDevice. Most parameters are
-    //	zeroed out. We set Windowed to TRUE, since we want to do D3D in a
-    //	window, and then set the SwapEffect to "discard", which is the most
-    //	efficient method of presenting the back buffer to the display.  And 
-    //	we request a back buffer format that matches the current desktop display 
-    //	format.
+		//	Set up the structure used to create the D3DDevice. Most parameters are
+		//	zeroed out. We set Windowed to TRUE, since we want to do D3D in a
+		//	window, and then set the SwapEffect to "discard", which is the most
+		//	efficient method of presenting the back buffer to the display.  And 
+		//	we request a back buffer format that matches the current desktop display 
+		//	format.
 
-    ZeroMemory( &m_Present, sizeof( m_Present ) );
-    m_Present.Windowed = TRUE;
-    m_Present.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    m_Present.BackBufferFormat = D3DFMT_UNKNOWN;
-	m_Present.Flags = D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
+		ZeroMemory(&m_Present, sizeof(m_Present));
+		m_Present.Windowed = TRUE;
+		m_Present.SwapEffect = D3DSWAPEFFECT_DISCARD;
+		m_Present.BackBufferFormat = D3DFMT_UNKNOWN;
+		m_Present.Flags = D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
 
-    //	Create the Direct3D device. Here we are using the default adapter (most
-    //	systems only have one, unless they have multiple graphics hardware cards
-    //	installed) and requesting the HAL (which is saying we want the hardware
-    //	device rather than a software one). Software vertex processing is 
-    //	specified since we know it will work on all cards. On cards that support 
-    //	hardware vertex processing, though, we would see a big performance gain 
-    //	by specifying hardware vertex processing.
+		//	Create the Direct3D device. Here we are using the default adapter (most
+		//	systems only have one, unless they have multiple graphics hardware cards
+		//	installed) and requesting the HAL (which is saying we want the hardware
+		//	device rather than a software one). Software vertex processing is 
+		//	specified since we know it will work on all cards. On cards that support 
+		//	hardware vertex processing, though, we would see a big performance gain 
+		//	by specifying hardware vertex processing.
 
-    if (FAILED(m_pD3D->CreateDevice(D3DADAPTER_DEFAULT,
+		if (FAILED(m_pD3D->CreateDevice(D3DADAPTER_DEFAULT,
 			D3DDEVTYPE_HAL,
 			hWnd,
-            D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-            &m_Present,
+			D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+			&m_Present,
 			&m_pD3DDevice)))
-	    {
-		if (retsError) *retsError = CONSTLIT("Unable to create D3D device.");
-        return false;
+			{
+			if (retsError) *retsError = CONSTLIT("Unable to create D3D device.");
+			return false;
+			}
+
+		//	Initialize
+
+		if (!InitDevice(retsError))
+			return false;
 		}
-
-	//	Initialize
-
-	if (!InitDevice(retsError))
-		return false;
 
 	//	Done
 
