@@ -442,6 +442,7 @@ bool CHumanInterface::WMCreate (HWND hWnd, CString *retsError)
 	ScreenOptions.m_bMultiMonitorMode = m_Options.m_bMultiMonitorMode;
 	ScreenOptions.m_bForceDX = m_Options.m_bForceDX;
 	ScreenOptions.m_bForceNonDX = m_Options.m_bForceNonDX;
+	ScreenOptions.m_bForceOpenGL = m_Options.m_bForceOpenGL;
 	ScreenOptions.m_bForceExclusiveMode = m_Options.m_bForceExclusiveMode;
 	ScreenOptions.m_bForceNonExclusiveMode = m_Options.m_bForceNonExclusiveMode;
 	ScreenOptions.m_bForceScreenSize = m_Options.m_bForceScreenSize;
