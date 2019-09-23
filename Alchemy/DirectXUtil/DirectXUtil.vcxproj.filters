@@ -135,13 +135,13 @@
     <ClInclude Include="..\Include\TImagePlane.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OpenGL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="OpenGLShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OpenGLIncludes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\OpenGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

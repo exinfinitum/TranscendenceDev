@@ -12,7 +12,8 @@ CDXScreen::CDXScreen (void) :
 		m_pD3D(NULL),
 		m_pD3DDevice(NULL),
 		m_pOGLContext(NULL),
-		m_bDeviceLost(false)
+		m_bDeviceLost(false),
+		m_bOpenGLAttached(false)
 
 //	CDXScreen constructor
 
@@ -178,9 +179,17 @@ bool CDXScreen::CreateLayer (const SDXLayerCreate &Create, int *retiLayerID, CSt
 	pLayer->yPos = Create.yPos;
 	pLayer->zPos = Create.zPos;
 
+	//	If we're using OpenGL, then create our texture resources.
+
+	if (m_bUseOpenGL)
+		{
+		//  TODO: Change this...
+		int do_something = 1;
+		}
+
 	//	If we're using textures, we need a vertex buffer and three textures.
 
-	if (m_bUseTextures)
+	else if (m_bUseTextures)
 		{
 		if (!CreateLayerResources(*pLayer, retsError))
 			{
@@ -394,9 +403,16 @@ bool CDXScreen::Init (HWND hWnd, int cxWidth, int cyHeight, DWORD dwFlags, CStri
 	m_bEndSceneNeeded = false;
 	m_bErrorReported = false;
 
-    //	Create the D3D object, which is needed to create the D3DDevice.
+    //	If using OpenGL, create the OpenGL object.
+	if (m_bUseOpenGL)
+		{
+		HDC hDC = ::GetDC(m_hWnd);
+		m_pOGLContext = &OpenGLContext(hWnd);
+		}
 
-	if (!m_bUseOpenGL)
+
+    //	Create the D3D object, which is needed to create the D3DDevice.
+	if (!m_bUseGDI && !m_bUseOpenGL)
 		{
 		if ((m_pD3D = ::Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
 			{
@@ -441,8 +457,7 @@ bool CDXScreen::Init (HWND hWnd, int cxWidth, int cyHeight, DWORD dwFlags, CStri
 		if (!InitDevice(retsError))
 			return false;
 		}
-
-	//	Done
+		//	Done
 
 	return true;
 	}
@@ -577,6 +592,21 @@ void CDXScreen::Render (void)
 			::ReleaseDC(m_hWnd, hDC);
 			}
 		}
+
+	//	If we're using OpenGL, then do some stuff...
+	else if (m_bUseOpenGL)
+		{
+		HDC hDC = ::GetDC(m_hWnd);
+		if (!m_bOpenGLAttached)
+			{
+			m_pOGLContext->initOpenGL(m_hWnd);
+			m_bOpenGLAttached = true;
+			}
+		glClearColor(0.4f, 0.6f, 0.9f, 0.0f);
+		glViewport(0, 0, 1024, 768);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		}
+
 
 	//	The remaining methods all use DX, so if we've lost the device, we can't
 	//	do anything.
@@ -764,7 +794,12 @@ void CDXScreen::SwapBuffers (void)
 	//	the buffers (since we're swapping), so this is a safe place to reset the
 	//	device if necessary.
 
-	if (m_bDeviceLost)
+	if (m_bUseOpenGL)
+		{
+			m_pOGLContext->swapBuffers(); // Swap buffers
+		}
+
+	else if (m_bDeviceLost)
 		{
 		//	See if we need to reset
 
