@@ -43,8 +43,9 @@ class CDXScreen
 		void DebugOutputStats (void);
 		inline CG32bitImage &GetLayerBuffer (int iLayerID) { return ((!IsReady() || m_bDeviceLost || iLayerID < 0 || iLayerID >= m_Layers.GetCount()) ? CG32bitImage::Null() : m_Layers[iLayerID].BackBuffer); }
 		bool Init (HWND hWnd, int cxWidth, int cyHeight, DWORD dwFlags, CString *retsError = NULL);
-		inline bool IsReady (void) const { return (m_bUseGDI || m_pD3DDevice); }
-		inline bool IsUsingDirectX (void) const { return !m_bUseGDI; }
+		inline bool IsReady (void) const { return (m_bUseGDI || m_pD3DDevice || m_pOGLContext); }
+		inline bool IsUsingDirectX (void) const { return (!m_bUseGDI && m_bUseOpenGL); }
+		inline bool IsUsingOpenGL (void) const { return m_bUseOpenGL; }
 		inline bool IsUsingTextures (void) const { return m_bUseTextures; }
 		void Render (void);
 		void SwapBuffers (void);
@@ -119,6 +120,7 @@ class CDXScreen
 		bool m_bEndSceneNeeded;				//	If TRUE, we need an EndScene call
 		bool m_bErrorReported;				//	If TRUE, we've already reported an error
 		bool m_bDeviceLost;					//	If TRUE, we need to reset the device
+		bool m_bOpenGLAttached;				//	If TRUE, we've attached OpenGL to our current window context
 
 		TArray<SLayer> m_Layers;
 		TSortMap<int, int> m_PaintOrder;
