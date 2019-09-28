@@ -597,12 +597,18 @@ void CDXScreen::Render (void)
 	else if (m_bUseOpenGL)
 		{
 		HDC hDC = ::GetDC(m_hWnd);
-		if (!m_bOpenGLAttached)
+		while(!m_bOpenGLAttached)
 			{
-			m_pOGLContext->initOpenGL(m_hWnd);
-			m_bOpenGLAttached = true;
+			// Use a while loop and sleep in order to avoid a weird race condition where OpenGL initializes before
+			// something important is done, which causes SetPixelFormat to fail
+			// Seems like SetPixelFormat (or rather the ChoosePixelFormat function) must be executed after something
+			// happens with the device context that hDC is attached to...
+			Sleep(1);
+			bool iInitOpenGLSuccess = m_pOGLContext->initOpenGL(m_hWnd, hDC);
+			if (iInitOpenGLSuccess)
+				m_bOpenGLAttached = true;
 			}
-		glClearColor(0.4f, 0.6f, 0.9f, 0.0f);
+		glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
 		glViewport(0, 0, 1024, 768);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		}
