@@ -1634,6 +1634,7 @@ class CSpaceObject
 		void SetNoFriendlyFire (void) { m_fNoFriendlyFire = true; }
 		void SetNoFriendlyTarget (void) { m_fNoFriendlyTarget = true; }
 		void SetNonLinearMove (bool bValue = true) { m_fNonLinearMove = bValue; }
+		void UpdateDrag (SUpdateCtx &Ctx, Metric rDragFactor);
 		void UpdateTrade (SUpdateCtx &Ctx, int iInventoryRefreshed);
 		void UpdateTradeExtended (const CTimeSpan &ExtraTime);
 
@@ -1759,6 +1760,14 @@ class CSpaceObject
 
 		static COverlayList m_NullOverlays;
 	};
+
+inline bool operator== (const CSpaceObject &Obj1, const CSpaceObject &Obj2) { return &Obj1 == &Obj2; }
+inline bool operator== (const CSpaceObject &Obj1, const CSpaceObject *pObj2) { return &Obj1 == pObj2; }
+inline bool operator== (const CSpaceObject *pObj1, const CSpaceObject &Obj2) { return pObj1 == &Obj2; }
+
+inline bool operator!= (const CSpaceObject &Obj1, const CSpaceObject &Obj2) { return !(Obj1 == Obj2); }
+inline bool operator!= (const CSpaceObject &Obj1, const CSpaceObject *pObj2) { return !(Obj1 == pObj2); }
+inline bool operator!= (const CSpaceObject *pObj1, const CSpaceObject &Obj2) { return !(pObj1 == Obj2); }
 
 class CGlobalSpaceObject
 	{
@@ -2120,8 +2129,8 @@ int GetDamageTypeLevel (DamageTypes iDamage);
 Metric *GetDestinyToBellCurveArray (void);
 void LoadDamageEffectsFromItem (ICCItem *pItem, SDamageCtx &Ctx);
 EManeuverTypes CalcTurnManeuver (int iDesired, int iCurrent, int iRotationAngle);
-CString ParseCriteriaParam (char **ioPos, bool bExpectColon = true, bool *retbBinaryParam = NULL);
-bool ParseCriteriaParamLevelRange (char **ioPos, int *retiLow = NULL, int *retiHigh = NULL);
+CString ParseCriteriaParam (const char **ioPos, bool bExpectColon = true, bool *retbBinaryParam = NULL);
+bool ParseCriteriaParamLevelRange (const char **ioPos, int *retiLow = NULL, int *retiHigh = NULL);
 Metric ParseDistance (const CString &sValue, Metric rDefaultScale);
 
 //	CodeChain helper functions (CCUtil.cpp)

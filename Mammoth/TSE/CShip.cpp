@@ -2557,7 +2557,8 @@ AbilityStatus CShip::GetAbility (Abilities iAbility) const
 		}
 	}
 
-int CShip::GetAmmoForSelectedLinkedFireWeapons(CInstalledDevice *pDevice)
+int CShip::GetAmmoForSelectedLinkedFireWeapons (CInstalledDevice *pDevice)
+
 //  GetAmmoForSelectedLinkedFireWeapons
 //
 //  If the given device is a linked-fire weapon of type "whenSelected",
@@ -2565,6 +2566,7 @@ int CShip::GetAmmoForSelectedLinkedFireWeapons(CInstalledDevice *pDevice)
 //  "whenSelected" weapons of the same type installed on the ship, and adding
 //  their ammo counts (if they use charges) or the number of rounds left in the
 //  cargo hold (if they don't). The latter should be added only once.
+
 	{
 	DWORD dwLinkedFireSelected = CDeviceClass::lkfSelected | CDeviceClass::lkfSelectedVariant;
 	if (pDevice->GetLinkedFireOptions() & dwLinkedFireSelected)
@@ -3896,6 +3898,7 @@ void CShip::InstallItemAsArmor (CItemListManipulator &ItemList, int iSect)
 	ItemList.Refresh(NewArmor);
 
 	pSect->Install(*this, ItemList, iSect);
+	NewArmor = ItemList.GetItemAtCursor();
 
 	//	The item is now known and referenced.
 
@@ -4203,18 +4206,18 @@ void CShip::ObjectDestroyedHook (const SDestroyCtx &Ctx)
 
 	//	If what we're docked with got destroyed, clear it
 
-	if (GetDockedObj() == Ctx.pObj)
+	if (GetDockedObj() == Ctx.Obj)
 		m_pDocked = NULL;
 
 	//	If this object is docked with us, remove it from the
 	//	docking table.
 
-	m_DockingPorts.OnObjDestroyed(this, Ctx.pObj);
+	m_DockingPorts.OnObjDestroyed(this, &Ctx.Obj);
 
 	//	If our exit gate got destroyed, then we're OK (this can happen if
 	//	a carrier gets destroyed while gunships are being launched)
 
-	if (m_pExitGate == Ctx.pObj)
+	if (m_pExitGate == Ctx.Obj)
 		{
 		Place(m_pExitGate->GetPos());
 
@@ -4228,7 +4231,7 @@ void CShip::ObjectDestroyedHook (const SDestroyCtx &Ctx)
 	//	Irradiated by
 
 	if (m_pIrradiatedBy)
-		m_pIrradiatedBy->OnObjDestroyed(Ctx.pObj);
+		m_pIrradiatedBy->OnObjDestroyed(Ctx.Obj);
 
 	//	If we've got attached objects, see if one of them got destroyed.
 
@@ -5035,6 +5038,9 @@ bool CShip::OnGetCondition (CConditionSet::ETypes iCondition) const
 
 		case CConditionSet::cndRadioactive:
 			return (m_fRadioactive ? true : false);
+
+		case CConditionSet::cndShieldBlocked:
+			return m_Perf.HasShieldInterference();
 
 		default:
 			return false;
@@ -6392,7 +6398,7 @@ void CShip::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
 
         //	Slow down
 
-        SetVel(CVector(GetVel().GetX() * g_SpaceDragFactor, GetVel().GetY() * g_SpaceDragFactor));
+		UpdateDrag(Ctx, g_SpaceDragFactor);
 
         if (m_iParalysisTimer > 0)
             m_iParalysisTimer--;

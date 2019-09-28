@@ -487,6 +487,7 @@ ICCItem *fnSystemAddStationTimerEvent (CEvalContext *pEvalCtx, ICCItem *pArgs, D
 #define FN_SYS_STARGATE_PROPERTY		38
 #define FN_SYS_LOCATIONS				39
 #define FN_SYS_TOPOLOGY_DISTANCE_TO_CRITERIA		40
+#define FN_SYS_GET_ASCENDED_OBJECTS		41
 
 ICCItem *fnSystemGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData);
 
@@ -1236,11 +1237,11 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"i",	0,	},
 
 		{	"shpInstallArmor",				fnShipSet,			FN_SHIP_INSTALL_ARMOR,
-			"(shpInstallArmor ship item armorSegment) -> True/Nil",
+			"(shpInstallArmor ship item armorSegment) -> itemStruct (or Nil)",
 			"ivi",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"shpInstallDevice",				fnShipSet,			FN_SHIP_INSTALL_DEVICE,
-			"(shpInstallDevice ship item [deviceSlot])",
+			"(shpInstallDevice ship item [deviceSlot]) -> itemStruct (or Nil)",
 			"iv*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"shpIsBlind",					fnShipGetOld,		FN_SHIP_BLINDNESS,
@@ -1648,6 +1649,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'lrsBlind\n"
 			"   'paralyzed\n"
 			"   'radioactive\n"
+			"   'shieldBlocked\n"
 			"   'spinning\n"
 			"   'timeStopped",
 
@@ -2868,6 +2870,10 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(sysFindObjectAtPos source criteria pos [destPos]) -> list of objects",
 			"isv*",	0,	},
 
+		{	"sysGetAscendedObjects",		fnSystemGet,	FN_SYS_GET_ASCENDED_OBJECTS,
+			"(sysGetAscendedObjects) -> list of objects",
+			"*",	0,	},
+
 		{	"sysGetData",					fnSystemGet,	FN_SYS_GET_DATA,
 			"(sysGetData [nodeID] attrib) -> data",
 			"s*",	0,	},
@@ -2905,10 +2911,11 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			NULL,	0,	},
 
 		{	"sysGetNodes",					fnSystemGet,	FN_SYS_ALL_NODES,
-			"(sysGetNodes [criteria]) -> list of nodeIDs\n\n"
+			"(sysGetNodes [criteria|options]) -> list of nodeIDs\n\n"
 			
-			"criteria:\n\n"
+			"options:\n\n"
 			
+			"   criteria:       Only nodes that match attributes\n"
 			"   knownOnly:True  Only nodes known to player\n"
 			"   maxDist:n       Only nodes n or fewer gates away.\n"
 			"   minDist:n       Only nodes n or more gates away.\n",
@@ -10108,7 +10115,7 @@ ICCItem *fnShipSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			//	Install
 
 			pShip->InstallItemAsArmor(ItemList, iSegment);
-			return pCC->CreateTrue();
+			return CreateListFromItem(ItemList.GetItemAtCursor());
 			}
 
 		case FN_SHIP_INSTALL_DEVICE:
@@ -11651,6 +11658,9 @@ ICCItem *fnSystemCreate (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 				ICCItemPtr pResult = CTLispConvert::CreateObjectList(Ctx.Result);
 				return pResult->Reference();
 				}
+
+			else
+				return pCC->CreateNil();
 			}
 
 		case FN_SYS_CREATE_ENVIRONMENT:
@@ -12518,7 +12528,7 @@ ICCItem *fnSystemCreateStargate (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD d
 
 	//	Add a named object
 
-	pSystem->NameObject(sStargateName, pStargate);
+	pSystem->NameObject(sStargateName, *pStargate);
 
 	//	Set stargate properties (note: CreateStation also looks at objName and adds the name
 	//	to the named-objects system table.)
@@ -12868,6 +12878,19 @@ ICCItem *fnSystemGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 				return pCC->CreateInteger(pEnvironment->GetUNID());
 			else
 				return pCC->CreateNil();
+			}
+
+		case FN_SYS_GET_ASCENDED_OBJECTS:
+			{
+			CAscendedObjectList &ObjList = pCtx->GetUniverse().GetAscendedObjects();
+			if (ObjList.GetCount() == 0)
+				return pCC->CreateNil();
+
+			ICCItemPtr pResult(ICCItem::List);
+			for (int i = 0; i < ObjList.GetCount(); i++)
+				pResult->Append(CTLispConvert::CreateObject(ObjList.GetObj(i)));
+
+			return pResult->Reference();
 			}
 
 		case FN_SYS_GET_FIRE_SOLUTION:

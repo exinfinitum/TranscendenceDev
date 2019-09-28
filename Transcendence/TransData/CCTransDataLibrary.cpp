@@ -5,7 +5,10 @@
 
 #include "PreComp.h"
 
-static constexpr DWORD FN_TSE_PATTERN =					1;
+static constexpr DWORD FN_TSE_PARSE_INTEGER_RANGE =		1;
+static constexpr DWORD FN_TSE_PATTERN =					2;
+static constexpr DWORD FN_TSE_SET_SYSTEM =				3;
+static constexpr DWORD FN_TSE_UPDATE_SYSTEM =			4;
 
 ICCItem *fnNil (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData);
 ICCItem *fnTransEngine (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData);
@@ -20,6 +23,18 @@ static PRIMITIVEPROCDEF g_Library[] =
 			"iv*",	0,	},
 
 		//	These are engine diagnostic functions
+
+		{	"diagSetSystem",				fnTransEngine,		FN_TSE_SET_SYSTEM,
+			"(diagSetSystem nodeID) -> True/error",
+			"s",	PPFLAG_SIDEEFFECTS,	},
+
+		{	"diagUpdateSystem",				fnTransEngine,		FN_TSE_UPDATE_SYSTEM,
+			"(diagUpdateSystem [updates]) -> True/error",
+			"*",	PPFLAG_SIDEEFFECTS,	},
+
+		{	"tseParseIntegerRange",			fnTransEngine,		FN_TSE_PARSE_INTEGER_RANGE,
+			"(tseParseIntegerRange criteria) -> result",
+			"s",	0,	},
 
 		{	"tsePattern",					fnTransEngine,		FN_TSE_PATTERN,
 			"(tsePattern pattern ...) -> string",
@@ -56,9 +71,40 @@ ICCItem *fnTransEngine (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 	{
 	CCodeChain *pCC = pEvalCtx->pCC;
+	CCodeChainCtx *pCtx = (CCodeChainCtx *)pEvalCtx->pExternalCtx;
+	CUniverse &Universe = pCtx->GetUniverse();
 
 	switch (dwData)
 		{
+		case FN_TSE_PARSE_INTEGER_RANGE:
+			{
+			CIntegerRangeCriteria Criteria;
+			CString sCriteria = pArgs->GetElement(0)->GetStringValue();
+
+			const char *pPos = sCriteria.GetASCIIZPointer();
+			char chModifier;
+			if (!Criteria.Parse(pPos, &pPos, &chModifier))
+				return pCC->CreateError(CONSTLIT("Invalid criteria"), pArgs->GetElement(0));
+
+			if (Criteria.IsEmpty())
+				return pCC->CreateNil();
+
+			ICCItemPtr pResult(ICCItem::SymbolTable);
+			if (Criteria.GetEqualToValue() != -1)
+				pResult->SetIntegerAt(CONSTLIT("equalTo"), Criteria.GetEqualToValue());
+
+			if (Criteria.GetGreaterThanValue() != -1)
+				pResult->SetIntegerAt(CONSTLIT("greaterThan"), Criteria.GetGreaterThanValue());
+
+			if (Criteria.GetLessThanValue() != -1)
+				pResult->SetIntegerAt(CONSTLIT("lessThan"), Criteria.GetLessThanValue());
+
+			if (chModifier != '\0')
+				pResult->SetStringAt(CONSTLIT("modifier"), CString(&chModifier, 1));
+
+			return pResult->Reference();
+			}
+
 		case FN_TSE_PATTERN:
 			{
 			static constexpr int MAX_ARG_BLOCK_SIZE = 4000;
@@ -121,6 +167,48 @@ ICCItem *fnTransEngine (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 				}
 
 			return pCC->CreateString(sResult);
+			}
+
+		case FN_TSE_SET_SYSTEM:
+			{
+			CString sNodeID = pArgs->GetElement(0)->GetStringValue();
+			CTopologyNode *pNode = Universe.FindTopologyNode(sNodeID);
+			if (pNode == NULL)
+				return pCC->CreateError("Unknown nodeID", pArgs->GetElement(0));
+
+			//	If system is not loaded, then we fail.
+
+			CSystem *pSystem = pNode->GetSystem();
+			if (pSystem == NULL)
+				return pCC->CreateError("System not loaded", pArgs->GetElement(0));
+
+			//	Set as current system.
+
+			Universe.SetCurrentSystem(pSystem);
+			return pCC->CreateTrue();
+			}
+
+		case FN_TSE_UPDATE_SYSTEM:
+			{
+			int iUpdates;
+			if (pArgs->GetCount() > 0)
+				iUpdates = pArgs->GetElement(0)->GetIntegerValue();
+			else
+				iUpdates = 1;
+
+			if (iUpdates <= 0)
+				return pCC->CreateNil();
+
+			SSystemUpdateCtx UpdateCtx;
+			UpdateCtx.bForceEventFiring = true;
+			UpdateCtx.bForcePainted = true;
+
+			for (int i = 0; i < iUpdates; i++)
+				{
+				Universe.Update(UpdateCtx);
+				}
+
+			return pCC->CreateTrue();
 			}
 
 		default:

@@ -770,6 +770,7 @@ class CSystem
 		void FireOnSystemObjDestroyed (SDestroyCtx &Ctx);
 		void FireOnSystemWeaponFire (CSpaceObject *pShot, CWeaponFireDesc *pDesc, const CDamageSource &Source, int iRepeatingCount);
 		void FireSystemWeaponEvents (CSpaceObject *pShot, CWeaponFireDesc *pDesc, const CDamageSource &Source, int iRepeatingCount, DWORD dwFlags);
+		void FlushAllCaches (void);
 		void FlushEnemyObjectCache (void);
 		CString GetAttribsAtPos (const CVector &vPos);
 		void GetDebugInfo (SDebugInfo &Info) const;
@@ -814,7 +815,7 @@ class CSystem
 		bool IsStationInSystem (CStationType *pType);
 		inline bool IsTimeStopped (void) { return (m_iTimeStopped != 0); }
 		void MarkImages (void);
-		void NameObject (const CString &sName, CSpaceObject *pObj);
+		void NameObject (const CString &sName, CSpaceObject &Obj);
 		CVector OnJumpPosAdj (CSpaceObject *pObj, const CVector &vPos);
 		void OnStationDestroyed (SDestroyCtx &Ctx);
 		void PaintViewport (CG32bitImage &Dest, const RECT &rcView, CSpaceObject *pCenter, DWORD dwFlags, SViewportAnnotations *pAnnotations = NULL);
@@ -843,7 +844,7 @@ class CSystem
 		CVector TileToVector (int x, int y) const;
 		void TransferObjEventsIn (CSpaceObject *pObj, CSystemEventList &ObjEvents);
 		void TransferObjEventsOut (CSpaceObject *pObj, CSystemEventList &ObjEvents);
-		void UnnameObject (CSpaceObject *pObj);
+		void UnnameObject (CSpaceObject &Obj);
 		void UnregisterEventHandler (CSpaceObject *pObj);
 		void Update (SSystemUpdateCtx &SystemCtx, SViewportAnnotations *pAnnotations = NULL);
 		void UpdateExtended (const CTimeSpan &ExtraTime);
@@ -870,7 +871,7 @@ class CSystem
 
 		static Metric CalcApparentSpeedAdj (Metric rSpeed);
 		static void GetObjRefFromID (SLoadCtx &Ctx, DWORD dwID, CSpaceObject **retpObj);
-		static void ReadObjRefFromStream (SLoadCtx &Ctx, CSpaceObject **retpObj);
+		static void ReadObjRefFromStream (SLoadCtx &Ctx, CSpaceObject **retpObj, bool bOptional = false);
 		static void ReadObjRefFromStream (SLoadCtx &Ctx, void *pCtx, PRESOLVEOBJIDPROC pfnResolveProc);
 		static void ReadSovereignRefFromStream (SLoadCtx &Ctx, CSovereign **retpSovereign);
 

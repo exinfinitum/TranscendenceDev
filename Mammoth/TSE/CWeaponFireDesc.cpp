@@ -582,7 +582,7 @@ CEffectCreator *CWeaponFireDesc::FindEffectCreator (const CString &sUNID)
 //	Finds effect creator from a partial UNID
 
 	{
-	char *pPos;
+	const char *pPos;
 
 	//	Get the appropriate weapon fire desc and the parse position
 
@@ -695,14 +695,14 @@ ICCItem *CWeaponFireDesc::FindProperty (const CString &sProperty) const
 		return NULL;
 	}
 
-CWeaponFireDesc *CWeaponFireDesc::FindWeaponFireDesc (const CString &sUNID, char **retpPos)
+CWeaponFireDesc *CWeaponFireDesc::FindWeaponFireDesc (const CString &sUNID, const char **retpPos)
 
 //	FindWeaponFireDesc
 //
 //	Finds the weapon fire desc from a partial UNID
 
 	{
-	char *pPos = sUNID.GetASCIIZPointer();
+	const char *pPos = sUNID.GetASCIIZPointer();
 
 	//	If we're done, then we want this descriptor
 
@@ -764,7 +764,7 @@ CWeaponFireDesc *CWeaponFireDesc::FindWeaponFireDescFromFullUNID (const CString 
 //	Finds the descriptor by name
 
 	{
-	char *pPos = sUNID.GetPointer();
+	const char *pPos = sUNID.GetPointer();
 
 	//	Get the UNID of the type
 
@@ -1171,7 +1171,7 @@ void CWeaponFireDesc::FireOnDestroyObj (const SDestroyCtx &Ctx)
 
 		CCCtx.DefineContainingType(GetWeaponType());
 		CCCtx.SaveAndDefineSourceVar(Ctx.Attacker.GetObj());
-		CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.pObj);
+		CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.Obj);
 		CCCtx.DefineSpaceObject(CONSTLIT("aDestroyer"), Ctx.Attacker.GetObj());
 		CCCtx.DefineSpaceObject(CONSTLIT("aOrderGiver"), Ctx.GetOrderGiver());
 		CCCtx.DefineSpaceObject(CONSTLIT("aWreckObj"), Ctx.pWreck);
@@ -1183,7 +1183,7 @@ void CWeaponFireDesc::FireOnDestroyObj (const SDestroyCtx &Ctx)
 
 		ICCItem *pResult = CCCtx.Run(Event);
 		if (pResult->IsError())
-			Ctx.pObj->ReportEventError(ON_DESTROY_OBJ_EVENT, pResult);
+			Ctx.Obj.ReportEventError(ON_DESTROY_OBJ_EVENT, pResult);
 
 		CCCtx.Discard(pResult);
 		}
@@ -1462,7 +1462,7 @@ CItemType *CWeaponFireDesc::GetWeaponType (CItemType **retpLauncher) const
 //	we return the weapon item UNID
 
 	{
-	char *pPos = m_sUNID.GetPointer();
+	const char *pPos = m_sUNID.GetPointer();
 
 	//	Get the weapon UNID and the ordinal
 

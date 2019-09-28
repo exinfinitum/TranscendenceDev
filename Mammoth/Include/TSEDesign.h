@@ -212,6 +212,7 @@ class CDesignType
 		CUniverse &GetUniverse (void) const { return *g_pUniverse; }
 		ALERROR InitFromXML (SDesignLoadCtx &Ctx, CXMLElement *pDesc, bool bIsOverride = false);
 		bool IsIncluded (DWORD dwAPIVersion, const TArray<DWORD> &ExtensionsIncluded) const;
+		bool IsNull (void) const { return (m_dwUNID == 0); }
 		bool MatchesCriteria (const CDesignTypeCriteria &Criteria);
 		ALERROR PrepareBindDesign (SDesignLoadCtx &Ctx);
 		void PrepareReinit (void) { OnPrepareReinit(); }
@@ -245,7 +246,7 @@ class CDesignType
 		int FireGetGlobalResurrectPotential (void);
 		void FireObjCustomEvent (const CString &sEvent, CSpaceObject *pObj, ICCItem *pData = NULL, ICCItem **retpResult = NULL);
 		ALERROR FireOnGlobalDockPaneInit (const SEventHandlerDesc &Event, void *pScreen, DWORD dwScreenUNID, const CString &sScreen, const CString &sScreenName, const CString &sPane, ICCItem *pData, CString *retsError);
-		void FireOnGlobalEndDiagnostics (const SEventHandlerDesc &Event);
+		bool FireOnGlobalEndDiagnostics (const SEventHandlerDesc &Event);
 		void FireOnGlobalIntroCommand (const SEventHandlerDesc &Event, const CString &sCommand);
 		void FireOnGlobalIntroStarted (const SEventHandlerDesc &Event);
 		void FireOnGlobalMarkImages (const SEventHandlerDesc &Event);
@@ -257,8 +258,9 @@ class CDesignType
 		ALERROR FireOnGlobalPlayerLeftSystem (CString *retsError = NULL);
 		void FireOnGlobalPlayerSoldItem (const SEventHandlerDesc &Event, CSpaceObject *pBuyerObj, const CItem &Item, const CCurrencyAndValue &Price);
 		ALERROR FireOnGlobalResurrect (CString *retsError = NULL);
-		void FireOnGlobalStartDiagnostics (const SEventHandlerDesc &Event);
-		void FireOnGlobalSystemDiagnostics (const SEventHandlerDesc &Event);
+		bool FireOnGlobalRunDiagnostics (const SEventHandlerDesc &Event);
+		bool FireOnGlobalStartDiagnostics (const SEventHandlerDesc &Event);
+		bool FireOnGlobalSystemDiagnostics (const SEventHandlerDesc &Event);
 		ALERROR FireOnGlobalSystemCreated (SSystemCreateCtx &SysCreateCtx, CString *retsError = NULL);
 		void FireOnGlobalSystemStarted (const SEventHandlerDesc &Event, DWORD dwElapsedTime);
 		void FireOnGlobalSystemStopped (const SEventHandlerDesc &Event);
@@ -821,13 +823,9 @@ class CExtension
 
 		struct SLoadOptions
 			{
-			SLoadOptions (void) :
-					bNoResources(false),
-					bNoDigestCheck(false)
-				{ }
-
-			bool bNoResources;
-			bool bNoDigestCheck;
+			bool bLoadDiagnostics = false;
+			bool bNoResources = false;
+			bool bNoDigestCheck = false;
 			};
 
 		struct SStats
@@ -1153,6 +1151,7 @@ struct SDesignLoadCtx
 	CDesignType *pType = NULL;				//	Current type being loaded
 	bool bLoadAdventureDesc = false;		//	If TRUE, we are loading an adventure desc only
 	bool bLoadModule = false;				//	If TRUE, we are loading elements in a module
+	bool bLoadDiagnostics = false;			//	If TRUE, load diagnostics code also
 	DWORD dwInheritAPIVersion = 0;			//	APIVersion of parent (if base file)
 
 	//	Options
@@ -1181,27 +1180,25 @@ class CDesignCollection
 
 			evtOnGlobalIntroCommand			= 5,
 			evtOnGlobalIntroStarted			= 6,
-
 			evtOnGlobalMarkImages			= 7,
-			
 			evtOnGlobalObjDestroyed			= 8,
 			evtOnGlobalObjGateCheck			= 9,
 
 			evtOnGlobalPlayerBoughtItem		= 10,
 			evtOnGlobalPlayerSoldItem		= 11,
-			evtOnGlobalStartDiagnostics		= 12,
+			evtOnGlobalRunDiagnostics		= 12,
+			evtOnGlobalStartDiagnostics		= 13,
+			evtOnGlobalSystemDiagnostics	= 14,
 
-			evtOnGlobalSystemDiagnostics	= 13,
-			evtOnGlobalSystemStarted		= 14,
-			evtOnGlobalSystemStopped		= 15,
+			evtOnGlobalSystemStarted		= 15,
+			evtOnGlobalSystemStopped		= 16,
+			evtOnGlobalUniverseCreated		= 17,
+			evtOnGlobalUniverseLoad			= 18,
+			evtOnGlobalUniverseSave			= 19,
 
-			evtOnGlobalUniverseCreated		= 16,
-			evtOnGlobalUniverseLoad			= 17,
-			evtOnGlobalUniverseSave			= 18,
-			
-			evtOnGlobalUpdate				= 19,
+			evtOnGlobalUpdate				= 20,
 
-			evtCount						= 20
+			evtCount						= 21
 			};
 
 		enum EFlags
@@ -1209,6 +1206,12 @@ class CDesignCollection
 			//	GetImage flags
 			FLAG_IMAGE_COPY =			0x00000001,
 			FLAG_IMAGE_LOCK =			0x00000002,
+			};
+
+		struct SDiagnosticsCtx
+			{
+			int iTotalTests = 0;
+			int iTotalErrors = 0;
 			};
 
 		struct SStats
@@ -1256,7 +1259,7 @@ class CDesignCollection
 		bool FireGetGlobalDockScreen (const CSpaceObject *pObj, DWORD dwFlags, CDockScreenSys::SSelector *retSelector = NULL) const;
 
 		bool FireGetGlobalPlayerPriceAdj (STradeServiceCtx &ServiceCtx, ICCItem *pData, int *retiPriceAdj);
-		void FireOnGlobalEndDiagnostics (void);
+		void FireOnGlobalEndDiagnostics (SDiagnosticsCtx &Ctx);
 		void FireOnGlobalIntroCommand (const CString &sCommand);
 		void FireOnGlobalIntroStarted (void);
 		void FireOnGlobalMarkImages (void);
@@ -1268,9 +1271,10 @@ class CDesignCollection
 		void FireOnGlobalPlayerEnteredSystem (void);
 		void FireOnGlobalPlayerLeftSystem (void);
 		void FireOnGlobalPlayerSoldItem (CSpaceObject *pBuyerObj, const CItem &Item, const CCurrencyAndValue &Price);
-		void FireOnGlobalStartDiagnostics (void);
+		void FireOnGlobalRunDiagnostics (SDiagnosticsCtx &Ctx);
+		void FireOnGlobalStartDiagnostics (SDiagnosticsCtx &Ctx);
 		void FireOnGlobalSystemCreated (SSystemCreateCtx &SysCreateCtx);
-		void FireOnGlobalSystemDiagnostics (void);
+		void FireOnGlobalSystemDiagnostics (SDiagnosticsCtx &Ctx);
 		void FireOnGlobalSystemStarted (DWORD dwElapsedTime);
 		void FireOnGlobalSystemStopped (void);
 		ALERROR FireOnGlobalTypesInit (SDesignLoadCtx &Ctx);

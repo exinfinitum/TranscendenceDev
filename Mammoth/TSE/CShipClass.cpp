@@ -1876,7 +1876,7 @@ bool CShipClass::FindDataField (const CString &sField, CString *retsValue) const
 			{
 			*retsValue = pPlayer->GetStartingNode();
 			if (retsValue->IsBlank())
-				*retsValue = GetUniverse().GetCurrentAdventureDesc()->GetStartingNodeID();
+				*retsValue = GetUniverse().GetCurrentAdventureDesc().GetStartingNodeID();
 			}
 		else
 			*retsValue = NULL_STR;
@@ -2338,9 +2338,9 @@ const CEconomyType *CShipClass::GetEconomyType (void) const
 	if (pCurrency)
 		return pCurrency;
 
-	//	Otherwise, default to credits
+	//	Otherwise, default currency
 
-	return CEconomyType::AsType(GetUniverse().FindDesignType(DEFAULT_ECONOMY_UNID));
+	return &GetUniverse().GetDefaultCurrency();
 	}
 
 CWeaponFireDesc *CShipClass::GetExplosionType (CShip *pShip) const

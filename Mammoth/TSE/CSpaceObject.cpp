@@ -1484,8 +1484,7 @@ void CSpaceObject::Destroy (DestructionTypes iCause, const CDamageSource &Attack
 
 	//	Prepare struct
 
-	SDestroyCtx Ctx;
-	Ctx.pObj = this;
+	SDestroyCtx Ctx(*this);
 	Ctx.pDesc = pWeaponDesc;
 	Ctx.iCause = iCause;
 	Ctx.Attacker = Attacker;
@@ -2587,7 +2586,7 @@ void CSpaceObject::FireOnDestroyObj (const SDestroyCtx &Ctx)
 		CCodeChainCtx CCCtx(GetUniverse());
 		CCCtx.DefineContainingType(this);
 		CCCtx.SaveAndDefineSourceVar(this);
-		CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.pObj);
+		CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.Obj);
 		CCCtx.DefineSpaceObject(CONSTLIT("aDestroyer"), Ctx.Attacker.GetObj());
 		CCCtx.DefineSpaceObject(CONSTLIT("aOrderGiver"), Ctx.GetOrderGiver());
 		CCCtx.DefineSpaceObject(CONSTLIT("aWreckObj"), Ctx.pWreck);
@@ -2660,7 +2659,7 @@ void CSpaceObject::FireOnDockObjDestroyed (CSpaceObject *pDockTarget, const SDes
 	CCodeChainCtx CCCtx(GetUniverse());
 	CCCtx.DefineContainingType(this);
 	CCCtx.SaveAndDefineSourceVar(this);
-	CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.pObj);
+	CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.Obj);
 	CCCtx.DefineSpaceObject(CONSTLIT("aDestroyer"), Ctx.Attacker.GetObj());
 	CCCtx.DefineSpaceObject(CONSTLIT("aOrderGiver"), Ctx.GetOrderGiver());
 	CCCtx.DefineSpaceObject(CONSTLIT("aWreckObj"), Ctx.pWreck);
@@ -2860,7 +2859,7 @@ void CSpaceObject::FireOnObjDestroyed (const SDestroyCtx &Ctx)
 		CCodeChainCtx CCCtx(GetUniverse());
 		CCCtx.DefineContainingType(this);
 		CCCtx.SaveAndDefineSourceVar(this);
-		CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.pObj);
+		CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.Obj);
 		CCCtx.DefineSpaceObject(CONSTLIT("aDestroyer"), Ctx.Attacker.GetObj());
 		CCCtx.DefineSpaceObject(CONSTLIT("aOrderGiver"), Ctx.GetOrderGiver());
 		CCCtx.DefineSpaceObject(CONSTLIT("aWreckObj"), Ctx.pWreck);
@@ -3398,7 +3397,7 @@ void CSpaceObject::FireOnSystemObjDestroyed (SDestroyCtx &Ctx)
 		CCodeChainCtx CCCtx(GetUniverse());
 		CCCtx.DefineContainingType(this);
 		CCCtx.SaveAndDefineSourceVar(this);
-		CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.pObj);
+		CCCtx.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.Obj);
 		CCCtx.DefineSpaceObject(CONSTLIT("aDestroyer"), Ctx.Attacker.GetObj());
 		CCCtx.DefineSpaceObject(CONSTLIT("aOrderGiver"), Ctx.GetOrderGiver());
 		CCCtx.DefineSpaceObject(CONSTLIT("aWreckObj"), Ctx.pWreck);
@@ -6384,11 +6383,11 @@ void CSpaceObject::OnObjDestroyed (const SDestroyCtx &Ctx)
 
 	//	NULL-out any references to the object
 
-	m_Data.OnObjDestroyed(Ctx.pObj);
+	m_Data.OnObjDestroyed(&Ctx.Obj);
 
 	//	Remove the object if it had a subscription to us
 
-	m_SubscribedObjs.Delete(Ctx.pObj);
+	m_SubscribedObjs.Delete(&Ctx.Obj);
 
 	DEBUG_CATCH
 	}
@@ -6868,8 +6867,7 @@ void CSpaceObject::Remove (DestructionTypes iCause, const CDamageSource &Attacke
 
 		//	Remove
 
-		SDestroyCtx Ctx;
-		Ctx.pObj  = this;
+		SDestroyCtx Ctx(*this);
 		Ctx.iCause = iCause;
 		Ctx.Attacker = Attacker;
 		Ctx.pWreck = NULL;
@@ -7525,6 +7523,25 @@ void CSpaceObject::Update (SUpdateCtx &Ctx)
 	//	Done
 
 	ClearInUpdateCode();
+	}
+
+void CSpaceObject::UpdateDrag (SUpdateCtx &Ctx, Metric rDragFactor)
+
+//	UpdateDrag
+//
+//	Slow down the update based on drag factor.
+
+	{
+	if (GetVel().IsNull())
+		;
+
+	//	If we're moving really slowly, force to 0. We do this so that we can optimize calculations
+	//	and not have to compute wreck movement down to infinitesimal distances.
+
+	else if (GetVel().Length2() < g_MinSpeed2)
+		SetVel(NullVector);
+	else
+		SetVel(CVector(GetVel().GetX() * rDragFactor, GetVel().GetY() * rDragFactor));
 	}
 
 void CSpaceObject::UpdateEffects (void)
