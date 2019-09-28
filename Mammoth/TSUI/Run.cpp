@@ -181,7 +181,8 @@ void CHumanInterface::MainLoop (void)
 
 			//	If we haven't handled it yet, handle it now
 
-			if (!bHandled)
+			//  TODO: On 6th frame of IntroSession, this receives a message with id 15 that makes opengl go away...
+			if (!bHandled && msg.message != WM_PAINT)
 				{
 				::TranslateMessage(&msg);
 				::DispatchMessage(&msg);
@@ -316,7 +317,7 @@ LONG APIENTRY CHumanInterface::MainWndProc (HWND hWnd, UINT message, UINT wParam
 
 		case WM_MOVE:
 			return g_pHI->WMMove((int)LOWORD(lParam), (int)HIWORD(lParam));
-
+/*
 		case WM_PAINT:
 			{
 			PAINTSTRUCT ps;
@@ -325,7 +326,7 @@ LONG APIENTRY CHumanInterface::MainWndProc (HWND hWnd, UINT message, UINT wParam
 			::EndPaint(hWnd, &ps);
 			return 0;
 			}
-
+*/
 		case WM_RBUTTONDBLCLK:
 			return g_pHI->WMRButtonDblClick((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam), wParam);
 
