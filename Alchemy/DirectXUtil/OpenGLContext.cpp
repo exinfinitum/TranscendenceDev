@@ -4,13 +4,13 @@
 #define OPENGL_DEPTH_BITS 32;
 
 OpenGLContext::OpenGLContext(HWND hwnd) {
-	initOpenGL(hwnd);
+	initOpenGL(hwnd, GetDC(hwnd));
 }
 
-bool OpenGLContext::initOpenGL(HWND hwnd)
+bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 {
 	this->m_windowID = hwnd;
-	m_deviceContext = GetDC(hwnd);
+	m_deviceContext = hdc;
 	PIXELFORMATDESCRIPTOR pfd;
 	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
 	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
@@ -26,7 +26,6 @@ bool OpenGLContext::initOpenGL(HWND hwnd)
 		::kernelDebugLogPattern("[OpenGL] Failed to choose pixel format.");
 		return false;
 		}
-
 	if (!SetPixelFormat(m_deviceContext, iPixelFormat, &pfd))
 		{
 		::kernelDebugLogPattern("[OpenGL] Failed to set pixel format");
@@ -63,7 +62,7 @@ bool OpenGLContext::initOpenGL(HWND hwnd)
 	glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
 	glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
 
-	::kernelDebugLogPattern("OpenGL version: %d.%d", glVersion[0], glVersion[1]);
+	::kernelDebugLogPattern("OpenGL successfully initialized, version: %d.%d", glVersion[0], glVersion[1]);
 
 	return true;
 	}

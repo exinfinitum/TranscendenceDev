@@ -273,6 +273,7 @@
     <ClInclude Include="DX3DImpl.h" />
     <ClInclude Include="lodepng\lodepng.h" />
     <ClInclude Include="NoiseImpl.h" />
+    <ClInclude Include="OpenGL.h" />
     <ClInclude Include="OpenGLIncludes.h" />
     <ClInclude Include="OpenGLShader.h" />
     <ClInclude Include="PixelMacros.h" />

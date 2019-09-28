@@ -9,7 +9,7 @@ public:
 	OpenGLContext(void) { };
 	OpenGLContext(HWND hwnd);
 	~OpenGLContext(void) { };
-	bool initOpenGL(HWND hwnd);
+	bool initOpenGL(HWND hwnd, HDC hdc);
 	void setupQuads(void);
 	void reshapeWindow(int w, int h);
 	void renderScene(void);
