@@ -181,10 +181,11 @@ void CHumanInterface::MainLoop (void)
 
 			//	If we haven't handled it yet, handle it now
 
-			//  TODO: On 6th frame of IntroSession, this receives a message with id 15 that makes opengl go away...
-			if (!bHandled && msg.message != WM_PAINT)
+			//  Don't handle WM_PAINT, WM_SIZE or WM_MOVE since those will take control of the window back from OpenGL
+			if (!bHandled && msg.message != WM_PAINT && msg.message != WM_SIZE && msg.message != WM_MOVE)
 				{
 				::TranslateMessage(&msg);
+//				::kernelDebugLogPattern("message caught: %d", msg.message);
 				::DispatchMessage(&msg);
 				}
 
@@ -223,9 +224,12 @@ LONG APIENTRY CHumanInterface::MainWndProc (HWND hWnd, UINT message, UINT wParam
 
 	{
 	DEBUG_TRY
-
+//		::kernelDebugLogPattern("MESSAGE CAUGHT: %d", message);
 	switch (message)
 		{
+		case WM_PAINT:
+			return DefWindowProc(hWnd, message, wParam, lParam);;
+
 		case WM_ACTIVATEAPP:
 			return g_pHI->WMActivateApp(wParam ? true : false);
 
@@ -317,6 +321,7 @@ LONG APIENTRY CHumanInterface::MainWndProc (HWND hWnd, UINT message, UINT wParam
 
 		case WM_MOVE:
 			return g_pHI->WMMove((int)LOWORD(lParam), (int)HIWORD(lParam));
+
 /*
 		case WM_PAINT:
 			{
