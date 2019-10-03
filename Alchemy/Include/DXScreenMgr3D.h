@@ -49,6 +49,7 @@ class CDXScreen
 		inline bool IsUsingTextures (void) const { return m_bUseTextures; }
 		void Render (void);
 		void SwapBuffers (void);
+		void ResizeOpenGL (int width, int height);
 
 	private:
 		struct SLayer
@@ -96,6 +97,7 @@ class CDXScreen
 		bool CreateLayerResources (SLayer &Layer, CString *retsError = NULL);
 		bool InitDevice (CString *retsError = NULL);
         bool InitLayerResources (void);
+		void InitOpenGL(void);
 		bool Present (void);
 		void RenderError (const CString &sError);
 		bool ResetDevice (void);
@@ -136,6 +138,7 @@ class CDXBackgroundBlt
 		bool Init (int cxWidth, int cyHeight, CString *retsError = NULL);
 		inline bool IsEnabled (void) const { return (m_hBackgroundThread != INVALID_HANDLE_VALUE); }
 		void Render (void);
+		void Resize (int width, int height);
 
 	private:
 		static DWORD WINAPI BackgroundThread (LPVOID pData);

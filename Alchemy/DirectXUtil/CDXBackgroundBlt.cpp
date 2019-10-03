@@ -122,3 +122,13 @@ bool CDXBackgroundBlt::Init (int cxWidth, int cyHeight, CString *retsError)
 
 	return true;
 	}
+
+void CDXBackgroundBlt::Resize(int width, int height)
+
+//	Resize
+//
+//	Resize the OpenGL context (if one is in use)
+
+	{
+	m_DX.ResizeOpenGL(width, height);
+	}

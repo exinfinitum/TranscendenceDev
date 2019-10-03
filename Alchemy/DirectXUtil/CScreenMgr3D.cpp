@@ -245,6 +245,10 @@ ALERROR CScreenMgr3D::Init (SScreenMgrOptions &Options, CString *retsError)
 	if (!m_DX.Init(m_hWnd, m_cxScreen, m_cyScreen, dwFlags, retsError))
 		return ERR_FAIL;
 
+
+	if (Options.m_bForceOpenGL)
+		return NOERROR;
+
 	//	Initialize the background blitter
 
 	if (!m_Blitter.Init(m_cxScreen, m_cyScreen, retsError))
@@ -382,6 +386,7 @@ void CScreenMgr3D::OnWMSize (int cxWidth, int cyHeight, int iSize)
 //	Handle WM_SIZE message
 
 	{
+	m_Blitter.Resize(cxWidth, cyHeight);
 	}
 
 void CScreenMgr3D::Render (void)
