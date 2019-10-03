@@ -608,9 +608,7 @@ void CDXScreen::Render (void)
 			if (iInitOpenGLSuccess)
 				m_bOpenGLAttached = true;
 			}
-		glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
-		glViewport(0, 0, 1024, 768);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		m_pOGLContext->testRender();
 		}
 
 
