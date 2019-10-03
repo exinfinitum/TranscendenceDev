@@ -785,6 +785,12 @@ bool CDXScreen::ResetDevice (void)
 	return true;
 	}
 
+void CDXScreen::ResizeOpenGL (int width, int height)
+	{
+	if (m_bOpenGLAttached)
+		m_pOGLContext->resize(width, height);
+	}
+
 void CDXScreen::SwapBuffers (void)
 
 //	SwapBuffers
