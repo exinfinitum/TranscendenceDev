@@ -245,10 +245,6 @@ ALERROR CScreenMgr3D::Init (SScreenMgrOptions &Options, CString *retsError)
 	if (!m_DX.Init(m_hWnd, m_cxScreen, m_cyScreen, dwFlags, retsError))
 		return ERR_FAIL;
 
-
-	if (Options.m_bForceOpenGL)
-		return NOERROR;
-
 	//	Initialize the background blitter
 
 	if (!m_Blitter.Init(m_cxScreen, m_cyScreen, retsError))
