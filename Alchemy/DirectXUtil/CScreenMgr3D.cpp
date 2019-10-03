@@ -105,6 +105,7 @@ void CScreenMgr3D::DebugOutputStats (void)
 	::kernelDebugLogPattern("Scale: %d.%02d", (int)m_rScale, (int)(m_rScale * 100.0) % 100);
 	::kernelDebugLogPattern("Background blt: %s", (m_Blitter.IsEnabled() ? CONSTLIT("Enabled") : CONSTLIT("Disabled")));
 	::kernelDebugLogPattern("Use Direct X: %s", (m_DX.IsUsingDirectX() ? CONSTLIT("Enabled") : CONSTLIT("Disabled")));
+	::kernelDebugLogPattern("Use OpenGL: %s", (m_DX.IsUsingOpenGL() ? CONSTLIT("Enabled") : CONSTLIT("Disabled")));
 	::kernelDebugLogPattern("Use GPU compositing: %s", (m_DX.IsUsingTextures() ? CONSTLIT("Enabled") : CONSTLIT("Disabled")));
 
 	HDC hDC = ::GetDC(m_hWnd);
