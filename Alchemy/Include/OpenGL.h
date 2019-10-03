@@ -11,9 +11,11 @@ public:
 	~OpenGLContext(void) { };
 	bool initOpenGL(HWND hwnd, HDC hdc);
 	void setupQuads(void);
-	void reshapeWindow(int w, int h);
+	void resize(int w, int h);
 	void renderScene(void);
+	void testRender(void);
 	void swapBuffers();
+	void getWGLError();
 
 private:
 	int m_iWindowWidth;

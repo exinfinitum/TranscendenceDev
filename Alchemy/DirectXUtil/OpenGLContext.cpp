@@ -4,7 +4,7 @@
 #define OPENGL_DEPTH_BITS 32;
 
 OpenGLContext::OpenGLContext(HWND hwnd) {
-	initOpenGL(hwnd, GetDC(hwnd));
+	//initOpenGL(hwnd, GetDC(hwnd));
 }
 
 bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
@@ -24,20 +24,21 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	if (iPixelFormat == 0)
 		{
 		::kernelDebugLogPattern("[OpenGL] Failed to choose pixel format.");
+		getWGLError();
 		return false;
 		}
 	if (!SetPixelFormat(m_deviceContext, iPixelFormat, &pfd))
 		{
 		::kernelDebugLogPattern("[OpenGL] Failed to set pixel format");
+		getWGLError();
 		return false;
 		}
 	// Create an OpenGL 2.1 render context so we can initialize GLEW
 	HGLRC tempOpenGLContext = wglCreateContext(m_deviceContext);
-	wglMakeCurrent(m_deviceContext, tempOpenGLContext);
-	if (glewInit() != GLEW_OK)
+	if (!wglMakeCurrent(m_deviceContext, tempOpenGLContext))
 		{
-		::kernelDebugLogPattern("[OpenGL] Failed to initialize GLEW.");
-		return false;
+		::kernelDebugLogPattern("[OpenGL] Failed to make temp OpenGL context current");
+		getWGLError();
 		}
 
 	int attributes[] = {
@@ -50,12 +51,22 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 		m_renderContext = wglCreateContextAttribsARB(m_deviceContext, NULL, attributes);
 		wglMakeCurrent(NULL, NULL);
 		wglDeleteContext(tempOpenGLContext);
-		wglMakeCurrent(m_deviceContext, m_renderContext);
+		if (!wglMakeCurrent(m_deviceContext, m_renderContext))
+			{
+			::kernelDebugLogPattern("[OpenGL] Failed to make OpenGL context current");
+			getWGLError();
+			}
 	}
 	else {
 		m_renderContext = tempOpenGLContext;
 	}
 
+	GLenum glewErr = glewInit();
+	if (glewErr != GLEW_OK)
+	{
+		::kernelDebugLogPattern("[OpenGL] Failed to initialize GLEW. Error: %s", CString((LPCSTR)glewGetErrorString(glewErr)));
+		return false;
+	}
 
 	const GLubyte *glVersionString = glGetString(GL_VERSION);
 	int glVersion[2] = { -1, -1 };
@@ -67,12 +78,39 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	return true;
 	}
 
-void OpenGLContext::reshapeWindow(int w, int h) {
+void OpenGLContext::resize(int w, int h) 
+	{
 	m_iWindowWidth = w;
 	m_iWindowHeight = h;
-}
+	}
+
+void OpenGLContext::testRender()
+	{
+	glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
+	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	}
 
 void OpenGLContext::swapBuffers()
 {
 	SwapBuffers(m_deviceContext);
 }
+
+void OpenGLContext::getWGLError()
+	{
+	LPCSTR lpMsgBuf;
+	DWORD dw = GetLastError();
+
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dw,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf,
+		0, NULL);
+
+	// Display the error message and exit the process
+	::kernelDebugLogPattern("[OpenGL] Error code %d: %s", dw, CString(lpMsgBuf));
+	}
