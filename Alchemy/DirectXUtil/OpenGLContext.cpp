@@ -82,18 +82,27 @@ void OpenGLContext::resize(int w, int h)
 	{
 	m_iWindowWidth = w;
 	m_iWindowHeight = h;
+	::kernelDebugLogPattern("Resolution change: %d, %d", m_iWindowWidth, m_iWindowHeight);
 	}
 
 void OpenGLContext::testRender()
 	{
-	glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
-	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight);
+	int schroedinger = rand();
+	if (schroedinger < 17628)
+		glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
+	else
+		glClearColor(1.0f, 0.4f, 0.0f, 0.0f);
+	::kernelDebugLogPattern("RENDER, RV: %d", schroedinger);
+	::kernelDebugLogPattern("Resolution: %d, %d", m_iWindowWidth, m_iWindowHeight);
+	glViewport(0, 0, 1024, 768);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	}
 
-void OpenGLContext::swapBuffers()
+void OpenGLContext::swapBuffers(HWND hwnd)
 {
-	SwapBuffers(m_deviceContext);
+	//::kernelDebugLogPattern("[OGL] Inner HWND: %x", hwnd);
+	SwapBuffers(GetDC(hwnd));
+	getWGLSwapError();
 }
 
 void OpenGLContext::getWGLError()
@@ -114,3 +123,22 @@ void OpenGLContext::getWGLError()
 	// Display the error message and exit the process
 	::kernelDebugLogPattern("[OpenGL] Error code %d: %s", dw, CString(lpMsgBuf));
 	}
+
+void OpenGLContext::getWGLSwapError()
+{
+	LPCSTR lpMsgBuf;
+	DWORD dw = GetLastError();
+
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dw,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf,
+		0, NULL);
+
+	// Display the error message and exit the process
+	::kernelDebugLogPattern("[OpenGL Swap] Error code %d: %s", dw, CString(lpMsgBuf));
+}

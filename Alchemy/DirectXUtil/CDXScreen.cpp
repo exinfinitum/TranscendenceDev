@@ -806,7 +806,8 @@ void CDXScreen::SwapBuffers (void)
 
 	if (m_bUseOpenGL)
 		{
-			m_pOGLContext->swapBuffers(); // Swap buffers
+			//::kernelDebugLogPattern("[OGL] Outer HWND: %x", m_hWnd);
+			m_pOGLContext->swapBuffers(m_hWnd); // Swap buffers
 		}
 
 	else if (m_bDeviceLost)
