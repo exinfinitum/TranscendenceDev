@@ -14,8 +14,9 @@ public:
 	void resize(int w, int h);
 	void renderScene(void);
 	void testRender(void);
-	void swapBuffers();
+	void swapBuffers(HWND hwnd);
 	void getWGLError();
+	void getWGLSwapError();
 
 private:
 	int m_iWindowWidth;
