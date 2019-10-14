@@ -13,14 +13,14 @@ public:
 	void setupQuads(void);
 	void resize(int w, int h);
 	void renderScene(void);
-	void testRender(void);
+	void testRender(int w, int h);
 	void swapBuffers(HWND hwnd);
 	void getWGLError();
 	void getWGLSwapError();
 
 private:
-	int m_iWindowWidth;
-	int m_iWindowHeight;
+	int m_iWindowWidth = 0;
+	int m_iWindowHeight = 0;
 
 	//Shader *m_pShader;
 
