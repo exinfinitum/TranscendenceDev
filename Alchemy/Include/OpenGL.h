@@ -1,7 +1,6 @@
 #pragma once
 
 #include "OpenGLIncludes.h"
-
 #include "OpenGLShader.h"
 
 class OpenGLContext {
@@ -13,14 +12,14 @@ public:
 	void setupQuads(void);
 	void resize(int w, int h);
 	void renderScene(void);
-	void testRender(int w, int h);
+	void testRender();
 	void swapBuffers(HWND hwnd);
 	void getWGLError();
 	void getWGLSwapError();
 
 private:
-	int m_iWindowWidth = 0;
-	int m_iWindowHeight = 0;
+	int m_iWindowWidth;
+	int m_iWindowHeight;
 
 	//Shader *m_pShader;
 

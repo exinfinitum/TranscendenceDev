@@ -407,7 +407,7 @@ bool CDXScreen::Init (HWND hWnd, int cxWidth, int cyHeight, DWORD dwFlags, CStri
 	if (m_bUseOpenGL)
 		{
 		HDC hDC = ::GetDC(m_hWnd);
-		m_pOGLContext = &OpenGLContext(hWnd);
+		m_pOGLContext = new OpenGLContext(hWnd);
 		}
 
 
@@ -607,8 +607,9 @@ void CDXScreen::Render (void)
 			bool iInitOpenGLSuccess = m_pOGLContext->initOpenGL(m_hWnd, hDC);
 			if (iInitOpenGLSuccess)
 				m_bOpenGLAttached = true;
+				m_pOGLContext->resize(m_cxTarget, m_cyTarget);
 			}
-		m_pOGLContext->testRender(m_cxTarget, m_cyTarget);
+		m_pOGLContext->testRender();
 		}
 
 
@@ -787,12 +788,8 @@ bool CDXScreen::ResetDevice (void)
 
 void CDXScreen::ResizeOpenGL (int width, int height)
 	{
-	m_cxTarget = width;
-	m_cyTarget = height;
-	//  Don't use the OGLContext width/height class variables, as those tend to get corrupted very easily...
-
-	//if (m_bOpenGLAttached)
-	//	m_pOGLContext->resize(width, height);
+	if (m_bOpenGLAttached)
+		m_pOGLContext->resize(width, height);
 	}
 
 void CDXScreen::SwapBuffers (void)

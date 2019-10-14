@@ -80,15 +80,20 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	return true;
 	}
 
-void OpenGLContext::testRender(int w, int h)
+void OpenGLContext::resize(int w, int h)
 	{
-	static int schroedinger = 0;
-	if ((schroedinger % 2) == 0)
+	m_iWindowWidth = w;
+	m_iWindowHeight = h;
+	::kernelDebugLogPattern("Resolution change: %d, %d", m_iWindowWidth, m_iWindowHeight);
+	}
+
+void OpenGLContext::testRender()
+	{
+	if ((rand() % 2) == 0)
 		glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
 	else
 		glClearColor(1.0f, 0.4f, 0.0f, 0.0f);
-	schroedinger++;
-	glViewport(0, 0, w, h);
+	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	unsigned char pixel[3];
 	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
