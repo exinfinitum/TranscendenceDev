@@ -3,8 +3,10 @@
 #define OPENGL_COLOR_BITS 32;
 #define OPENGL_DEPTH_BITS 32;
 
-OpenGLContext::OpenGLContext(HWND hwnd) {
-	//initOpenGL(hwnd, GetDC(hwnd));
+OpenGLContext::OpenGLContext(HWND hwnd) :
+	m_iWindowWidth(0),
+	m_iWindowHeight(0)
+{
 }
 
 bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
@@ -78,31 +80,23 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	return true;
 	}
 
-void OpenGLContext::resize(int w, int h) 
+void OpenGLContext::testRender(int w, int h)
 	{
-	m_iWindowWidth = w;
-	m_iWindowHeight = h;
-	::kernelDebugLogPattern("Resolution change: %d, %d", m_iWindowWidth, m_iWindowHeight);
-	}
-
-void OpenGLContext::testRender()
-	{
-	int schroedinger = rand();
-	if (schroedinger < 17628)
+	static int schroedinger = 0;
+	if ((schroedinger % 2) == 0)
 		glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
 	else
 		glClearColor(1.0f, 0.4f, 0.0f, 0.0f);
-	::kernelDebugLogPattern("RENDER, RV: %d", schroedinger);
-	::kernelDebugLogPattern("Resolution: %d, %d", m_iWindowWidth, m_iWindowHeight);
-	glViewport(0, 0, 1024, 768);
+	schroedinger++;
+	glViewport(0, 0, w, h);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	unsigned char pixel[3];
+	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 	}
 
 void OpenGLContext::swapBuffers(HWND hwnd)
 {
-	//::kernelDebugLogPattern("[OGL] Inner HWND: %x", hwnd);
 	SwapBuffers(GetDC(hwnd));
-	getWGLSwapError();
 }
 
 void OpenGLContext::getWGLError()
