@@ -76,8 +76,65 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
 
 	::kernelDebugLogPattern("OpenGL successfully initialized, version: %d.%d", glVersion[0], glVersion[1]);
-
+	prepTestScene();
 	return true;
+	}
+
+void OpenGLContext::prepTestScene()
+	{
+	m_pTestShader = new Shader("./shaders/test_vertex_shader.glsl", "./shaders/test_fragment_shader.glsl");
+	// Create our square
+	// Declare vertices for our square - 18 floats (6 vertices, xyz for each)
+	float* vertices = new float[18];
+	float* colors = new float[18];
+	float square_dimensions = 1.0;
+
+	// Fill out our array of vertices
+	vertices[0] = -square_dimensions; vertices[1] = -square_dimensions; vertices[2] = 0.0; // Bottom left corner
+	vertices[3] = -square_dimensions; vertices[4] = square_dimensions; vertices[5] = 0.0; // Top left corner
+	vertices[6] = square_dimensions; vertices[7] = square_dimensions; vertices[8] = 0.0; // Top Right corner
+	vertices[9] = square_dimensions; vertices[10] = -square_dimensions; vertices[11] = 0.0; // Bottom right corner
+	vertices[12] = -square_dimensions; vertices[13] = -square_dimensions; vertices[14] = 0.0; // Bottom left corner
+	vertices[15] = square_dimensions; vertices[16] = square_dimensions; vertices[17] = 0.0; // Top Right corner
+
+																							// Fill out our array of colors
+	colors[0] = 1.0; colors[1] = 1.0; colors[2] = 1.0; // Bottom left corner
+	colors[3] = 1.0; colors[4] = 0.0; colors[5] = 0.0; // Top left corner
+	colors[6] = 0.0; colors[7] = 1.0; colors[8] = 0.0; // Top Right corner
+	colors[9] = 0.0; colors[10] = 0.0; colors[11] = 1.0; // Bottom right corner
+	colors[12] = 1.0; colors[13] = 1.0; colors[14] = 1.0; // Bottom left corner
+	colors[15] = 0.0; colors[16] = 1.0; colors[17] = 0.0; // Top Right corner
+
+														  // Now that the vertices are filled in, we need to create a VAO with a call to
+														  // glGenVertexArrays, then bind it so we can use it.
+														  // Generate 2 vertex arrays, one for colors and one for vertices
+	glGenVertexArrays(1, &vaoID[0]);
+	glBindVertexArray(vaoID[0]);
+
+	// Generate and bind our Vertex Buffer Objects.
+	glGenBuffers(2, vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
+
+	// Now, fill the size and data of our VBO and set it to static_draw.
+	glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	// Set up our vertex attribute pointer.
+	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	// Repeat for colors.
+	glBindBuffer(GL_ARRAY_BUFFER, vboID[1]); // Bind our second Vertex Buffer Object
+	glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(GLfloat), colors, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0); // Set up our vertex attributes pointer
+	glEnableVertexAttribArray(1); // Enable the second vertex attribute array
+
+								  // Disable our VAO and VBO. In that order.
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
+
+	// Delete our vertices once we're done with them
+	// Unlike machine learning/CUDA applications, the vertices go straight from GPU to our screen
+	// so no use keeping them here in our memory
+	delete[] vertices;
+	delete[] colors;
 	}
 
 void OpenGLContext::resize(int w, int h)
@@ -99,10 +156,58 @@ void OpenGLContext::testRender()
 	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 	}
 
-void OpenGLContext::swapBuffers(HWND hwnd)
+void OpenGLContext::testShaders()
 {
-	SwapBuffers(GetDC(hwnd));
+
+	// Create our new shader
+	
+	// Set up our perspective matrix
+	// glm::perspective is the equivalent of old gluPerspective
+	// 10 deg FOV in y direction, 0.1 distance to near clipping plane, 100 distance to far clipping plane
+	// Note, FOV is in radians!
+	glm::mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), (float)m_iWindowWidth / (float)m_iWindowHeight, 0.1f, 100.0f);
+
+	int schroedinger = rand();
+	if (schroedinger < 17628)
+		glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
+	else
+		glClearColor(1.0f, 0.4f, 0.0f, 0.0f);
+	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight); // Set the viewport size to fill the window
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
+
+																				// Set up model and view matrices
+																				// glm::mat4(1.0f) seems to make an identity matrix?
+																				// View matrix translates 5 units back into the scene
+
+	glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+	// Model matrix rotates by 45 degrees
+	glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	m_pTestShader->bind(); // Bind our shader
+
+					// Get the location of the matrix variables inside our shaders
+	int projectionMatrixLocation = glGetUniformLocation(m_pTestShader->id(), "projectionMatrix");
+	int viewMatrixLocation = glGetUniformLocation(m_pTestShader->id(), "viewMatrix");
+	int modelMatrixLocation = glGetUniformLocation(m_pTestShader->id(), "modelMatrix");
+
+	// Send our matrices into the shader variables
+	glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
+	glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
+	glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
+
+	glBindVertexArray(vaoID[0]); // Bind our Vertex Array Object
+	glDrawArrays(GL_TRIANGLES, 0, 6); // Draw our square
+	glBindVertexArray(0); // Unbind our Vertex Array Object
+
+	m_pTestShader->unbind(); // Unbind our shader
+	unsigned char pixel[3];
+	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 }
+
+void OpenGLContext::swapBuffers(HWND hwnd)
+	{
+	SwapBuffers(GetDC(hwnd));
+	}
 
 void OpenGLContext::getWGLError()
 	{
