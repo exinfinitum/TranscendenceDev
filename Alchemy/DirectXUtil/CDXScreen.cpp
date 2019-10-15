@@ -150,6 +150,11 @@ void CDXScreen::CleanUp (void)
         m_pD3D->Release();
 		m_pD3D = NULL;
 		}
+	if (m_pOGLContext != NULL)
+		{
+		delete(m_pOGLContext);
+		m_pOGLContext = NULL;
+		}
 	}
 
 bool CDXScreen::CreateLayer (const SDXLayerCreate &Create, int *retiLayerID, CString *retsError)
@@ -609,7 +614,7 @@ void CDXScreen::Render (void)
 				m_bOpenGLAttached = true;
 				m_pOGLContext->resize(m_cxTarget, m_cyTarget);
 			}
-		m_pOGLContext->testRender();
+		m_pOGLContext->testShaders();
 		}
 
 

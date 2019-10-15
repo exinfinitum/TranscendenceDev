@@ -13,6 +13,8 @@ public:
 	void resize(int w, int h);
 	void renderScene(void);
 	void testRender();
+	void testShaders();
+	void prepTestScene();
 	void swapBuffers(HWND hwnd);
 	void getWGLError();
 	void getWGLSwapError();
@@ -21,7 +23,7 @@ private:
 	int m_iWindowWidth;
 	int m_iWindowHeight;
 
-	//Shader *m_pShader;
+	Shader *m_pTestShader;
 
 	// Projection, view and model matrices respectively
 	glm::mat4 m_pMatrix;
