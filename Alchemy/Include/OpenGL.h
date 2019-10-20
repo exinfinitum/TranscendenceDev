@@ -2,6 +2,7 @@
 
 #include "OpenGLIncludes.h"
 #include "OpenGLShader.h"
+#include <vector>
 
 class OpenGLContext {
 public:
@@ -14,6 +15,7 @@ public:
 	void renderScene(void);
 	void testRender();
 	void testShaders();
+	void prepSquareCanvas();
 	void prepTestScene();
 	void swapBuffers(HWND hwnd);
 	void getWGLError();
@@ -32,9 +34,27 @@ private:
 
 	unsigned int vaoID[1];
 	unsigned int vboID[1];
+	unsigned int eboID[1];
 
 protected:
 	HGLRC m_renderContext;
 	HDC m_deviceContext;
 	HWND m_windowID;
+};
+
+class OpenGLVAO {
+public:
+	OpenGLVAO(void) { };
+	OpenGLVAO(std::vector<std::vector<float>> vbos,
+		std::vector<std::vector<unsigned int>> ebos);
+	~OpenGLVAO(void) { };
+	void initVAO(std::vector<std::vector<float>> vbos,
+		std::vector<std::vector<unsigned int>> ebos);
+	void setShader(Shader* shader) { m_pTestShader = shader; }
+
+private:
+	Shader *m_pTestShader;
+	unsigned int vaoID[1];
+	unsigned int vboID[1];
+	unsigned int eboID[1];
 };

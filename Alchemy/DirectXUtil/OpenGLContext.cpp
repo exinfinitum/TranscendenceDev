@@ -76,8 +76,58 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
 
 	::kernelDebugLogPattern("OpenGL successfully initialized, version: %d.%d", glVersion[0], glVersion[1]);
-	prepTestScene();
+	prepSquareCanvas();
 	return true;
+	}
+
+void OpenGLContext::prepSquareCanvas()
+{
+	m_pTestShader = new Shader("./shaders/test_vertex_shader.glsl", "./shaders/test_fragment_shader.glsl");
+	float fSize = 0.5f;
+	float posZ = 0.0f;
+	float vertices[] = {
+		fSize, fSize, posZ,
+		fSize, -fSize, posZ,
+		-fSize, -fSize, posZ,
+		-fSize, fSize, posZ,
+	};
+
+	float colors[] = {
+		1.0, 0.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 0.0, 1.0,
+		1.0, 1.0, 1.0,
+	};
+
+	unsigned int indices[] = {
+		0, 1, 3,
+		1, 2, 3
+	};
+
+	// TODO: Put the below in the VAO object...
+	glGenVertexArrays(1, &vaoID[0]); // One VAO per object; it contains our VBOs/EBOs
+	glGenBuffers(2, &vboID[0]); // VBO stores vertex/colour/other info
+	glGenBuffers(2, &eboID[0]); // EBO can store e.g. indices per triangle
+	glBindVertexArray(vaoID[0]);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboID[0]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices) * sizeof(GLfloat), indices, GL_STATIC_DRAW);
+	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0); // Enable the vertex attrib array
+
+	glBindBuffer(GL_ARRAY_BUFFER, vboID[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(colors) * sizeof(GLfloat), colors, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboID[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices) * sizeof(GLfloat), indices, GL_STATIC_DRAW);
+	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1); // Enable the vertex attrib array
+
+	// Unbind buffer and vertex array so we don't accidentally overwrite anything
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
 	}
 
 void OpenGLContext::prepTestScene()
@@ -168,10 +218,7 @@ void OpenGLContext::testShaders()
 	glm::mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), (float)m_iWindowWidth / (float)m_iWindowHeight, 0.1f, 100.0f);
 
 	int schroedinger = rand();
-	if (schroedinger < 17628)
-		glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
-	else
-		glClearColor(1.0f, 0.4f, 0.0f, 0.0f);
+	glClearColor(1.0f, 0.4f, 0.0f, 0.0f);
 	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight); // Set the viewport size to fill the window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
 
@@ -181,7 +228,9 @@ void OpenGLContext::testShaders()
 
 	glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 	// Model matrix rotates by 45 degrees
-	glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	static float rotation = 0.0f;
+	glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+	rotation += 1.0f;
 
 	m_pTestShader->bind(); // Bind our shader
 
@@ -196,7 +245,8 @@ void OpenGLContext::testShaders()
 	glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
 
 	glBindVertexArray(vaoID[0]); // Bind our Vertex Array Object
-	glDrawArrays(GL_TRIANGLES, 0, 6); // Draw our square
+	//glDrawArrays(GL_TRIANGLES, 0, 6); // Draw our square
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0); // Unbind our Vertex Array Object
 
 	m_pTestShader->unbind(); // Unbind our shader
