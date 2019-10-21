@@ -82,51 +82,35 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 
 void OpenGLContext::prepSquareCanvas()
 {
-	m_pTestShader = new Shader("./shaders/test_vertex_shader.glsl", "./shaders/test_fragment_shader.glsl");
+	Shader* pTestShader = new Shader("./shaders/test_vertex_shader.glsl", "./shaders/test_fragment_shader.glsl");
 	float fSize = 0.5f;
 	float posZ = 0.0f;
-	float vertices[] = {
+
+	std::vector<float> vertices {
 		fSize, fSize, posZ,
 		fSize, -fSize, posZ,
 		-fSize, -fSize, posZ,
 		-fSize, fSize, posZ,
 	};
-
-	float colors[] = {
-		1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 0.0, 1.0,
-		1.0, 1.0, 1.0,
+	
+	std::vector<float> colors {
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+		1.0f, 1.0f, 1.0f
 	};
 
-	unsigned int indices[] = {
+	std::vector<unsigned int> indices {
 		0, 1, 3,
 		1, 2, 3
 	};
 
-	// TODO: Put the below in the VAO object...
-	glGenVertexArrays(1, &vaoID[0]); // One VAO per object; it contains our VBOs/EBOs
-	glGenBuffers(2, &vboID[0]); // VBO stores vertex/colour/other info
-	glGenBuffers(2, &eboID[0]); // EBO can store e.g. indices per triangle
-	glBindVertexArray(vaoID[0]);
+	std::vector<std::vector<float>> vbos{ vertices, colors };
+	std::vector<std::vector<unsigned int>> ebos{ indices, indices };
 
-	glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboID[0]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices) * sizeof(GLfloat), indices, GL_STATIC_DRAW);
-	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0); // Enable the vertex attrib array
-
-	glBindBuffer(GL_ARRAY_BUFFER, vboID[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colors) * sizeof(GLfloat), colors, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboID[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices) * sizeof(GLfloat), indices, GL_STATIC_DRAW);
-	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1); // Enable the vertex attrib array
-
-	// Unbind buffer and vertex array so we don't accidentally overwrite anything
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	OpenGLVAO* vao = new OpenGLVAO(vbos, ebos);
+	vao->setShader(pTestShader);
+	vaos.push_back(vao);
 
 	}
 
@@ -207,7 +191,7 @@ void OpenGLContext::testRender()
 	}
 
 void OpenGLContext::testShaders()
-{
+	{
 
 	// Create our new shader
 	
@@ -232,27 +216,28 @@ void OpenGLContext::testShaders()
 	glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 	rotation += 1.0f;
 
-	m_pTestShader->bind(); // Bind our shader
-
+	Shader* pShader = vaos[0]->getShader();
+	pShader->bind(); // Bind our shader
+	// TODO: Put the rest of these thingies into the VAO class...
 					// Get the location of the matrix variables inside our shaders
-	int projectionMatrixLocation = glGetUniformLocation(m_pTestShader->id(), "projectionMatrix");
-	int viewMatrixLocation = glGetUniformLocation(m_pTestShader->id(), "viewMatrix");
-	int modelMatrixLocation = glGetUniformLocation(m_pTestShader->id(), "modelMatrix");
+	int projectionMatrixLocation = glGetUniformLocation(pShader->id(), "projectionMatrix");
+	int viewMatrixLocation = glGetUniformLocation(pShader->id(), "viewMatrix");
+	int modelMatrixLocation = glGetUniformLocation(pShader->id(), "modelMatrix");
 
 	// Send our matrices into the shader variables
 	glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
 	glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
 	glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
 
-	glBindVertexArray(vaoID[0]); // Bind our Vertex Array Object
+	glBindVertexArray((vaos[0]->getVAO())[0]); // Bind our Vertex Array Object
 	//glDrawArrays(GL_TRIANGLES, 0, 6); // Draw our square
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0); // Unbind our Vertex Array Object
 
-	m_pTestShader->unbind(); // Unbind our shader
+	pShader->unbind(); // Unbind our shader
 	unsigned char pixel[3];
 	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
-}
+	}
 
 void OpenGLContext::swapBuffers(HWND hwnd)
 	{
@@ -279,7 +264,7 @@ void OpenGLContext::getWGLError()
 	}
 
 void OpenGLContext::getWGLSwapError()
-{
+	{
 	LPCSTR lpMsgBuf;
 	DWORD dw = GetLastError();
 
@@ -295,4 +280,4 @@ void OpenGLContext::getWGLSwapError()
 
 	// Display the error message and exit the process
 	::kernelDebugLogPattern("[OpenGL Swap] Error code %d: %s", dw, CString(lpMsgBuf));
-}
+	}

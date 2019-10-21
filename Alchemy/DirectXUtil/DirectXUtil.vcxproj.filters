@@ -443,5 +443,8 @@
     <ClCompile Include="OpenGLShader.cpp">
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="OpenGLVAO.cpp">
+      <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
