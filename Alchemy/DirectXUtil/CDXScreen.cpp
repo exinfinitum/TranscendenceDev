@@ -413,6 +413,7 @@ bool CDXScreen::Init (HWND hWnd, int cxWidth, int cyHeight, DWORD dwFlags, CStri
 		{
 		HDC hDC = ::GetDC(m_hWnd);
 		m_pOGLContext = new OpenGLContext(hWnd);
+		::ReleaseDC(m_hWnd, hDC);
 		}
 
 
@@ -615,6 +616,7 @@ void CDXScreen::Render (void)
 				m_pOGLContext->resize(m_cxTarget, m_cyTarget);
 			}
 		m_pOGLContext->testShaders();
+		::ReleaseDC(m_hWnd, hDC);
 		}
 
 
@@ -814,6 +816,7 @@ void CDXScreen::SwapBuffers (void)
 		{
 			//::kernelDebugLogPattern("[OGL] Outer HWND: %x", m_hWnd);
 			m_pOGLContext->swapBuffers(m_hWnd); // Swap buffers
+			//int doNothing = 1;
 		}
 
 	else if (m_bDeviceLost)
