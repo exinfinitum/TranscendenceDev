@@ -21,6 +21,7 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	pfd.cColorBits = 32;
 	pfd.cDepthBits = 32;
 	pfd.iLayerType = PFD_MAIN_PLANE;
+	::kernelDebugLogPattern("[OpenGL] INITOPENGL called.");
 
 	int iPixelFormat = ChoosePixelFormat(m_deviceContext, &pfd);
 	if (iPixelFormat == 0)
@@ -49,6 +50,14 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 		WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
 		0
 	};
+
+	GLenum glewErr = glewInit();
+	if (glewErr != GLEW_OK)
+	{
+		::kernelDebugLogPattern("[OpenGL] Failed to initialize GLEW. Error: %s", CString((LPCSTR)glewGetErrorString(glewErr)));
+		return false;
+	}
+
 	if (wglewIsSupported("WGL_ARB_create_context") == 1) {
 		m_renderContext = wglCreateContextAttribsARB(m_deviceContext, NULL, attributes);
 		wglMakeCurrent(NULL, NULL);
@@ -61,13 +70,7 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	}
 	else {
 		m_renderContext = tempOpenGLContext;
-	}
-
-	GLenum glewErr = glewInit();
-	if (glewErr != GLEW_OK)
-	{
-		::kernelDebugLogPattern("[OpenGL] Failed to initialize GLEW. Error: %s", CString((LPCSTR)glewGetErrorString(glewErr)));
-		return false;
+		::kernelDebugLogPattern("[OpenGL] Unable to use WGL_ARB_create_context, falling back to 2.1 render context...");
 	}
 
 	const GLubyte *glVersionString = glGetString(GL_VERSION);
@@ -180,14 +183,15 @@ void OpenGLContext::resize(int w, int h)
 
 void OpenGLContext::testRender()
 	{
-	if ((rand() % 2) == 0)
-		glClearColor(0.4f, 1.0f, 0.0f, 0.0f);
-	else
-		glClearColor(1.0f, 0.4f, 0.0f, 0.0f);
+	static float red = 0.0f;
+	static float blue = 0.0f;
+	static float green = 0.0f;
+	glClearColor(red, green, blue, 0.0f);
 	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	unsigned char pixel[3];
-	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+	red = fmod((red + 0.05f), 1.0f);
+	blue = fmod((blue + 0.01f), 1.0f);
+	green = fmod((green + 0.1f), 1.0f);
 	}
 
 void OpenGLContext::testShaders()
@@ -201,8 +205,7 @@ void OpenGLContext::testShaders()
 	// Note, FOV is in radians!
 	glm::mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), (float)m_iWindowWidth / (float)m_iWindowHeight, 0.1f, 100.0f);
 
-	int schroedinger = rand();
-	glClearColor(1.0f, 0.4f, 0.0f, 0.0f);
+	glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
 	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight); // Set the viewport size to fill the window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
 
@@ -214,7 +217,7 @@ void OpenGLContext::testShaders()
 	// Model matrix rotates by 45 degrees
 	static float rotation = 0.0f;
 	glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-	rotation += 1.0f;
+	rotation += 5.0f;
 
 	Shader* pShader = vaos[0]->getShader();
 	pShader->bind(); // Bind our shader
@@ -235,13 +238,16 @@ void OpenGLContext::testShaders()
 	glBindVertexArray(0); // Unbind our Vertex Array Object
 
 	pShader->unbind(); // Unbind our shader
-	unsigned char pixel[3];
-	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+
+//	unsigned char pixel[3];
+//	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 	}
 
 void OpenGLContext::swapBuffers(HWND hwnd)
 	{
-	SwapBuffers(GetDC(hwnd));
+	HDC hDC = ::GetDC(hwnd);
+	SwapBuffers(hDC);
+	::ReleaseDC(hwnd, hDC);
 	}
 
 void OpenGLContext::getWGLError()
