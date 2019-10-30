@@ -13,7 +13,8 @@ CDXScreen::CDXScreen (void) :
 		m_pD3DDevice(NULL),
 		m_pOGLContext(NULL),
 		m_bDeviceLost(false),
-		m_bOpenGLAttached(false)
+		m_bOpenGLAttached(false),
+	    m_pOpenGLTexture(NULL)
 
 //	CDXScreen constructor
 
@@ -188,8 +189,8 @@ bool CDXScreen::CreateLayer (const SDXLayerCreate &Create, int *retiLayerID, CSt
 
 	if (m_bUseOpenGL)
 		{
-		//  TODO: Change this...
-		int do_something = 1;
+		pLayer->FrontBuffer.Create(Create.cxWidth, Create.cyHeight);
+		pLayer->BackBuffer.Create(Create.cxWidth, Create.cyHeight);
 		}
 
 	//	If we're using textures, we need a vertex buffer and three textures.
@@ -603,6 +604,8 @@ void CDXScreen::Render (void)
 	else if (m_bUseOpenGL)
 		{
 		HDC hDC = ::GetDC(m_hWnd);
+		SLayer &Layer = m_Layers[m_PaintOrder[0]];
+		CG32bitPixel *pPixelArray = Layer.BackBuffer.GetPixelArray();
 		while(!m_bOpenGLAttached)
 			{
 			// Use a while loop and sleep in order to avoid a weird race condition where OpenGL initializes before
@@ -615,7 +618,17 @@ void CDXScreen::Render (void)
 				m_bOpenGLAttached = true;
 				m_pOGLContext->resize(m_cxTarget, m_cyTarget);
 			}
-		m_pOGLContext->testShaders();
+		if (pPixelArray)
+			{
+			if (!m_pOpenGLTexture)
+				m_pOpenGLTexture = new OpenGLTexture(pPixelArray, Layer.cxWidth, Layer.cyHeight);
+			else
+				m_pOpenGLTexture->updateTexture2D(pPixelArray, Layer.cxWidth, Layer.cyHeight);
+			}
+		if (m_pOpenGLTexture)
+			m_pOGLContext->testTextures(m_pOpenGLTexture);
+		else
+			m_pOGLContext->testShaders();
 		::ReleaseDC(m_hWnd, hDC);
 		}
 

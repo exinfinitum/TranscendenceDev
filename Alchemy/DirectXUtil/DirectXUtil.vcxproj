@@ -520,6 +520,7 @@
     <ClCompile Include="Noise.cpp" />
     <ClCompile Include="OpenGLContext.cpp" />
     <ClCompile Include="OpenGLShader.cpp" />
+    <ClCompile Include="OpenGLTexture.cpp" />
     <ClCompile Include="OpenGLVAO.cpp" />
     <ClCompile Include="Polygon.cpp" />
     <ClCompile Include="PolygonSimple.cpp" />

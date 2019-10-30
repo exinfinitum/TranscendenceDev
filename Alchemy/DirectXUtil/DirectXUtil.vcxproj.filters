@@ -446,5 +446,8 @@
     <ClCompile Include="OpenGLVAO.cpp">
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="OpenGLTexture.cpp">
+      <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

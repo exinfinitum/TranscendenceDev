@@ -108,6 +108,7 @@ class CDXScreen
 		OpenGLContext *m_pOGLContext;		//  OpenGL context
 		D3DPRESENT_PARAMETERS m_Present;	//	Present parameters
 		D3DCAPS9 m_DeviceCaps;				//	Device caps for current device
+		OpenGLTexture *m_pOpenGLTexture;    //  OpenGL texture for game layer
 
 		int m_cxTarget;						//	Width of target surface (usually the screen)
 		int m_cyTarget;						//	Height of target surface
