@@ -16,8 +16,8 @@ public:
 	unsigned int* getTexture(void) { return m_pTextureID; }
 
 private:
-	Shader *m_pShader;
 	unsigned int m_pTextureID[1];
+	unsigned int pboID[2];
 };
 
 class OpenGLVAO {
@@ -44,9 +44,9 @@ private:
 	Shader *m_pShader;
 	unsigned int m_iNumArrays;
 	unsigned int m_iNumTexArrays;
-	unsigned int vaoID[1];
-	unsigned int vboID[1];
-	unsigned int eboID[1];
+	unsigned int vaoID[128];
+	unsigned int vboID[128];
+	unsigned int eboID[128];
 };
 
 class OpenGLContext {
