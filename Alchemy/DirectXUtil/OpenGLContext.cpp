@@ -263,7 +263,8 @@ void OpenGLContext::testTextures(OpenGLTexture* texture)
 	// glm::perspective is the equivalent of old gluPerspective
 	// 10 deg FOV in y direction, 0.1 distance to near clipping plane, 100 distance to far clipping plane
 	// Note, FOV is in radians!
-	glm::mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), (float)m_iWindowWidth / (float)m_iWindowHeight, 0.1f, 100.0f);
+	//glm::mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), (float)m_iWindowWidth / (float)m_iWindowHeight, 0.1f, 100.0f);
+	glm::mat4 projectionMatrix = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, 0.1f, 100.0f);
 
 	glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
 	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight); // Set the viewport size to fill the window
@@ -275,9 +276,9 @@ void OpenGLContext::testTextures(OpenGLTexture* texture)
 
 	glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 	// Model matrix rotates by 45 degrees
-	static float rotation = 0.0f;
+	static float rotation = 180.0f;
 	glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-	rotation += 5.0f;
+	//rotation += 1.0f;
 
 	Shader* pShader = vaos[0]->getShader();
 	pShader->bind(); // Bind our shader
