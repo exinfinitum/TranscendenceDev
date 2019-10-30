@@ -6,7 +6,15 @@ in vec2 TexCoord;
 
 uniform sampler2D ourTexture;
 
+float roundme(float input)
+{
+    float roundLevels = 10.0f;
+    return float(round(input * roundLevels)) / roundLevels;
+}
+
 void main()
 {
-    FragColor = vec4(ourColor, 1.0) * 0.2 + texture(ourTexture, vec2(-TexCoord[0], TexCoord[1]));
+    vec4 RealColor = texture(ourTexture, vec2(-TexCoord[0], TexCoord[1]));
+	FragColor = RealColor;
+	//FragColor = vec4(roundme(RealColor[0]), roundme(RealColor[1]), roundme(RealColor[2]), roundme(RealColor[3]));
 }
