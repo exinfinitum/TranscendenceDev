@@ -47,6 +47,7 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 	int attributes[] = {
 		WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
 		WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+		WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
 		WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
 		0
 	};
@@ -85,7 +86,9 @@ bool OpenGLContext::initOpenGL(HWND hwnd, HDC hdc)
 
 void OpenGLContext::prepSquareCanvas()
 {
-	Shader* pTestShader = new Shader("./shaders/test_vertex_shader.glsl", "./shaders/test_fragment_shader.glsl");
+	//
+	//Shader* pTestShader = new Shader("./shaders/test_vertex_shader.glsl", "./shaders/test_fragment_shader.glsl");
+	Shader* pTestShader = new Shader("./shaders/texture_vertex_shader.glsl", "./shaders/texture_fragment_shader.glsl");
 	float fSize = 0.5f;
 	float posZ = 0.0f;
 
@@ -103,15 +106,23 @@ void OpenGLContext::prepSquareCanvas()
 		1.0f, 1.0f, 1.0f
 	};
 
+	std::vector<float> texcoords{
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+		0.0f, 1.0f,
+	};
+
 	std::vector<unsigned int> indices {
 		0, 1, 3,
 		1, 2, 3
 	};
 
 	std::vector<std::vector<float>> vbos{ vertices, colors };
-	std::vector<std::vector<unsigned int>> ebos{ indices, indices };
+	std::vector<std::vector<float>> texcoord_arr{ texcoords };
+	std::vector<std::vector<unsigned int>> ebos{ indices, indices, indices };
 
-	OpenGLVAO* vao = new OpenGLVAO(vbos, ebos);
+	OpenGLVAO* vao = new OpenGLVAO(vbos, ebos, texcoord_arr);
 	vao->setShader(pTestShader);
 	vaos.push_back(vao);
 
@@ -242,6 +253,57 @@ void OpenGLContext::testShaders()
 //	unsigned char pixel[3];
 //	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 	}
+
+void OpenGLContext::testTextures(OpenGLTexture* texture)
+{
+
+	// Create our new shader
+
+	// Set up our perspective matrix
+	// glm::perspective is the equivalent of old gluPerspective
+	// 10 deg FOV in y direction, 0.1 distance to near clipping plane, 100 distance to far clipping plane
+	// Note, FOV is in radians!
+	glm::mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), (float)m_iWindowWidth / (float)m_iWindowHeight, 0.1f, 100.0f);
+
+	glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
+	glViewport(0, 0, m_iWindowWidth, m_iWindowHeight); // Set the viewport size to fill the window
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
+
+																				// Set up model and view matrices
+																				// glm::mat4(1.0f) seems to make an identity matrix?
+																				// View matrix translates 5 units back into the scene
+
+	glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+	// Model matrix rotates by 45 degrees
+	static float rotation = 0.0f;
+	glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+	rotation += 5.0f;
+
+	Shader* pShader = vaos[0]->getShader();
+	pShader->bind(); // Bind our shader
+					 // TODO: Put the rest of these thingies into the VAO class...
+					 // Get the location of the matrix variables inside our shaders
+	int projectionMatrixLocation = glGetUniformLocation(pShader->id(), "projectionMatrix");
+	int viewMatrixLocation = glGetUniformLocation(pShader->id(), "viewMatrix");
+	int modelMatrixLocation = glGetUniformLocation(pShader->id(), "modelMatrix");
+
+	// Send our matrices into the shader variables
+	glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
+	glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
+	glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
+	texture->bindTexture2D(GL_TEXTURE0);
+
+	glBindVertexArray((vaos[0]->getVAO())[0]); // Bind our Vertex Array Object
+											   //glDrawArrays(GL_TRIANGLES, 0, 6); // Draw our square
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0); // Unbind our Vertex Array Object
+	texture->unbindTexture2D();
+
+	pShader->unbind(); // Unbind our shader
+
+					   //	unsigned char pixel[3];
+					   //	glReadPixels(1, 1, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+}
 
 void OpenGLContext::swapBuffers(HWND hwnd)
 	{
