@@ -618,18 +618,18 @@ void CDXScreen::Render (void)
 				m_bOpenGLAttached = true;
 				m_pOGLContext->resize(m_cxTarget, m_cyTarget);
 			}
+		::ReleaseDC(m_hWnd, hDC);
 		if (pPixelArray)
-			{
+		{
 			if (!m_pOpenGLTexture)
 				m_pOpenGLTexture = new OpenGLTexture(pPixelArray, Layer.cxWidth, Layer.cyHeight);
 			else
 				m_pOpenGLTexture->updateTexture2D(pPixelArray, Layer.cxWidth, Layer.cyHeight);
-			}
+		}
 		if (m_pOpenGLTexture)
 			m_pOGLContext->testTextures(m_pOpenGLTexture);
 		else
 			m_pOGLContext->testShaders();
-		::ReleaseDC(m_hWnd, hDC);
 		}
 
 
