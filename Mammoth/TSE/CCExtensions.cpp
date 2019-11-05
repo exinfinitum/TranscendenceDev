@@ -1934,6 +1934,8 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"property (all)\n\n"
 
 			"   'ascended\n"
+			"   'canAttack\n"
+			"   'canBeAttacked\n"
 			"   'category -> 'beam | 'effect | 'marker | 'missile | 'mission | 'ship | 'station\n"
 			"   'commsKey\n"
 			"   'currency -> currency type UNID\n"
@@ -3003,6 +3005,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			
 			"property:\n\n"
 			
+			"   'attributes        Attributes of the system\n"
 			"   'known             Known to player\n"
 			"   'lastVisitOn       Tick on which player last visited\n"
 			"   'lastVisitSeconds  Game seconds since player last visited\n"
@@ -6683,7 +6686,7 @@ ICCItem *fnObjGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			if (pTarget == NULL)
 				return pCC->CreateNil();
 
-			return CreateDisposition(*pCC, pObj->GetDispositionTowards(pTarget));
+			return CreateDisposition(*pCC, pObj->GetDispositionTowards(*pTarget));
 			}
 
 		case FN_OBJ_GET_EVENT_HANDLER:

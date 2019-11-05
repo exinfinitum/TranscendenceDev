@@ -323,6 +323,18 @@
     <ClInclude Include="GameFileCompatibility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\TSEResourceDb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\TSESpaceObjectUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\TSEOverlays.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CAdventureRecord.cpp">
@@ -488,9 +500,6 @@
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="CAttackDetector.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="CAttributeCriteria.cpp">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="CAttributeDataBlock.cpp">
@@ -1332,6 +1341,18 @@
     </ClCompile>
     <ClCompile Include="DockSessionProperties.cpp">
       <Filter>Source Files\Dock Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="CAutoTargetCalc.cpp">
+      <Filter>Source Files\SpaceObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="CAutoDockCalc.cpp">
+      <Filter>Source Files\SpaceObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="CTopologyAttributeCriteria.cpp">
+      <Filter>Source Files\Topology</Filter>
+    </ClCompile>
+    <ClCompile Include="CAffinityCriteria.cpp">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

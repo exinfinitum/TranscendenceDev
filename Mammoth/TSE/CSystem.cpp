@@ -11,7 +11,6 @@
 
 #define LEVEL_ENCOUNTER_CHANCE			10
 
-const Metric MAX_AUTO_TARGET_DISTANCE =			30.0 * LIGHT_SECOND;
 const Metric MAX_ENCOUNTER_DIST	=				30.0 * LIGHT_MINUTE;
 const Metric MAX_MIRV_TARGET_RANGE =			50.0 * LIGHT_SECOND;
 
@@ -348,55 +347,6 @@ Metric CSystem::CalcApparentSpeedAdj (Metric rSpeed)
 	return Min(MAX_ADJ, rAdj);
 	}
 
-void CSystem::CalcAutoTarget (SUpdateCtx &Ctx)
-
-//	CalcAutoTarget
-//
-//	Initializes various fields in the context to figure out what the player's
-//	auto-target is.
-
-	{
-	if (Ctx.pPlayer == NULL)
-		return;
-
-	Ctx.pPlayerTarget = Ctx.pPlayer->GetTarget(CItemCtx(), IShipController::FLAG_ACTUAL_TARGET);
-
-	//	Check to see if the primary weapon requires autotargetting
-
-	CInstalledDevice *pWeapon = Ctx.pPlayer->GetNamedDevice(devPrimaryWeapon);
-	if (pWeapon && pWeapon->IsEnabled())
-		{
-		CItemCtx ItemCtx(Ctx.pPlayer, pWeapon);
-		Ctx.bNeedsAutoTarget = pWeapon->GetClass()->NeedsAutoTarget(ItemCtx, &Ctx.iMinFireArc, &Ctx.iMaxFireArc);
-		}
-
-	//	If the primary does not need it, check the missile launcher
-
-	CInstalledDevice *pLauncher;
-	if ((pLauncher = Ctx.pPlayer->GetNamedDevice(devMissileWeapon))
-		&& pLauncher->IsEnabled())
-		{
-		CItemCtx ItemCtx(Ctx.pPlayer, pLauncher);
-		int iLauncherMinFireArc, iLauncherMaxFireArc;
-		if (pLauncher->GetClass()->NeedsAutoTarget(ItemCtx, &iLauncherMinFireArc, &iLauncherMaxFireArc))
-			{
-			if (Ctx.bNeedsAutoTarget)
-				CGeometry::CombineArcs(Ctx.iMinFireArc, Ctx.iMaxFireArc, iLauncherMinFireArc, iLauncherMaxFireArc, &Ctx.iMinFireArc, &Ctx.iMaxFireArc);
-			else
-				{
-				Ctx.bNeedsAutoTarget = true;
-				Ctx.iMinFireArc = iLauncherMinFireArc;
-				Ctx.iMaxFireArc = iLauncherMaxFireArc;
-				}
-			}
-		}
-
-	//	Set up perception and max target dist
-
-	Ctx.iPlayerPerception = Ctx.pPlayer->GetPerception();
-	Ctx.rTargetDist2 = MAX_AUTO_TARGET_DISTANCE * MAX_AUTO_TARGET_DISTANCE;
-	}
-
 int CSystem::CalculateLightIntensity (const CVector &vPos, CSpaceObject **retpStar, const CG8bitSparseImage **retpVolumetricMask)
 
 //	CalculateLightIntensity
@@ -467,66 +417,18 @@ int CSystem::CalculateLightIntensity (const CVector &vPos, CSpaceObject **retpSt
 	DEBUG_CATCH
 	}
 
-int CSystem::CalcLocationWeight (CLocationDef *pLoc, const CAttributeCriteria &Criteria)
+int CSystem::CalcLocationAffinity (const CAffinityCriteria &Criteria, const CString &sLocationAttribs, const CVector &vPos) const
 
-//	CalcLocationWeight
+//	CalcLocationAffinity
 //
-//	Calculates the weight of the given location relative to the given
-//	criteria.
-//
-//	See: CAttributeCriteria::CalcWeightAdj
-//
-//	EXAMPLES:
-//
-//	Criteria = "*"			LocationAttribs = "{anything}"		Result = 1000
-//	Criteria = "+asteroids"	LocationAttribs = "asteroids"		Result = 2000
-//	Criteria = "+asteroids"	LocationAttribs = "foo"				Result = 1000
-//	Criteria = "-asteroids"	LocationAttribs = "asteroids"		Result = 500
-//	Criteria = "-asteroids"	LocationAttribs = "foo"				Result = 1000
+//	Computes the affinity of the position with the given location attributes.
 
 	{
-	int i;
-	int iWeight = 1000;
-
-	//	Handle edge cases
-
-	if (Criteria.MatchesAll())
-		return iWeight;
-
-	//	Adjust weight based on criteria
-
-	const CString &sAttributes = pLoc->GetAttributes();
-	CVector vPos = pLoc->GetOrbit().GetObjectPos();
-
-	for (i = 0; i < Criteria.GetCount(); i++)
-		{
-		DWORD dwMatchStrength;
-		const CString &sAttrib = Criteria.GetAttribAndWeight(i, &dwMatchStrength);
-
-		//	Do we have the attribute? Check the location and any attributes
-		//	inherited from territories and the system.
-
-		bool bHasAttrib = (::HasModifier(sAttributes, sAttrib)
-				|| HasAttribute(vPos, sAttrib));
-
-		//	Compute the frequency of the given attribute
-
-		int iAttribFreq = m_Universe.GetAttributeDesc().GetLocationAttribFrequency(sAttrib);
-
-		//	Adjust probability based on the match strength
-
-		int iAdj = CAttributeCriteria::CalcWeightAdj(bHasAttrib, dwMatchStrength, iAttribFreq);
-		iWeight = iWeight * iAdj / 1000;
-
-		//	If weight is 0, then no need to continue
-
-		if (iWeight == 0)
-			return 0;
-		}
-
-	//	Done
-
-	return iWeight;
+	return Criteria.CalcWeight(
+		[this, sLocationAttribs, vPos](const CString &sAttrib) { return ::HasModifier(sLocationAttribs, sAttrib) || HasAttribute(vPos, sAttrib); },
+		NULL,
+		[this](const CString &sAttrib) { return m_Universe.GetAttributeDesc().GetLocationAttribFrequency(sAttrib); }
+		);
 	}
 
 CVector CSystem::CalcRandomEncounterPos (const CSpaceObject &TargetObj, Metric rDistance, const CSpaceObject *pEncounterBase) const
@@ -2376,7 +2278,7 @@ bool CSystem::GetEmptyLocations (const SLocationCriteria &Criteria, const COrbit
 
 		//	Compute the probability based on attributes
 
-		int iChance = CalcLocationWeight(&Loc, Criteria.AttribCriteria);
+		int iChance = CalcLocationAffinity(Loc, Criteria.AttribCriteria);
 		if (iChance == 0)
 			continue;
 
@@ -2576,7 +2478,7 @@ int CSystem::GetTileSize (void) const
 	return m_pEnvironment->GetTileSize();
 	}
 
-bool CSystem::HasAttribute (const CVector &vPos, const CString &sAttrib)
+bool CSystem::HasAttribute (const CVector &vPos, const CString &sAttrib) const
 
 //	HasAttribute
 //
@@ -3005,6 +2907,19 @@ void CSystem::MarkImages (void)
 	m_Universe.SetLogImageLoad(true);
 
 	DEBUG_CATCH
+	}
+
+bool CSystem::MatchesLocationAffinity (const CAffinityCriteria &Criteria, const CString &sLocationAttribs, const CVector &vPos) const
+
+//	MatchesLocationAffinity
+//
+//	Returns TRUE if we match the given position with the given location 
+//	attributes.
+
+	{
+	return Criteria.Matches(
+		[this, sLocationAttribs, vPos](const CString &sAttrib) { return ::HasModifier(sLocationAttribs, sAttrib) || HasAttribute(vPos, sAttrib); }
+		);
 	}
 
 void CSystem::NameObject (const CString &sName, CSpaceObject &Obj)
@@ -4604,7 +4519,8 @@ void CSystem::Update (SSystemUpdateCtx &SystemCtx, SViewportAnnotations *pAnnota
 	//	Initialize the player weapon context so that we can select the auto-
 	//	target.
 
-	CalcAutoTarget(Ctx);
+	if (Ctx.pPlayer)
+		Ctx.AutoTarget.Init(*Ctx.pPlayer);
 
 	//	Add all objects to the grid so that we can do faster
 	//	hit tests

@@ -45,6 +45,7 @@ class CDifferentiatedItem
 		inline CCurrencyAndValue GetCurrencyAndValue (bool bActual = false) const;
 		inline const CEconomyType &GetCurrencyType (void) const;
 		inline int GetLevel (void) const;
+		inline int GetMassKg (void) const;
 		inline int GetMinLevel (void) const;
 		inline const CItemType &GetType (void) const;
 		inline CItemType &GetType (void);
@@ -75,6 +76,9 @@ class CArmorItem : public CDifferentiatedItem
 			Metric rBalance = 0.0;				//	Total balance (+100 = 100% overpowered)
 			int iLevel = 0;						//	Level for which we balanced
 			Metric rHP = 0.0;					//	Max HP for armor (counting bonuses, etc.).
+			Metric rStdMass = 0.0;				//	Standard mass (balance = 0.0)
+			Metric rStdCost = 0.0;				//	Standard cost for mass.
+			Metric rStdHP = 0.0;				//	Standard HP for mass.
 
 			Metric rHPBalance = 0.0;			//	Balance contribution from raw HP
 			Metric rDamageAdj = 0.0;			//	Balance contribution from damage adj
@@ -272,6 +276,7 @@ class CItem
 		CItemType *GetUnknownType (void) const;
 		CItemType *GetUnknownTypeIfUnknown (bool bActual = false) const;
 		int GetVariantNumber(void) const { return (m_pExtra ? (int)m_pExtra->m_dwVariantCounter : 0); }
+		inline bool HasAttribute (const CString &sAttrib) const;
 		bool HasComponents (void) const;
 		bool HasMods (void) const { return (m_pExtra && m_pExtra->m_Mods.IsNotEmpty()); }
 		bool HasSpecialAttribute (const CString &sAttrib) const;
@@ -342,7 +347,6 @@ class CItem
 
 		//	Item Criteria
 
-		static CString GenerateCriteria (const CItemCriteria &Criteria);
 		static const CItem &NullItem (void) { return CItem::m_NullItem; }
 		static DWORD ParseFlags (ICCItem *pItem);
 		bool MatchesCriteria (const CItemCriteria &Criteria) const;
@@ -609,6 +613,7 @@ class IItemGenerator
 		virtual ~IItemGenerator (void) { }
 		virtual void AddItems (SItemAddCtx &Ctx) { }
 		virtual void AddTypesUsed (TSortMap<DWORD, bool> *retTypesUsed) { }
+		virtual ALERROR FinishBind (SDesignLoadCtx &Ctx) { return NOERROR; }
 		virtual CurrencyValue GetAverageValue (int iLevel) { return 0; }
 		virtual CCurrencyAndValue GetDesiredValue (int iLevel, int *retiLoopCount = NULL, Metric *retrScale = NULL) const { return CCurrencyAndValue(); }
 		virtual IItemGenerator *GetGenerator (int iIndex) { return NULL; }
@@ -619,4 +624,7 @@ class IItemGenerator
 		virtual bool HasItemAttribute (const CString &sAttrib) const { return false; }
 		virtual ALERROR LoadFromXML (SDesignLoadCtx &Ctx, CXMLElement *pDesc) { return NOERROR; }
 		virtual ALERROR OnDesignLoadComplete (SDesignLoadCtx &Ctx) { return NOERROR; }
+
+	protected:
+		static int CalcLocationAffinity (SItemAddCtx &Ctx, const CAffinityCriteria &Criteria);
 	};

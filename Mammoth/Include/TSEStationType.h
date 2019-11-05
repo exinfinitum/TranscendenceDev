@@ -115,7 +115,7 @@ class CStationEncounterDesc
 			Metric rEnemyExclusionRadius2;
 			};
 
-		int CalcAffinity (CTopologyNode *pNode) const;
+		int CalcAffinity (const CTopologyNode &Node) const;
 		int CalcLevelFromFrequency (void) const;
 		bool InitAsOverride (const CStationEncounterDesc &Original, const CXMLElement &Override, CString *retsError);
 		ALERROR InitFromStationTypeXML (SDesignLoadCtx &Ctx, CXMLElement *pDesc);
@@ -123,14 +123,14 @@ class CStationEncounterDesc
 		void InitLevelFrequency (CTopology &Topology);
 		bool CanBeRandomlyEncountered (void) const { return (!m_sLevelFrequency.IsBlank() || m_bNumberAppearing); }
 		int GetCountOfRandomEncounterLevels (void) const;
-		const CTopologyNode::SAttributeCriteria &GetDistanceCriteria (void) const { return m_DistanceCriteria; }
+		const CTopologyAttributeCriteria &GetDistanceCriteria (void) const { return m_DistanceCriteria; }
 		void GetExclusionDesc (SExclusionDesc &Exclusion) const;
 		Metric GetExclusionRadius (void) const { return m_rExclusionRadius; }
 		Metric GetEnemyExclusionRadius (void) const { return m_rEnemyExclusionRadius; }
 		int GetFrequencyByDistance (int iDistance) const;
 		int GetFrequencyByLevel (int iLevel) const;
 		const CString &GetLevelFrequency (void) const { return m_sLevelFrequency; }
-		const CString &GetLocationCriteria (void) const { return m_sLocationCriteria; }
+		const CAffinityCriteria &GetLocationCriteria (void) const { return m_LocationCriteria; }
 		int GetMaxAppearing (void) const { return (m_bMaxCountLimit ? m_MaxAppearing.Roll() : -1); }
 		int GetNumberAppearing (void) const { return (m_bNumberAppearing ? m_NumberAppearing.Roll() : -1); }
 		bool HasAutoLevelFrequency (void) const { return m_bAutoLevelFrequency; }
@@ -154,12 +154,12 @@ class CStationEncounterDesc
 		bool m_bSystemCriteria = false;				//	If TRUE we have system criteria
 		CTopologyNode::SCriteria m_SystemCriteria;	//	System criteria
 
-		CTopologyNode::SAttributeCriteria m_DistanceCriteria;	//	Criteria for nodes for distance calc
+		CTopologyAttributeCriteria m_DistanceCriteria;	//	Criteria for nodes for distance calc
 		CString m_sDistanceFrequency;				//	Frequency distribution by distance from criteria
 		CString m_sLevelFrequency;					//	String array of frequency distribution by level
-		CAttributeCriteria m_SystemAffinity;		//	Adjust frequency based on number of matches
+		CAffinityCriteria m_SystemAffinity;			//	Adjust frequency based on number of matches
 
-		CString m_sLocationCriteria;				//	Criteria for location
+		CAffinityCriteria m_LocationCriteria;		//	Affinity for a location in a system.
 		Metric m_rExclusionRadius = 0.0;			//	No stations of any kind within this radius
 		Metric m_rEnemyExclusionRadius = 0.0;		//	No enemy stations within this radius
 		bool m_bAutoLevelFrequency = false;			//	We generated m_sLevelFrequency and need to save it.
@@ -192,7 +192,7 @@ class CStationEncounterCtx
 		void Reinit (const CStationEncounterDesc &Desc);
 		void WriteToStream (IWriteStream *pStream);
 
-		static int CalcDistanceToCriteria (CTopologyNode *pNode, const CTopologyNode::SAttributeCriteria &Criteria);
+		static int CalcDistanceToCriteria (CTopologyNode *pNode, const CTopologyAttributeCriteria &Criteria);
 
 	private:
 		struct SEncounterStats
@@ -305,7 +305,7 @@ class CStationType : public CDesignType
 		int GetImageVariants (void) { return m_Image.GetVariantCount(); }
 		IShipGenerator *GetInitialShips (void) const { return m_pInitialShips; }
 		Metric GetLevelStrength (int iLevel);
-		const CString &GetLocationCriteria (void) const { return GetEncounterDesc().GetLocationCriteria(); }
+		const CAffinityCriteria &GetLocationCriteria (void) const { return GetEncounterDesc().GetLocationCriteria(); }
 		Metric GetMass (void) { return m_rMass; }
 		Metric GetMaxEffectiveRange (void) { if (m_fCalcMaxAttackDist) CalcMaxAttackDistance(); return m_rMaxAttackDistance; }
 		int GetMaxLightDistance (void) { return m_iMaxLightDistance; }

@@ -529,8 +529,11 @@
 	<!ENTITY itLightCeramicPlate		"0x000041B1">
 	<!ENTITY itLightReactiveArmor		"0x000041B2">
 	<!ENTITY itLightOmskArmor			"0x000041B3">
+	<!ENTITY itLightMarkIOmskArmor		"0x000041B3">	<!-- itLightOmskArmor -->
 	<!ENTITY itMediumOmskArmor			"0x000041B4">
+	<!ENTITY itMediumMarkIIOmskArmor	"0x000041B4">	<!-- itMediumOmskArmor-->
 	<!ENTITY itMassiveOmskArmor			"0x000041B5">
+	<!ENTITY itMassiveMarkIIOmskArmor	"0x000041B5">	<!-- itMassiveOmskArmor -->
 	<!ENTITY itHeavyOmskArmor			"0x000041B5">	<!-- itMassiveOmskArmor synonym -->
 	<!ENTITY itOmskDeflectorI			"0x000041B6">
 	<!ENTITY itOmskDeflectorII			"0x000041B7">
@@ -2222,6 +2225,10 @@
 	<!-- 05C0-05DF MAKAYEV CORPORATION -->
 
 	<!ENTITY itSuperHeavyBlastPlate		"0x001005C0">
+	<!ENTITY itMediumMarkIOmskArmor		"0x001005C1">
+	<!ENTITY itHeavyMarkIOmskArmor		"0x001005C2">
+	<!ENTITY itLightMarkIIOmskArmor		"0x001005C3">
+	<!ENTITY itHeavyMarkIIOmskArmor		"0x001005C4">
 
 	<!-- 05E0-05FF MISCELLANEOUS -->
 
@@ -2242,6 +2249,7 @@
 	<!-- 0640-065F DOMINA -->
 
 	<!ENTITY baDominaPower				"0x00100640">
+	<!ENTITY vtIngenuityEnhancement		"0x00100641">
 
 	<!-- 0660-06BF COMMONWEALTH FLEET III -->
 
@@ -2279,10 +2287,12 @@
 	<!ENTITY rsWolfenC					"0x00100700">
 	<!ENTITY scWolfenC2					"0x00100701">
 	<!ENTITY scWolfenC3					"0x00100702">
+	<!ENTITY vtUniversityEnhancement	"0x00100703">
 
 	<!-- 0740-075F RASIERMESSER -->
 
 	<!ENTITY msRasiermesserFindDvalin	"0x00100740">
+	<!ENTITY itV70PoweredArmor			"0x00100741">
 
     <!-- 1000-FFFF RESERVED: DO NOT USE -->
 	]>

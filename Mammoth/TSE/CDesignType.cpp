@@ -283,6 +283,19 @@ ALERROR CDesignType::BindDesign (SDesignLoadCtx &Ctx)
 	return error;
 	}
 
+int CDesignType::CalcAffinity (const CAffinityCriteria &Criteria) const
+
+//	CalcAffinity
+//
+//	Computes the affinity value of this type given the criteria.
+
+	{
+	return Criteria.CalcWeight(
+		[this](const CString &sAttrib) { return HasAttribute(sAttrib); },
+		[this](const CString &sAttrib) { return HasSpecialAttribute(sAttrib); }
+		);
+	}
+
 ALERROR CDesignType::ComposeLoadError (SDesignLoadCtx &Ctx, const CString &sError) const
 
 //	ComposeLoadError
@@ -2702,7 +2715,10 @@ bool CDesignType::MatchesCriteria (const CDesignTypeCriteria &Criteria)
 //	Returns TRUE if this type matches the given criteria
 
 	{
-	int i;
+	//	If we have an OR expression, check that first.
+
+	if (Criteria.HasORExpression() && MatchesCriteria(Criteria.GetORExpression()))
+		return true;
 
 	//	If this type is not part of the criteria, then we're done
 
@@ -2736,21 +2752,21 @@ bool CDesignType::MatchesCriteria (const CDesignTypeCriteria &Criteria)
 
 	//	Check required attributes
 
-	for (i = 0; i < Criteria.GetRequiredAttribCount(); i++)
+	for (int i = 0; i < Criteria.GetRequiredAttribCount(); i++)
 		if (!HasLiteralAttribute(Criteria.GetRequiredAttrib(i)))
 			return false;
 
-	for (i = 0; i < Criteria.GetRequiredSpecialAttribCount(); i++)
+	for (int i = 0; i < Criteria.GetRequiredSpecialAttribCount(); i++)
 		if (!HasSpecialAttribute(Criteria.GetRequiredSpecialAttrib(i)))
 			return false;
 
 	//	Check excluded attributes
 
-	for (i = 0; i < Criteria.GetExcludedAttribCount(); i++)
+	for (int i = 0; i < Criteria.GetExcludedAttribCount(); i++)
 		if (HasLiteralAttribute(Criteria.GetExcludedAttrib(i)))
 			return false;
 
-	for (i = 0; i < Criteria.GetExcludedSpecialAttribCount(); i++)
+	for (int i = 0; i < Criteria.GetExcludedSpecialAttribCount(); i++)
 		if (HasSpecialAttribute(Criteria.GetExcludedSpecialAttrib(i)))
 			return false;
 
@@ -2911,7 +2927,7 @@ bool CDesignType::Translate (const CString &sID, ICCItem *pData, ICCItemPtr &ret
 	return false;
 	}
 
-bool CDesignType::Translate (CSpaceObject *pObj, const CString &sID, ICCItem *pData, ICCItemPtr &retResult) const
+bool CDesignType::Translate (const CSpaceObject *pObj, const CString &sID, ICCItem *pData, ICCItemPtr &retResult) const
 
 //	Translate
 //
@@ -2954,7 +2970,7 @@ bool CDesignType::TranslateText (const CString &sID, ICCItem *pData, CString *re
 	return false;
 	}
 	
-bool CDesignType::TranslateText (CSpaceObject *pObj, const CString &sID, ICCItem *pData, CString *retsText) const
+bool CDesignType::TranslateText (const CSpaceObject *pObj, const CString &sID, ICCItem *pData, CString *retsText) const
 
 //	Translate
 //
@@ -3002,7 +3018,7 @@ bool CDesignType::TranslateText (const CItem &Item, const CString &sID, ICCItem 
 	return false;
 	}
 
-bool CDesignType::TranslateVersion2 (CSpaceObject *pObj, const CString &sID, ICCItemPtr &retResult) const
+bool CDesignType::TranslateVersion2 (const CSpaceObject *pObj, const CString &sID, ICCItemPtr &retResult) const
 
 //	TranslateVersion2
 //

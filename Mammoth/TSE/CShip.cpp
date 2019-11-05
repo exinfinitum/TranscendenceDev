@@ -3132,7 +3132,7 @@ CItem CShip::GetNamedDeviceItem (DeviceNames iDev)
 		}
 	}
 
-int CShip::GetPerception (void)
+int CShip::GetPerception (void) const
 
 //	GetPerception
 //
@@ -3500,12 +3500,7 @@ int CShip::GetShieldLevel (void)
 	if (pShields == NULL)
 		return -1;
 
-	int iHP, iMaxHP;
-	pShields->GetStatus(this, &iHP, &iMaxHP);
-	if (iMaxHP == 0)
-		return -1;
-
-	return iHP * 100 / iMaxHP;
+	return pShields->GetHitPointsPercent(this);
 	}
 
 int CShip::GetStealth (void) const
@@ -4010,7 +4005,7 @@ void CShip::InstallItemAsDevice (CItemListManipulator &ItemList, int iDeviceSlot
 	InvalidateItemListState();
 	}
 
-bool CShip::IsAngryAt (CSpaceObject *pObj) const
+bool CShip::IsAngryAt (const CSpaceObject *pObj) const
 
 //	IsAngryAt
 //

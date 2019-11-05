@@ -304,7 +304,6 @@
 			regen=              "15"
 			shipRegen=			"6"
 				 
-			canAttack=			"true"
 			explosionType=		"&vtThermoExplosion2;"
 			ejectaType=			"&vtWreckEjecta;"
 			fireRateAdj=		"40"
@@ -459,12 +458,11 @@
             regen=              "4"
 			shipRegen=			"6"
 				 
-			canAttack=			"true"
 			explosionType=		"&vtThermoExplosion2;"
 			ejectaType=			"&vtWreckEjecta;"
 			fireRateAdj=		"40"
 				 
-			noBlacklist=		"true"
+			ignoreFriendlyFire=	"true"
 			definiteArticle=	"true"
 			>
 
@@ -569,8 +567,7 @@
 
 			dockScreen=			"Main"
 			abandonedScreen=	"&dsRPGAbandonedStation;"
-			canAttack=			"true"
-			noBlacklist=		"true"
+			ignoreFriendlyFire=	"true"
 
 			multiHull=			"true"
 			armorID=			"&itDiamondLatticeArmor;"
@@ -734,8 +731,7 @@
 			inherit=			"&unidCommonText;"
 			dockScreen=			"Main"
 			abandonedScreen=	"&dsRPGAbandonedStation;"
-			canAttack=			"true"
-			noBlacklist=		"true"
+			ignoreFriendlyFire=	"true"
 
 			multiHull=			"true"
 			armorID=			"&itLightIthaliumArmor;"
@@ -870,8 +866,7 @@
 			dockScreen=			"Main"
 			abandonedScreen=	"&dsRPGAbandonedStation;"
 			dockingPorts=		"8"
-			canAttack=			"true"
-			noBlacklist=		"true"
+			ignoreFriendlyFire=	"true"
 
 			multiHull=			"true"
 			armorID=			"&itQuadroCarbideArmor;"
@@ -989,14 +984,13 @@
 
 			abandonedScreen=	"&dsRPGAbandonedStation;"
 			dockScreen=			"Main"
-			noBlacklist=		"true"
+			ignoreFriendlyFire=	"true"
 
 			armorID=			"&itHeavyTharsisPlate;"
 			hitPoints=			"610"
 			multiHull=			"true"
             regen=              "6"
 
-			canAttack=			"true"
 			fireRateAdj=		"20"
 			explosionType=		"&vtThermoExplosion2;"
 			ejectaType=			"&vtWreckEjecta;"

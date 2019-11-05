@@ -240,6 +240,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Include\TSEOverlays.h" />
+    <ClInclude Include="..\Include\TSESpaceObjectUtil.h" />
     <ClInclude Include="..\Include\TSEAdventureDesc.h" />
     <ClInclude Include="..\Include\TSEArmor.h" />
     <ClInclude Include="..\Include\TSEArtifactAwakening.h" />
@@ -275,6 +277,7 @@
     <ClInclude Include="..\Include\TSEPlayerSettings.h" />
     <ClInclude Include="..\Include\TSEPower.h" />
     <ClInclude Include="..\Include\TSEPropertyHandler.h" />
+    <ClInclude Include="..\Include\TSEResourceDb.h" />
     <ClInclude Include="..\Include\TSEShipAI.h" />
     <ClInclude Include="..\Include\TSEShipClass.h" />
     <ClInclude Include="..\Include\TSEShipCreator.h" />
@@ -316,6 +319,7 @@
     <ClInclude Include="SFXImpl.h" />
     <ClInclude Include="SFXRayImpl.h" />
     <ClInclude Include="ShipAIImpl.h" />
+    <ClInclude Include="SystemImpl.h" />
     <ClInclude Include="SystemPaintImpl.h" />
     <ClInclude Include="TopologyDescImpl.h" />
     <ClInclude Include="TopologyProcessorsImpl.h" />
@@ -336,6 +340,8 @@
     <ClCompile Include="CAscendedObjectList.cpp" />
     <ClCompile Include="CAttackOrder.cpp" />
     <ClCompile Include="CAttackStationOrder.cpp" />
+    <ClCompile Include="CAutoDockCalc.cpp" />
+    <ClCompile Include="CAutoTargetCalc.cpp" />
     <ClCompile Include="CCargoDesc.cpp" />
     <ClCompile Include="CCircleRadiusDisruptor.cpp" />
     <ClCompile Include="CCommunicationsHandler.cpp">
@@ -513,6 +519,7 @@
     <ClCompile Include="CSystemEventList.cpp" />
     <ClCompile Include="CTimedMissionEvent.cpp" />
     <ClCompile Include="CTLispConvert.cpp" />
+    <ClCompile Include="CTopologyAttributeCriteria.cpp" />
     <ClCompile Include="CTopologyCreateCtx.cpp" />
     <ClCompile Include="CTopologySystemDesc.cpp" />
     <ClCompile Include="CTradingComputer.cpp" />
@@ -885,7 +892,7 @@
     <ClCompile Include="C3DConversion.cpp" />
     <ClCompile Include="CAStarPathFinder.cpp" />
     <ClCompile Include="CAttackDetector.cpp" />
-    <ClCompile Include="CAttributeCriteria.cpp" />
+    <ClCompile Include="CAffinityCriteria.cpp" />
     <ClCompile Include="CAttributeDataBlock.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='SteamDebug|Win32'">Disabled</Optimization>

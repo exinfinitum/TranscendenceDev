@@ -2702,17 +2702,17 @@ int CWeaponClass::GetCounter (CInstalledDevice *pDevice, CSpaceObject *pSource, 
 	return pDevice->GetTemperature();
 	}
 
-int CWeaponClass::GetAlternatingPos (CInstalledDevice *pDevice) const
+int CWeaponClass::GetAlternatingPos (const CInstalledDevice *pDevice) const
 	{
 	return (int)(DWORD)HIBYTE(LOWORD(pDevice->GetData()));
 	}
 
-DWORD CWeaponClass::GetContinuousFire (CInstalledDevice *pDevice) const
+DWORD CWeaponClass::GetContinuousFire (const CInstalledDevice *pDevice) const
 	{
-	return (int)(DWORD)LOBYTE(LOWORD(pDevice->GetData()));
+	return pDevice->GetContinuousFire();
 	}
 
-int CWeaponClass::GetCurrentVariant (CInstalledDevice *pDevice) const
+int CWeaponClass::GetCurrentVariant (const CInstalledDevice *pDevice) const
 	{
 	return (int)(short)HIWORD(pDevice->GetData()); 
 	}
@@ -4202,9 +4202,14 @@ void CWeaponClass::OnAccumulateAttributes (const CDeviceItem &DeviceItem, const 
 		CWeaponFireDesc *pShot = GetReferenceShotData(pRootShot, &iFragments);
 		DamageDesc Damage = pShot->GetDamage();
 
+		//	Apply enhancements
+
+		const CItemEnhancementStack &Enhancements = DeviceItem.GetEnhancements();
+		Enhancements.ApplySpecialDamage(&Damage);
+
 		//	Compute special abilities.
 
-		if (pRootShot->IsTracking() || pShot->IsTracking())
+		if (pRootShot->IsTracking() || pShot->IsTracking() || Enhancements.IsTracking())
 			retList->Insert(SDisplayAttribute(attribPositive, CONSTLIT("tracking")));
 
 		//	Special damage delivery
@@ -4285,6 +4290,17 @@ void CWeaponClass::OnAccumulateAttributes (const CDeviceItem &DeviceItem, const 
 
 		if (Damage.GetMassDestructionLevel() > 0)
 			retList->Insert(SDisplayAttribute(attribPositive, strPatternSubst(CONSTLIT("WMD %d"), Damage.GetMassDestructionLevel())));
+		}
+
+	//	A launcher with no ammo selected.
+
+	else
+		{
+		const CItemEnhancementStack &Enhancements = DeviceItem.GetEnhancements();
+
+		if (Enhancements.IsTracking())
+			retList->Insert(SDisplayAttribute(attribPositive, CONSTLIT("tracking")));
+
 		}
 	}
 

@@ -132,7 +132,7 @@ class CArmorClass
 		int CalcBalance (const CArmorItem &ArmorItem, CArmorItem::SBalance &retBalance) const;
 		Metric CalcBalanceDamageAdj (const CArmorItem &ArmorItem, const SScalableStats &Stats) const;
 		Metric CalcBalanceDamageEffectAdj (const CArmorItem &ArmorItem, const SScalableStats &Stats) const;
-		Metric CalcBalanceMass (const CArmorItem &ArmorItem, const SScalableStats &Stats) const;
+		Metric CalcBalanceMass (const CArmorItem &ArmorItem, const SScalableStats &Stats, Metric *retrStdMass) const;
 		Metric CalcBalancePower (const CArmorItem &ArmorItem, const SScalableStats &Stats) const;
 		Metric CalcBalanceRegen (const CArmorItem &ArmorItem, const SScalableStats &Stats) const;
 		Metric CalcBalanceRepair (const CArmorItem &ArmorItem, const SScalableStats &Stats) const;
@@ -175,6 +175,7 @@ class CArmorClass
 		int m_iDamageAdjLevel;					//	Level to use for intrinsic damage adj
 		DamageTypeSet m_Reflective;				//	Types of damage reflected
 		CString m_sMassClass;					//	Computed mass class (computed in Bind)
+		int m_iBalanceAdj;						//	Manual adjustment to balance calculation
 
 		DWORD m_fPhotoRecharge:1;				//	TRUE if refuels when near a star
 		DWORD m_fShieldInterference:1;			//	TRUE if armor interferes with shields

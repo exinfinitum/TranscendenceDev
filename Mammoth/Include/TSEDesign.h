@@ -13,6 +13,7 @@ class CDesignCollection;
 class CDockScreen;
 class CDockingPorts;
 class CDynamicDesignTable;
+class CEconomyType;
 class CEffect;
 class CGameStats;
 class CGenericType;
@@ -120,7 +121,7 @@ enum DesignTypes
 class CDesignTypeCriteria
 	{
 	public:
-		CDesignTypeCriteria (void);
+		CDesignTypeCriteria (void) { }
 
 		CString AsString (void) const;
 		bool ChecksLevel (void) const { return (m_iGreaterThanLevel != INVALID_COMPARE || m_iLessThanLevel != INVALID_COMPARE); }
@@ -128,10 +129,12 @@ class CDesignTypeCriteria
 		int GetExcludedAttribCount (void) const { return m_sExclude.GetCount(); }
 		const CString &GetExcludedSpecialAttrib (int iIndex) const { return m_sExcludeSpecial[iIndex]; }
 		int GetExcludedSpecialAttribCount (void) const { return m_sExcludeSpecial.GetCount(); }
+		const CDesignTypeCriteria &GetORExpression (void) const { return (m_pOr ? *m_pOr : m_Null); }
 		const CString &GetRequiredAttrib (int iIndex) const { return m_sRequire[iIndex]; }
 		int GetRequiredAttribCount (void) const { return m_sRequire.GetCount(); }
 		const CString &GetRequiredSpecialAttrib (int iIndex) const { return m_sRequireSpecial[iIndex]; }
 		int GetRequiredSpecialAttribCount (void) const { return m_sRequireSpecial.GetCount(); }
+		bool HasORExpression (void) const { return (m_pOr ? true : false); }
         void IncludeType (DesignTypes iType) { m_dwTypeSet |= (1 << iType); }
 		bool IncludesVirtual (void) const { return m_bIncludeVirtual; }
         bool IsEmpty (void) const { return (m_dwTypeSet == 0); }
@@ -151,17 +154,24 @@ class CDesignTypeCriteria
 			INVALID_COMPARE = -1000,
 			};
 
-		DWORD m_dwTypeSet;
+		ALERROR ParseSubExpression (const char *pPos);
+		void WriteSubExpression (CMemoryWriteStream &Stream) const;
+
+		DWORD m_dwTypeSet = 0;
 		TArray<CString> m_sRequire;
 		TArray<CString> m_sExclude;
 		TArray<CString> m_sRequireSpecial;
 		TArray<CString> m_sExcludeSpecial;
 
-		int m_iGreaterThanLevel;
-		int m_iLessThanLevel;
+		int m_iGreaterThanLevel = INVALID_COMPARE;
+		int m_iLessThanLevel = INVALID_COMPARE;
 
-		bool m_bIncludeVirtual;
-        bool m_bStructuresOnly;
+		bool m_bIncludeVirtual = false;
+        bool m_bStructuresOnly = false;
+
+		TUniquePtr<CDesignTypeCriteria> m_pOr;
+
+		static const CDesignTypeCriteria m_Null;
 	};
 
 //	CDesignType
@@ -224,6 +234,7 @@ class CDesignType
 		void AddExternals (TArray<CString> *retExternals) { OnAddExternals(retExternals); }
 		void AddTypesUsed (TSortMap<DWORD, bool> *retTypesUsed);
 		static CDesignType *AsType (CDesignType *pType) { return pType; }
+		int CalcAffinity (const CAffinityCriteria &Criteria) const;
 		void ClearMark (void) { OnClearMark(); }
 		bool FindCustomProperty (const CString &sProperty, ICCItemPtr &pResult, EPropertyType *retiType = NULL) const;
 		CEffectCreator *FindEffectCreatorInType (const CString &sUNID) { return OnFindEffectCreator(sUNID); }
@@ -329,9 +340,9 @@ class CDesignType
 		void Sweep (void) { OnSweep(); }
 		void TopologyInitialized (void) { OnTopologyInitialized(); }
 		bool Translate (const CString &sID, ICCItem *pData, ICCItemPtr &retResult) const;
-		bool Translate (CSpaceObject *pObj, const CString &sID, ICCItem *pData, ICCItemPtr &retResult) const;
+		bool Translate (const CSpaceObject *pObj, const CString &sID, ICCItem *pData, ICCItemPtr &retResult) const;
 		bool TranslateText (const CString &sID, ICCItem *pData, CString *retsText) const;
-		bool TranslateText (CSpaceObject *pObj, const CString &sID, ICCItem *pData, CString *retsText) const;
+		bool TranslateText (const CSpaceObject *pObj, const CString &sID, ICCItem *pData, CString *retsText) const;
 		bool TranslateText (const CItem &Item, const CString &sID, ICCItem *pData, CString *retsText) const;
 
 		static CString GetTypeChar (DesignTypes iType);
@@ -411,7 +422,7 @@ class CDesignType
 		bool HasCachedEvent (ECachedHandlers iEvent) const { return (m_pExtra && m_pExtra->EventsCache[iEvent].pCode != NULL); }
 		void InitCachedEvents (void);
 		bool InSelfReference (CDesignType *pType);
-		bool TranslateVersion2 (CSpaceObject *pObj, const CString &sID, ICCItemPtr &retResult) const;
+		bool TranslateVersion2 (const CSpaceObject *pObj, const CString &sID, ICCItemPtr &retResult) const;
 		SExtra *SetExtra (void) { if (!m_pExtra) m_pExtra.Set(new SExtra); return m_pExtra; }
 
 		DWORD m_dwUNID = 0;

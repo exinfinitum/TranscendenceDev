@@ -62,6 +62,7 @@
 #define GATE_EFFECT_ATTRIB						CONSTLIT("gateEffect")
 #define GRAVITY_RADIUS_ATTRIB					CONSTLIT("gravityRadius")
 #define HIT_POINTS_ATTRIB						CONSTLIT("hitPoints")
+#define IGNORE_FRIENDLY_FIRE_ATTRIB				CONSTLIT("ignoreFriendlyFire")
 #define IMMUTABLE_ATTRIB						CONSTLIT("immutable")
 #define INACTIVE_ATTRIB							CONSTLIT("inactive")
 #define LEVEL_ATTRIB							CONSTLIT("level")
@@ -735,7 +736,7 @@ bool CStationType::FindDataField (const CString &sField, CString *retsValue) con
     else if (strEquals(sField, FIELD_LEVEL))
         *retsValue = strFromInt(GetLevel());
     else if (strEquals(sField, FIELD_LOCATION_CRITERIA))
-        *retsValue = GetLocationCriteria();
+        *retsValue = GetLocationCriteria().AsString();
     else if (strEquals(sField, FIELD_NAME))
         *retsValue = GetNounPhrase();
 	else if (strEquals(sField, FIELD_FIRE_RATE_ADJ))
@@ -1304,7 +1305,7 @@ ALERROR CStationType::OnCreateFromXML (SDesignLoadCtx &Ctx, CXMLElement *pDesc)
 	m_fTimeStopImmune = pDesc->GetAttributeBool(TIME_STOP_IMMUNE_ATTRIB);
 	m_fCanAttack = pDesc->GetAttributeBool(CAN_ATTACK_ATTRIB);
 	m_fReverseArticle = pDesc->GetAttributeBool(REVERSE_ARTICLE_ATTRIB);
-	m_fNoBlacklist = pDesc->GetAttributeBool(NO_BLACKLIST_ATTRIB);
+	m_fNoBlacklist = (pDesc->GetAttributeBool(NO_BLACKLIST_ATTRIB) || pDesc->GetAttributeBool(IGNORE_FRIENDLY_FIRE_ATTRIB));
 	m_iAlertWhenAttacked = pDesc->GetAttributeInteger(ALERT_WHEN_ATTACKED_ATTRIB);
 	m_iAlertWhenDestroyed = pDesc->GetAttributeInteger(ALERT_WHEN_DESTROYED_ATTRIB);
 	m_rMaxAttackDistance = MAX_ATTACK_DISTANCE;

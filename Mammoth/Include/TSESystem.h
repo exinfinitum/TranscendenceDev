@@ -232,14 +232,14 @@ class CSystemCreateEvents
 
 struct SLocationCriteria
 	{
-	SLocationCriteria (void) :
-			rMinDist(0.0),
-			rMaxDist(0.0)
+	SLocationCriteria (void) { }
+	explicit SLocationCriteria (const CAffinityCriteria &Criteria) :
+			AttribCriteria(Criteria)
 		{ }
 
-	CAttributeCriteria AttribCriteria;		//	Attribute criteria
-	Metric rMinDist;						//	Minimum distance from source
-	Metric rMaxDist;						//	Maximum distance from source
+	CAffinityCriteria AttribCriteria;		//	Attribute criteria
+	Metric rMinDist = 0.0;					//	Minimum distance from source
+	Metric rMaxDist = 0.0;					//	Maximum distance from source
 	};
 
 struct SSystemCreateCtx
@@ -741,7 +741,6 @@ class CSystem
 		ALERROR AddToSystem (CSpaceObject *pObj, int *retiIndex);
 		bool AscendObject (CSpaceObject *pObj, CString *retsError = NULL);
 		int CalculateLightIntensity (const CVector &vPos, CSpaceObject **retpStar = NULL, const CG8bitSparseImage **retpVolumetricMask = NULL);
-		int CalcMatchStrength (const CAttributeCriteria &Criteria) { return (m_pTopology ? m_pTopology->CalcMatchStrength(Criteria) : (Criteria.MatchesAll() ? 1000 : 0)); }
 		CVector CalcRandomEncounterPos (const CSpaceObject &TargetObj, Metric rDistance, const CSpaceObject *pEncounterBase = NULL) const;
 		CG32bitPixel CalculateSpaceColor (CSpaceObject *pPOV, CSpaceObject **retpStar = NULL, const CG8bitSparseImage **retpVolumetricMask = NULL);
 		void CancelTimedEvent (CSpaceObject *pSource, bool bInDoEvent = false);
@@ -806,7 +805,7 @@ class CSystem
 		CSpaceEnvironmentType *GetSpaceEnvironment (const CVector &vPos, int *retxTile = NULL, int *retyTile = NULL);
 		CTopologyNode *GetStargateDestination (const CString &sStargate, CString *retsEntryPoint);
 		inline CUniverse &GetUniverse (void) const { return m_Universe; }
-		bool HasAttribute (const CVector &vPos, const CString &sAttrib);
+		bool HasAttribute (const CVector &vPos, const CString &sAttrib) const;
 		CSpaceObject *HitScan (CSpaceObject *pExclude, const CVector &vStart, const CVector &vEnd, bool bExcludeWorlds, CVector *retvHitPos = NULL);
 		CSpaceObject *HitTest (CSpaceObject *pExclude, const CVector &vPos, bool bExcludeWorlds);
 		inline bool IsCreationInProgress (void) const { return (m_fInCreate ? true : false); }
@@ -857,7 +856,8 @@ class CSystem
 		//	Locations & Territories
 		ALERROR AddTerritory (CTerritoryDef *pTerritory);
 		void BlockOverlappingLocations (void);
-		int CalcLocationWeight (CLocationDef *pLoc, const CAttributeCriteria &Criteria);
+		int CalcLocationAffinity (const CAffinityCriteria &Criteria, const CString &sLocationAttribs, const CVector &vPos) const;
+		int CalcLocationAffinity (const CLocationDef &Loc, const CAffinityCriteria &Criteria) const { return CalcLocationAffinity(Criteria, Loc.GetAttributes(), Loc.GetOrbit().GetObjectPos()); }
 		ALERROR CreateLocation (const CString &sID, const COrbit &Orbit, const CString &sAttributes, CLocationDef **retpLocation = NULL);
 		bool FindRandomLocation (const SLocationCriteria &Criteria, DWORD dwFlags, const COrbit &CenterOrbitDesc, CStationType *pStationToPlace, int *retiLocID);
 		int GetEmptyLocationCount (void);
@@ -867,7 +867,8 @@ class CSystem
 		inline CLocationDef &GetLocation (int iLocID) { return m_Locations.GetLocation(iLocID); }
 		inline int GetLocationCount (void) { return m_Locations.GetCount(); }
 		bool IsExclusionZoneClear (const CVector &vPos, CStationType *pType = NULL);
-		inline void SetLocationObjID (int iLocID, DWORD dwObjID) { m_Locations.SetObjID(iLocID, dwObjID); }
+		bool MatchesLocationAffinity (const CAffinityCriteria &Criteria, const CString &sLocationAttribs, const CVector &vPos) const;
+		void SetLocationObjID (int iLocID, DWORD dwObjID) { m_Locations.SetObjID(iLocID, dwObjID); }
 
 		static Metric CalcApparentSpeedAdj (Metric rSpeed);
 		static void GetObjRefFromID (SLoadCtx &Ctx, DWORD dwID, CSpaceObject **retpObj);
@@ -901,7 +902,6 @@ class CSystem
 
 		CSystem (CUniverse &Universe, CTopologyNode *pTopology);
 
-		void CalcAutoTarget (SUpdateCtx &Ctx);
 		void CalcViewportCtx (SViewportPaintCtx &Ctx, const RECT &rcView, CSpaceObject *pCenter, DWORD dwFlags);
 		void CalcVolumetricMask (CSpaceObject *pStar, CG8bitSparseImage &VolumetricMask);
 		void ComputeRandomEncounters (void);
