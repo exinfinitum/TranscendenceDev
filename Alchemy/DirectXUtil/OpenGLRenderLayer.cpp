@@ -45,19 +45,19 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	m_texRenderBatches[image]->addObjToRender(renderRequest);
 }
 
-void OpenGLRenderLayer::addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth)
+void OpenGLRenderLayer::addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode)
 {
 	glm::vec4 intensityAndCyclesV4(intensitiesAndCycles[0], intensitiesAndCycles[1], intensitiesAndCycles[2], 0.0);
-	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, intensityAndCyclesV4, vPrimaryColor, vSecondaryColor, 0, OpenGLRenderLayer::effectType::effectTypeRay);
+	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, intensityAndCyclesV4, vPrimaryColor, vSecondaryColor, 0, OpenGLRenderLayer::effectType::effectTypeRay, blendMode);
 	renderRequest.set_depth(startingDepth);
-	m_rayRenderBatch.addObjToRender(renderRequest);
+	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
 }
 
-void OpenGLRenderLayer::addLightningToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, float rotation, float seed, float startingDepth)
+void OpenGLRenderLayer::addLightningToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, float rotation, float seed, float startingDepth, OpenGLRenderLayer::blendMode blendMode)
 {
-	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, glm::ivec4(0, 0, 0, 0), glm::vec4(0, 0, 0, 0), vPrimaryColor, vSecondaryColor, seed, OpenGLRenderLayer::effectType::effectTypeLightning);
+	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, glm::ivec4(0, 0, 0, 0), glm::vec4(0, 0, 0, 0), vPrimaryColor, vSecondaryColor, seed, OpenGLRenderLayer::effectType::effectTypeLightning, blendMode);
 	renderRequest.set_depth(startingDepth);
-	m_rayRenderBatch.addObjToRender(renderRequest);
+	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
 }
 
 void OpenGLRenderLayer::addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition,
@@ -74,7 +74,8 @@ void OpenGLRenderLayer::addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition,
 	glm::vec3 primaryColor,
 	glm::vec3 secondaryColor,
 	float secondaryOpacity,
-	float startingDepth)
+	float startingDepth,
+	OpenGLRenderLayer::blendMode blendMode)
 	// aShapes: orbLifetime, orbCurrFrame, orbDistortion, orbDetail
     // aStyles: orbStyle, orbAnimation, opacity, blank
     // aFloatParams: intensity, blank, opacityAdj, orbSecondaryOpacity
@@ -84,9 +85,9 @@ void OpenGLRenderLayer::addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition,
 	glm::ivec4 styles(style, animation, 0, 0);
 	glm::vec4 floatParams(intensity, secondaryOpacity, opacity, 0.0);
 
-	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, floatParams, primaryColor, secondaryColor, float(animationSeed), OpenGLRenderLayer::effectType::effectTypeOrb);
+	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, floatParams, primaryColor, secondaryColor, float(animationSeed), OpenGLRenderLayer::effectType::effectTypeOrb, blendMode);
 	renderRequest.set_depth(startingDepth);
-	m_rayRenderBatch.addObjToRender(renderRequest);
+	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
 }
 
 void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
@@ -98,7 +99,8 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 	// Use a while loop that repeats while we still have stuff left in our render batches.
 	// In this loop, iterate through our batches, and find the ones with the first and second largest depths
 	// for their last elements. On the one with the first largest, render all of the objects up to and excluding
-	// the first one whose depth is smaller than the second largest. Delete those from CPU memory.
+	// the first one whose depth is smaller than the second largest. Delete those from CPU memory. Remember that all batches
+	// are in order to render.
 
 	// Delete textures scheduled for deletion.
 	// TODO: Remove? We don't seem to use m_texturesForDeletion anymore
@@ -111,29 +113,99 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		}
 	m_texturesForDeletion.clear();
 
-	for (const auto &p : m_texRenderBatches)
+	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> batchesToRender;
+
+	// Set uniforms for all render batches and append them to our list of batches to render
+	// Note, setUniforms is persistent across calls to any Render() function since it sets things in the batch object, not in OpenGL
+	for (const auto& p : m_texRenderBatches)
 	{
-		OpenGLTexture *pTextureToUse = p.first;
+		OpenGLTexture* pTextureToUse = p.first;
 		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
 		pTextureToUse->initTextureFromOpenGLThread();
-		OpenGLInstancedBatchTexture *pInstancedRenderQueue = p.second;
+		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-
 		std::array<std::string, 4> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise" };
 		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse, currentTick, perlinNoise);
-		pInstancedRenderQueue->Render(objectTextureShader, depthLevel, depthDelta, currentTick, false);
+		batchesToRender.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
+	}
+	std::array<std::string, 3> rayAndLightningUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise" };
+	m_rayRenderBatchBlendNormal.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
+	batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
+	m_rayRenderBatchBlendScreen.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
+	batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
+
+	int iDeepestBatchIndex = -1;
+	int iSecondDeepestBatchIndex = -1;
+	float fDeepestBatchLastElementDepth = 0.0;
+	float fSecondDeepestBatchLastElementDepth = 0.0;
+
+	blendMode prevBlendMode = blendMode::blendNormal;
+
+	while (true) {
+		// Phase 0: Reset tracking vars
+		iDeepestBatchIndex = -1;
+		iSecondDeepestBatchIndex = -1;
+		fDeepestBatchLastElementDepth = -1.0;
+		fSecondDeepestBatchLastElementDepth = -1.0;
+
+		int iCurrBatchIndex = 0;
+		// Phase 1: Get deepest and second deepest batches
+		for (const auto& p : batchesToRender) {
+			OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
+			float fBatchDepth = pInstancedRenderBatch->getDepthOfDeepestObject();
+			if (fBatchDepth > fDeepestBatchLastElementDepth) {
+				iSecondDeepestBatchIndex = iDeepestBatchIndex;
+				fSecondDeepestBatchLastElementDepth = fDeepestBatchLastElementDepth;
+				iDeepestBatchIndex = iCurrBatchIndex;
+				fDeepestBatchLastElementDepth = fBatchDepth;
+			}
+			iCurrBatchIndex += 1;
+		}
+
+		// Phase 2: If deepest batch depth is less than zero, we're done.
+		if (fDeepestBatchLastElementDepth < 0) {
+			break;
+		}
+
+		// Phase 3: Render from deepest batch up to depth of second deepest batch's deepest object
+		auto batchToRenderShader = batchesToRender[iDeepestBatchIndex].first;
+		auto batchToRender = batchesToRender[iDeepestBatchIndex].second;
+		int currBlendMode = batchToRender->getBlendMode();
+
+		if (currBlendMode != int(prevBlendMode)) {
+			switch (currBlendMode) {
+				case int(blendMode::blendNormal) :
+					prevBlendMode = blendMode::blendNormal;
+					setBlendModeNormal();
+					break;
+				case int(blendMode::blendScreen) :
+				    prevBlendMode = blendMode::blendScreen;
+				    setBlendModeScreen();
+				    break;
+				default:
+					prevBlendMode = blendMode::blendNormal;
+					setBlendModeNormal();
+			}
+		}
+
+		batchToRender->RenderUpToGivenDepth(batchToRenderShader, fSecondDeepestBatchLastElementDepth);
+	}
+	for (const auto& p : batchesToRender) {
+		OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
+		pInstancedRenderBatch->clear();
+	}
+	/*
+	for (const auto& p : batchesToRender) {
+		OpenGLShader* pShaderToUse = p.first;
+		OpenGLInstancedBatchInterface* pInstancedRenderQueue = p.second;
+		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
+		pInstancedRenderQueue->Render(pShaderToUse, depthLevel, depthDelta);
 		pInstancedRenderQueue->clear();
 	}
-
-	std::array<std::string, 3> rayAndLightningUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise" };
-	std::array<std::string, 2> orbUniformNames = { "current_tick", "aCanvasAdjustedDimensions" };
-
-	m_rayRenderBatch.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
-	m_rayRenderBatch.Render(rayShader, depthLevel, depthDelta, currentTick);
-	m_orbRenderBatch.setUniforms(orbUniformNames, float(currentTick), canvasDimensions);
-	m_orbRenderBatch.Render(orbShader, depthLevel, depthDelta, currentTick);
+	*/
 
 	m_texRenderBatches.clear();
+	setBlendModeNormal();
 }
 
 void OpenGLRenderLayer::GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader) {
