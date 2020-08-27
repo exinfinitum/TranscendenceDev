@@ -111,6 +111,7 @@
 #define PROPERTY_CURRENCY_NAME					CONSTLIT("currencyName")
 #define PROPERTY_DESCRIPTION					CONSTLIT("description")
 #define PROPERTY_FREQUENCY 						CONSTLIT("frequency")
+#define PROPERTY_FREQUENCY_RATE					CONSTLIT("frequencyRate")
 #define PROPERTY_KNOWN							CONSTLIT("known")
 #define PROPERTY_LEVEL  						CONSTLIT("level")
 #define PROPERTY_MAX_CHARGES  					CONSTLIT("maxCharges")
@@ -133,6 +134,7 @@
 #define SPECIAL_HAS_COMPONENTS					CONSTLIT("hasComponents:")
 #define SPECIAL_IS_LAUNCHER						CONSTLIT("isLauncher:")
 #define SPECIAL_LAUNCHED_BY						CONSTLIT("launchedBy:")
+#define SPECIAL_LAUNCHES						CONSTLIT("launches:")
 #define SPECIAL_UNKNOWN_TYPE					CONSTLIT("unknownType:")
 
 #define SPECIAL_TRUE							CONSTLIT("true")
@@ -179,7 +181,7 @@ CItemType::SStdStats CItemType::m_Stats[MAX_ITEM_LEVEL] =
 		{   4'200'000'000, },
 	};
 
-static char *CACHED_EVENTS[CItemType::evtCount] =
+static const char *CACHED_EVENTS[CItemType::evtCount] =
 	{
 		"GetDescription",
 		"GetDisplayAttributes",
@@ -424,7 +426,10 @@ bool CItemType::FindDataField (const CString &sField, CString *retsValue) const
 		}
 
 	else if (strEquals(sField, FIELD_COST))
-		*retsValue = strFromInt(GetValue(CItemCtx()));
+		{
+		CItemCtx ItemCtx;
+		*retsValue = strFromInt(GetValue(ItemCtx));
+		}
 
 	else if (strEquals(sField, FIELD_INSTALL_COST))
 		{
@@ -456,7 +461,10 @@ bool CItemType::FindDataField (const CString &sField, CString *retsValue) const
 			*retsValue = NULL_STR;
 		}
 	else if (strEquals(sField, FIELD_TREASURE_VALUE))
-		*retsValue = strFromInt((int)CEconomyType::ExchangeToCredits(GetCurrencyType(), GetValue(CItemCtx(), true)));
+		{
+		CItemCtx ItemCtx;
+		*retsValue = strFromInt((int)CEconomyType::ExchangeToCredits(GetCurrencyType(), GetValue(ItemCtx, true)));
+		}
 
 	else if (strEquals(sField, FIELD_UNKNOWN_TYPE))
 		{
@@ -557,6 +565,9 @@ ICCItemPtr CItemType::FindItemTypeBaseProperty (CCodeChainCtx &Ctx, const CStrin
 
 	else if (strEquals(sProperty, PROPERTY_FREQUENCY))
 		return ICCItemPtr(GetFrequencyName((FrequencyTypes)GetFrequency()));
+
+	else if (strEquals(sProperty, PROPERTY_FREQUENCY_RATE))
+		return ICCItemPtr(GetFrequency());
 
 	else if (strEquals(sProperty, PROPERTY_KNOWN))
 		{
@@ -733,7 +744,10 @@ CCurrencyAndValue CItemType::GetCurrencyAndValue (CItemCtx &Ctx, bool bActual) c
 
 	int iUnknownIndex;
 	if (!Ctx.GetItem().IsKnown(&iUnknownIndex) && !bActual)
-		return m_UnknownTypes[iUnknownIndex].pUnknownType->GetCurrencyAndValue(CItemCtx());
+		{
+		CItemCtx ItemCtx;
+		return m_UnknownTypes[iUnknownIndex].pUnknownType->GetCurrencyAndValue(ItemCtx);
+		}
 
 	//	If this is a scalable item, then we need to ask the class
 
@@ -1882,7 +1896,8 @@ bool CItemType::OnHasSpecialAttribute (const CString &sAttrib) const
 		if (iType == damageError)
 			return false;
 
-		return (iType == pDevice->GetDamageType(CItemCtx(), Ammo));
+		CItemCtx ItemCtx;
+		return (iType == pDevice->GetDamageType(ItemCtx, Ammo));
 		}
 	else if (strStartsWith(sAttrib, SPECIAL_CAN_BE_DAMAGED))
 		{
@@ -1920,8 +1935,11 @@ bool CItemType::OnHasSpecialAttribute (const CString &sAttrib) const
 		}
 	else if (strStartsWith(sAttrib, SPECIAL_LAUNCHED_BY))
 		{
-		DWORD dwLauncher = strToInt(strSubString(sAttrib, SPECIAL_LAUNCHED_BY.GetLength(), -1), 0);
-		if (dwLauncher == 0 || !IsMissile())
+		if (!IsMissile())
+			return false;
+
+		DWORD dwLauncher;
+		if (!GetUniverse().GetDesignCollection().ParseUNID(strSubString(sAttrib, SPECIAL_LAUNCHED_BY.GetLength()), &dwLauncher))
 			return false;
 
 		CDeviceClass *pDevice = GetUniverse().FindDeviceClass(dwLauncher);
@@ -1929,6 +1947,22 @@ bool CItemType::OnHasSpecialAttribute (const CString &sAttrib) const
 			return false;
 
 		return (pDevice->GetAmmoVariant(this) != -1);
+		}
+	else if (strStartsWith(sAttrib, SPECIAL_LAUNCHES))
+		{
+		CDeviceClass *pDevice = GetDeviceClass();
+		if (!pDevice)
+			return false;
+
+		DWORD dwAmmo;
+		if (!GetUniverse().GetDesignCollection().ParseUNID(strSubString(sAttrib, SPECIAL_LAUNCHES.GetLength()), &dwAmmo))
+			return false;
+
+		CItemType *pAmmoType = GetUniverse().FindItemType(dwAmmo);
+		if (!pAmmoType)
+			return false;
+
+		return (pDevice->GetAmmoVariant(pAmmoType) != -1);
 		}
 	else if (strStartsWith(sAttrib, SPECIAL_UNKNOWN_TYPE))
 		{
@@ -2045,8 +2079,10 @@ void CItemType::OnReadFromStream (SUniverseLoadCtx &Ctx)
 
 	if (Ctx.dwSystemVersion >= 117)
 		{
+		SLoadCtx LoadCtx(Ctx);
+
 		m_Components.DeleteAll();
-		m_Components.ReadFromStream(SLoadCtx(Ctx));
+		m_Components.ReadFromStream(LoadCtx);
 		}
 	}
 

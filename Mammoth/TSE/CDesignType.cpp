@@ -22,6 +22,7 @@
 #define IMAGE_TAG								CONSTLIT("Image")
 #define IMAGE_COMPOSITE_TAG						CONSTLIT("ImageComposite")
 #define INITIAL_DATA_TAG						CONSTLIT("InitialData")
+#define ITEM_ENCOUNTER_DESC_TAG					CONSTLIT("ItemEncounterDesc")
 #define ITEM_TABLE_TAG							CONSTLIT("ItemTable")
 #define ITEM_TYPE_TAG							CONSTLIT("ItemType")
 #define LANGUAGE_TAG							CONSTLIT("Language")
@@ -128,7 +129,7 @@
 
 #define STR_OVERRIDE							CONSTLIT("Override")
 
-static char DESIGN_CHAR[designCount] =
+static const char DESIGN_CHAR[designCount] =
 	{
 		'i',
 		'b',
@@ -158,7 +159,7 @@ static char DESIGN_CHAR[designCount] =
 		'o',
 	};
 
-static char *DESIGN_CLASS_NAME[designCount] =
+static const char *DESIGN_CLASS_NAME[designCount] =
 	{
 		"ItemType",
 		"ItemTable",
@@ -188,7 +189,7 @@ static char *DESIGN_CLASS_NAME[designCount] =
 		"ImageComposite",
 	};
 
-static char *CACHED_EVENTS[CDesignType::evtCount] =
+static const char *CACHED_EVENTS[CDesignType::evtCount] =
 	{
 		"CanInstallItem",
 		"CanRemoveItem",
@@ -566,7 +567,9 @@ ICCItem *CDesignType::FindBaseProperty (CCodeChainCtx &Ctx, const CString &sProp
 		}
 
 	else if (strEquals(sProperty, PROPERTY_MAP_DESCRIPTION))
+		{
 		return CC.CreateString(GetMapDescription(SMapDescriptionCtx()));
+		}
 
 	else if (strEquals(sProperty, PROPERTY_MAX_BALANCE))
 		{
@@ -1829,7 +1832,7 @@ SEventHandlerDesc *CDesignType::GetInheritedCachedEvent (ECachedHandlers iEvent)
 		return NULL;
 	}
 
-CString CDesignType::GetMapDescription (SMapDescriptionCtx &Ctx) const
+CString CDesignType::GetMapDescription (const SMapDescriptionCtx &Ctx) const
 
 //  GetMapDescription
 //
@@ -2500,13 +2503,15 @@ bool CDesignType::HasSpecialAttribute (const CString &sAttrib) const
 
 		CString sError;
 		CPropertyCompare Compare;
-		if (!Compare.Parse(CCodeChainCtx(GetUniverse()), sProperty, &sError))
+		CCodeChainCtx CCX(GetUniverse());
+
+		if (!Compare.Parse(CCX, sProperty, &sError))
 			{
 			::kernelDebugLogPattern("ERROR: Unable to parse property expression: %s", sError);
 			return false;
 			}
 
-		ICCItemPtr pValue = GetProperty(CCodeChainCtx(GetUniverse()), Compare.GetProperty());
+		ICCItemPtr pValue = GetProperty(CCX, Compare.GetProperty());
 		return Compare.Eval(pValue);
 		}
 	else if (strStartsWith(sAttrib, SPECIAL_SYSTEM_LEVEL))
@@ -2627,7 +2632,7 @@ void CDesignType::InitCachedEvents (void)
 		}
 	}
 
-void CDesignType::InitCachedEvents (int iCount, char **pszEvents, SEventHandlerDesc *retEvents)
+void CDesignType::InitCachedEvents (int iCount, const char **pszEvents, SEventHandlerDesc *retEvents)
 
 //	InitCachedEvents
 //
@@ -2773,6 +2778,14 @@ ALERROR CDesignType::InitFromXML (SDesignLoadCtx &Ctx, CXMLElement *pDesc, bool 
 				return ComposeLoadError(Ctx, Ctx.sError);
 				}
 			}
+		else if (strEquals(pItem->GetTag(), ITEM_ENCOUNTER_DESC_TAG))
+			{
+			if (error = SetExtra()->ItemEncounterDefinitions.InitFromXML(Ctx, *pItem))
+				{
+				Ctx.pType = NULL;
+				return ComposeLoadError(Ctx, Ctx.sError);
+				}
+			}
 
 		//	Otherwise, it is some element that we don't understand.
 		}
@@ -2817,7 +2830,7 @@ bool CDesignType::InSelfReference (CDesignType *pType)
 	return false;
 	}
 
-bool CDesignType::MatchesCriteria (const CDesignTypeCriteria &Criteria)
+bool CDesignType::MatchesCriteria (const CDesignTypeCriteria &Criteria) const
 
 //	MatchesCriteria
 //
@@ -2836,7 +2849,7 @@ bool CDesignType::MatchesCriteria (const CDesignTypeCriteria &Criteria)
 
 	//  If structures only, and this is a stationtype, then exclude stars/planets
 
-	CStationType *pStationType;
+	const CStationType *pStationType;
 	if (Criteria.StructuresOnly()
 			&& (pStationType = CStationType::AsType(this))
 			&& (pStationType->GetScale() == scaleStar || pStationType->GetScale() == scaleWorld))
@@ -3286,7 +3299,8 @@ ALERROR CWeaponFireDescRef::Bind (SDesignLoadCtx &Ctx)
 		if (ALERROR error = CDesignTypeRef<CItemType>::BindType(Ctx, m_dwUNID, pItemType))
 			return error;
 
-		m_pType = pItemType->GetWeaponFireDesc(CItemCtx(), &Ctx.sError);
+		CItemCtx ItemCtx;
+		m_pType = pItemType->GetWeaponFireDesc(ItemCtx, &Ctx.sError);
 		if (m_pType == NULL)
 			return ERR_FAIL;
 		}

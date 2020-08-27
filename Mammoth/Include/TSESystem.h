@@ -179,6 +179,7 @@ class CTerritoryList
 	public:
 		~CTerritoryList (void);
 
+		void DebugPaint (CG32bitImage &Dest, CMapViewportCtx &PaintCtx, const CG16bitFont &LabelFont) const;
 		CString GetAttribsAtPos (const CVector &vPos) const;
 		int GetCount (void) { return m_List.GetCount(); }
 		bool HasAttribute (const CVector &vPos, const CString &sAttrib) const;
@@ -418,8 +419,8 @@ class CSystem
 										 CSpaceObject **retpObj = NULL,
 										 CSpaceObject *pPlayerShip = NULL);
 		static ALERROR CreateFromXML (CUniverse &Universe, 
-									  CSystemType *pType, 
-									  CTopologyNode *pTopology, 
+									  CSystemType &Type, 
+									  CTopologyNode &NodeID, 
 									  CSystem **retpSystem,
 									  CString *retsError = NULL,
 									  CSystemCreateStats *pStats = NULL);
@@ -446,14 +447,14 @@ class CSystem
 								 CSovereign *pSovereign,
 								 CStation **retpWreck);
 		ALERROR CreateStargate (CStationType *pType,
-								CVector &vPos,
+								const CVector &vPos,
 								const CString &sStargateID,
 								const CString &sDestNodeID,
 								const CString &sDestStargateID,
 								CSpaceObject **retpStation = NULL);
 		ALERROR CreateStation (CStationType *pType,
 							   CDesignType *pEventHandler,
-							   CVector &vPos,
+							   const CVector &vPos,
 							   CSpaceObject **retpStation = NULL);
 		ALERROR CreateStation (SSystemCreateCtx *pCtx, 
 							   CStationType *pType, 
@@ -557,7 +558,9 @@ class CSystem
 		void PaintViewportGrid (CMapViewportCtx &Ctx, CG32bitImage &Dest, Metric rGridSize);
 		void PaintViewportObject (CG32bitImage &Dest, const RECT &rcView, CSpaceObject *pCenter, CSpaceObject *pObj);
 		void PaintViewportLRS (CG32bitImage &Dest, const RECT &rcView, CSpaceObject *pCenter, Metric rScale, DWORD dwFlags, bool *retbNewEnemies);
-		void PaintViewportMap (CG32bitImage &Dest, const RECT &rcView, CSpaceObject *pCenter, Metric rMapScale);
+
+		static constexpr DWORD FLAG_VIEWPORT_MAP_SHOW_ZONES =		0x00000001;
+		void PaintViewportMap (CG32bitImage &Dest, const RECT &rcView, CSpaceObject *pCenter, Metric rMapScale, DWORD dwFlags = 0);
 		void PaintViewportMapObject (CG32bitImage &Dest, const RECT &rcView, CSpaceObject *pCenter, CSpaceObject *pObj);
 		void PlaceInGate (CSpaceObject *pObj, CSpaceObject *pGate);
 		void PlayerEntered (CSpaceObject *pPlayer);

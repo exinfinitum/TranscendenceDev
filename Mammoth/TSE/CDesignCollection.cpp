@@ -18,7 +18,7 @@
 
 #define PROPERTY_CORE_GAME_STATS				CONSTLIT("core.gameStats")
 
-static char *CACHED_EVENTS[CDesignCollection::evtCount] =
+static const char *CACHED_EVENTS[CDesignCollection::evtCount] =
 	{
 		"GetGlobalAchievements",
 		"GetGlobalDockScreen",
@@ -47,7 +47,7 @@ static char *CACHED_EVENTS[CDesignCollection::evtCount] =
 		"OnGlobalUpdate",
 	};
 
-static constexpr char *CACHED_PROPERTIES[] =
+static constexpr const char *CACHED_PROPERTIES[] =
 	{
 		"core.gameStats",
 	};
@@ -340,6 +340,10 @@ ALERROR CDesignCollection::BindDesign (CUniverse &Universe, const TArray<CExtens
 		const CDisplayAttributeDefinitions &Attribs = pEntry->GetDisplayAttributes();
 		if (!Attribs.IsEmpty())
 			m_DisplayAttribs.Append(Attribs);
+
+		const auto &ItemEncounterDefinitions = pEntry->GetItemEncounterDefinitions();
+		if (!ItemEncounterDefinitions.IsEmpty())
+			m_ItemEncounterDefinitions.Append(ItemEncounterDefinitions);
 		}
 
 	//	Tell our armor mass definitions that we're done so that we can calculate
@@ -1330,7 +1334,7 @@ void CDesignCollection::GetEnabledExtensions (TArray<CExtension *> *retExtension
 		}
 	}
 
-CG32bitImage *CDesignCollection::GetImage (DWORD dwUNID, DWORD dwFlags)
+CG32bitImage *CDesignCollection::GetImage (DWORD dwUNID, DWORD dwFlags) const
 
 //	GetImage
 //
@@ -2066,6 +2070,7 @@ void CDesignCollection::Unbind (void)
 	m_OverrideTypes.DeleteAll();
 	m_ArmorDefinitions.DeleteAll();
 	m_DisplayAttribs.DeleteAll();
+	m_ItemEncounterDefinitions.DeleteAll();
 	m_EconomyIndex.DeleteAll();
 
 	//	Reset

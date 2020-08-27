@@ -32,15 +32,15 @@ enum OptionTypes
 
 struct SOptionDefaults
 	{
-	char *pszName;
+	const char *pszName;
 	int iType;
-	char *pszDefaultValue;
+	const char *pszDefaultValue;
 	DWORD dwFlags;
 	};
 
 struct SCommandLineData
 	{
-	char *pszParam;
+	const char *pszParam;
 	int iOption;
 	DWORD dwFlags;
 	};
@@ -64,6 +64,7 @@ SOptionDefaults g_OptionData[CGameSettings::OPTIONS_COUNT] =
 		{	"defaultBuyTab",			optionString,	"filterGeneral",	0	},
 		{	"noMouseAim",				optionBoolean,	"false",	0	},
 		{	"forcePermadeath",			optionBoolean,	"false",	0	},
+		{	"showIconBar",				optionString,	"auto",		0	},
 
 		//	Installation options
 
@@ -319,7 +320,7 @@ ALERROR CGameSettings::ParseCommandLine (char *pszCmdLine)
 	ALERROR error;
 	int i;
 
-	char *argv[2];
+	const char *argv[2];
 	argv[0] = "Transcendence";
 	argv[1] = pszCmdLine;
 	CXMLElement *pCmdLine;

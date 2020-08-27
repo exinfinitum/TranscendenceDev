@@ -400,7 +400,7 @@ CCompositeImageDesc::SCacheEntry *CCompositeImageDesc::FindCacheEntry (const CCo
 	return NULL;
 	}
 
-CObjectImageArray &CCompositeImageDesc::GetImage (SGetImageCtx &Ctx, const CCompositeImageSelector &Selector, const CCompositeImageModifiers &Modifiers, int *retiFrameIndex) const
+CObjectImageArray &CCompositeImageDesc::GetImage (const SGetImageCtx &Ctx, const CCompositeImageSelector &Selector, const CCompositeImageModifiers &Modifiers, int *retiFrameIndex) const
 
 //	GetImage
 //
@@ -743,7 +743,7 @@ void CCompositeImageDesc::MarkImage (void)
 	m_pRoot->MarkImage(CCompositeImageSelector(), CCompositeImageModifiers());
 	}
 
-void CCompositeImageDesc::MarkImage (SGetImageCtx &Ctx, const CCompositeImageSelector &Selector, const CCompositeImageModifiers &Modifiers)
+void CCompositeImageDesc::MarkImage (const SGetImageCtx &Ctx, const CCompositeImageSelector &Selector, const CCompositeImageModifiers &Modifiers)
 
 //	MarkImage
 //
@@ -2139,15 +2139,7 @@ void CShipwreckEntry::GetImage (CShipClass *pClass, int iRotation, CObjectImageA
 //	Returns an image.
 
 	{
-	const CShipwreckDesc &WreckDesc = pClass->GetWreckDesc();
-	CObjectImageArray *pWreckImage = WreckDesc.GetWreckImage(pClass, iRotation);
-	if (pWreckImage == NULL)
-		{
-		*retImage = EMPTY_IMAGE;
-		return;
-		}
-
-	*retImage = *pWreckImage;
+	*retImage = pClass->GetWreckImage(iRotation);
 	}
 
 void CShipwreckEntry::GetImage (const CCompositeImageSelector &Selector, const CCompositeImageModifiers &Modifiers, CObjectImageArray *retImage)

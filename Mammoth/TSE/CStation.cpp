@@ -30,16 +30,19 @@
 
 #define PROPERTY_ABANDONED						CONSTLIT("abandoned")
 #define PROPERTY_ACTIVE							CONSTLIT("active")
+#define PROPERTY_ALLOW_ENEMY_DOCKING			CONSTLIT("allowEnemyDocking")
 #define PROPERTY_ANGRY							CONSTLIT("angry")
 #define PROPERTY_BARRIER						CONSTLIT("barrier")
 #define PROPERTY_CAN_BE_MINED					CONSTLIT("canBeMined")
 #define PROPERTY_DEST_NODE_ID					CONSTLIT("destNodeID")
 #define PROPERTY_DEST_STARGATE_ID				CONSTLIT("destStargateID")
+#define PROPERTY_DESTROY_WHEN_EMPTY				CONSTLIT("destroyWhenEmpty")
 #define PROPERTY_DOCKING_PORT_COUNT				CONSTLIT("dockingPortCount")
 #define PROPERTY_EXPLORED						CONSTLIT("explored")
 #define PROPERTY_IGNORE_FRIENDLY_FIRE			CONSTLIT("ignoreFriendlyFire")
 #define PROPERTY_IMAGE_SELECTOR					CONSTLIT("imageSelector")
 #define PROPERTY_IMAGE_VARIANT					CONSTLIT("imageVariant")
+#define PROPERTY_ITEM_TABLE						CONSTLIT("itemTable")
 #define PROPERTY_MAX_HP							CONSTLIT("maxHP")
 #define PROPERTY_MAX_STRUCTURAL_HP				CONSTLIT("maxStructuralHP")
 #define PROPERTY_NO_FRIENDLY_FIRE				CONSTLIT("noFriendlyFire")
@@ -113,13 +116,7 @@ const int g_iMapScale = 5;
 const int DEFAULT_TIME_STOP_TIME =				150;
 
 CStation::CStation (CUniverse &Universe) : TSpaceObjectImpl(Universe),
-		m_Devices(CDeviceSystem::FLAG_NO_NAMED_DEVICES),
-		m_fArmed(false),
-		m_fForceMapLabel(false),
-		m_fMapLabelInitialized(false),
-		m_fHasMissileDefense(false),
-		m_fMaxAttackDistValid(false),
-		m_dwSpare(0)
+		m_Devices(CDeviceSystem::FLAG_NO_NAMED_DEVICES)
 
 //	CStation constructor
 
@@ -438,7 +435,7 @@ int CStation::CalcAdjustedDamage (SDamageCtx &Ctx) const
 
 	else
 		{
-        int iDamageAdj = DamageDesc::GetMassDestructionAdjFromValue(iSpecialDamage);
+		int iDamageAdj = DamageDesc::GetMassDestructionAdjFromValue(iSpecialDamage);
 		int iDamage = mathAdjust(Ctx.iDamage, iDamageAdj);
 
 		//	If we're not making progress, then return a hint about what to do.
@@ -450,7 +447,7 @@ int CStation::CalcAdjustedDamage (SDamageCtx &Ctx) const
 
 		//	Return adjusted damage
 
-        return iDamage;
+		return iDamage;
 		}
 	}
 
@@ -491,7 +488,7 @@ int CStation::CalcAdjustedDamageAbandoned (SDamageCtx &Ctx) const
 
 	else
 		{
-        int iDamageAdj = DamageDesc::GetMassDestructionAdjFromValue(iSpecialDamage);
+		int iDamageAdj = DamageDesc::GetMassDestructionAdjFromValue(iSpecialDamage);
 		return mathAdjust(Ctx.iDamage, iDamageAdj);
 		}
 	}
@@ -591,7 +588,7 @@ void CStation::CalcDeviceBonus (void)
 		{
 		CInstalledDevice &Device = *DeviceItem.GetInstalledDevice();
 
-        CItemCtx ItemCtx(this, &Device);
+		CItemCtx ItemCtx(this, &Device);
 
 		//	Keep track of device types to see if we have duplicates
 
@@ -893,7 +890,7 @@ CSpaceObject::RequestDockResults CStation::CanObjRequestDock (CSpaceObject *pObj
 
 	if (pObj
 			&& !IsAbandoned() 
-			&& !m_pType->IsEnemyDockingAllowed()
+			&& !m_fAllowEnemyDocking
 			&& (IsEnemy(pObj) || IsBlacklisted(pObj)))
 		return dockingDenied;
 
@@ -1146,7 +1143,7 @@ ALERROR CStation::CreateFromType (CSystem &System,
 	CStation *pStation;
 	CXMLElement *pDesc = pType->GetDesc();
 
-	if (!CreateCtx.bIgnoreLimits && !pType->CanBeEncountered())
+	if (!CreateCtx.bIgnoreLimits && !pType->CanBeEncountered(System, pType->GetEncounterDescConst()))
 		{
 		if (retsError)
 			*retsError = CONSTLIT("Cannot be encountered");
@@ -1186,6 +1183,7 @@ ALERROR CStation::CreateFromType (CSystem &System,
 	pStation->m_fDestroyIfEmpty = false;
 	pStation->m_fIsSegment = CreateCtx.bIsSegment;
 	pStation->m_fAnonymous = pType->IsAnonymous();
+	pStation->m_fAllowEnemyDocking = pType->IsEnemyDockingAllowed();
 	pStation->Set3DExtra(CreateCtx.bIs3DExtra);
 
 	//	3D Extra objects are always faded
@@ -1397,7 +1395,7 @@ ALERROR CStation::CreateFromType (CSystem &System,
 
 	//	This type has now been encountered
 
-	pType->SetEncountered(&System);
+	pType->SetEncountered(System);
 
 	//	Fire events on devices
 
@@ -1718,7 +1716,8 @@ Metric CStation::CalcMaxAttackDist (void) const
 			if (Device.GetCategory() == itemcatWeapon
 					|| Device.GetCategory() == itemcatLauncher)
 				{
-				Metric rRange = Device.GetMaxRange(CItemCtx(this, &Device));
+				CItemCtx ItemCtx(this, &Device);
+				Metric rRange = Device.GetMaxRange(ItemCtx);
 				if (rRange > rBestRange)
 					rBestRange = rRange;
 				}
@@ -1955,6 +1954,9 @@ ICCItem *CStation::GetPropertyCompatible (CCodeChainCtx &Ctx, const CString &sNa
 	else if (strEquals(sName, PROPERTY_ACTIVE))
 		return CC.CreateBool(m_fActive);
 
+	else if (strEquals(sName, PROPERTY_ALLOW_ENEMY_DOCKING))
+		return CC.CreateBool(m_fAllowEnemyDocking);
+
 	else if (strEquals(sName, PROPERTY_ANGRY))
 		return (m_iAngryCounter > 0 ? CC.CreateInteger(m_iAngryCounter) : CC.CreateNil());
 
@@ -1969,6 +1971,9 @@ ICCItem *CStation::GetPropertyCompatible (CCodeChainCtx &Ctx, const CString &sNa
 
 	else if (strEquals(sName, PROPERTY_DEST_STARGATE_ID))
 		return (IsStargate() ? CC.CreateString(m_sStargateDestEntryPoint) : CC.CreateNil());
+
+	else if (strEquals(sName, PROPERTY_DESTROY_WHEN_EMPTY))
+		return CC.CreateBool(m_fDestroyIfEmpty);
 
 	else if (strEquals(sName, PROPERTY_DOCKING_PORT_COUNT))
 		return CC.CreateInteger(m_DockingPorts.GetPortCount(this));
@@ -1993,6 +1998,31 @@ ICCItem *CStation::GetPropertyCompatible (CCodeChainCtx &Ctx, const CString &sNa
 			return CC.CreateString(sVariantID);
 		else
 			return CC.CreateInteger(iVariantID);
+		}
+	else if (strEquals(sName, PROPERTY_ITEM_TABLE))
+		{
+		IItemGenerator *pTable = m_pType->GetRandomItemTable();
+		if (pTable == NULL)
+			return CC.CreateNil();
+
+		SItemAddCtx Ctx(GetUniverse());
+		Ctx.pSystem = GetSystem();
+		Ctx.vPos = GetPos();
+		Ctx.iLevel = (Ctx.pSystem ? Ctx.pSystem->GetLevel() : 1);
+
+		CItemTypeProbabilityTable Table = pTable->GetProbabilityTable(Ctx);
+		ICCItemPtr pResult(ICCItem::List);
+		for (int i = 0; i < Table.GetCount(); i++)
+			{
+			ICCItemPtr pEntry(ICCItem::SymbolTable);
+			pEntry->SetIntegerAt(CONSTLIT("itemType"), Table.GetType(i)->GetUNID());
+			pEntry->SetStringAt(CONSTLIT("itemName"), Table.GetType(i)->GetNounPhrase());
+			pEntry->SetIntegerAt(CONSTLIT("chance"), mathRound(100.0 * Table.GetProbability(i)));
+
+			pResult->Append(pEntry);
+			}
+
+		return pResult->Reference();
 		}
 
 	else if (strEquals(sName, PROPERTY_NO_FRIENDLY_FIRE))
@@ -2301,37 +2331,37 @@ bool CStation::IsShownInGalacticMap (void) const
 //  Returns TRUE if this object should be shown on the details pane of the 
 //  galactic map.
 
-    {
-    //  Skip if we purposefully disable this
+	{
+	//  Skip if we purposefully disable this
 
-    if (!m_pType->ShowsMapDetails())
-        return false;
+	if (!m_pType->ShowsMapDetails())
+		return false;
 
-    //  If we're virtual and we've got a trading descriptor, then we should
-    //  be included. This handles the case of stations like New Victoria
-    //  Arcology, which are composed of multiple parts with a virtual center.
+	//  If we're virtual and we've got a trading descriptor, then we should
+	//  be included. This handles the case of stations like New Victoria
+	//  Arcology, which are composed of multiple parts with a virtual center.
 
-    if (IsVirtual() && m_pType->GetTradingDesc())
-        return true;
+	if (IsVirtual() && m_pType->GetTradingDesc())
+		return true;
 
-    //  We only show stations/wrecks (not worlds)
+	//  We only show stations/wrecks (not worlds)
 
-    if (GetScale() != scaleStructure && GetScale() != scaleShip)
-        return false;
+	if (GetScale() != scaleStructure && GetScale() != scaleShip)
+		return false;
 
-    //  Only if we would show it on the system map
+	//  Only if we would show it on the system map
 	//
 	//	NOTE: We only care about what the type specifies, not what the object
 	//	overrides, because sometimes the object just hides the map label to keep
 	//	the map clean (not because it is not an interesting station).
 
-    if (!m_pType->ShowsMapIcon() || m_pType->SuppressMapLabel())
-        return false;
+	if (!m_pType->ShowsMapIcon() || m_pType->SuppressMapLabel())
+		return false;
 
-    //  Show it
+	//  Show it
 
-    return true;
-    }
+	return true;
+	}
 
 void CStation::OnClearCondition (CConditionSet::ETypes iCondition, DWORD dwFlags)
 
@@ -2552,19 +2582,19 @@ EDamageResults CStation::OnDamageImmutable (SDamageCtx &Ctx)
 
 	{
 	//	If we don't have ejecta, then decrease damage to 0.
-    //
-    //  NOTE: We check MassDestructionLevel (instead of MassDestructionAdj) 
-    //  because even level 0 has some WMD. But for this case we only case
-    //  about "real" WMD.
+	//
+	//  NOTE: We check MassDestructionLevel (instead of MassDestructionAdj) 
+	//  because even level 0 has some WMD. But for this case we only case
+	//  about "real" WMD.
 
-    if (m_pType->GetEjectaAdj() == 0
-            || Ctx.Damage.GetMassDestructionLevel() == 0)
-        Ctx.iDamage = 0;
+	if (m_pType->GetEjectaAdj() == 0
+			|| Ctx.Damage.GetMassDestructionLevel() == 0)
+		Ctx.iDamage = 0;
 
-    //	Otherwise, adjust for WMD
+	//	Otherwise, adjust for WMD
 
-    else
-        Ctx.iDamage = mathAdjust(Ctx.iDamage, Ctx.Damage.GetMassDestructionAdj());
+	else
+		Ctx.iDamage = mathAdjust(Ctx.iDamage, Ctx.Damage.GetMassDestructionAdj());
 
 	//	Hit effect
 
@@ -2764,12 +2794,12 @@ void CStation::OnDestroyedByFriendlyFire (CSpaceObject *pAttacker, CSpaceObject 
 //	Station destroyed by friendly fire
 
 	{
-	CSpaceObject *pTarget;
-
-	ASSERT(pOrderGiver && pOrderGiver->CanAttack());
+	if (!pOrderGiver || !pOrderGiver->CanAttack())
+		throw CException(ERR_FAIL);
 
 	//	If the player attacked us, we need to blacklist her
 
+	CSpaceObject *pTarget;
 	if (pOrderGiver->IsPlayer()
 			&& CanBlacklist()
 			&& (pTarget = CalcTargetToAttack(pAttacker, pOrderGiver)))
@@ -3175,7 +3205,8 @@ void CStation::OnHitByFriendlyFire (CSpaceObject *pAttacker, CSpaceObject *pOrde
 //	the attacker.
 
 	{
-	ASSERT(pOrderGiver && pOrderGiver->CanAttack());
+	if (!pOrderGiver || !pOrderGiver->CanAttack())
+		throw CException(ERR_FAIL);
 
 	//	Warn the attacker
 
@@ -3316,7 +3347,7 @@ void CStation::OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx
 	else
 		Image.PaintImage(Dest, x, y, iTick, iVariant);
 
-    //  Paint satellites in front of the station.
+	//  Paint satellites in front of the station.
 
 	PaintSatellites(Dest, x, y, (Ctx.fShowSatellites ? CPaintOrder::none : CPaintOrder::bringToFront), Ctx);
 
@@ -3580,10 +3611,10 @@ void CStation::OnPlayerObj (CSpaceObject *pPlayer)
 //	Player has entered the system
 
 	{
-    int i;
+	int i;
 
 	//	If this is a beacon, scan all stations in range. We scan here because
-    //  we don't want to scan distant systems at game creation.
+	//  we don't want to scan distant systems at game creation.
 
 	if (m_pType->IsBeacon())
 		{
@@ -3603,7 +3634,7 @@ void CStation::OnPlayerObj (CSpaceObject *pPlayer)
 			}
 		}
 
-    //  Fire event
+	//  Fire event
 
 	FireOnPlayerEnteredSystem(pPlayer);
 	}
@@ -3989,6 +4020,7 @@ void CStation::OnReadFromStream (SLoadCtx &Ctx)
 	m_fIsSegment =		    ((dwLoad & 0x00100000) ? true : false);
 	m_fForceMapLabel =		((dwLoad & 0x00200000) ? true : false);
 	m_fHasMissileDefense =	((dwLoad & 0x00400000) ? true : false);
+	m_fAllowEnemyDocking =	(Ctx.dwVersion >= 194 ? ((dwLoad & 0x00800000) ? true : false) : m_pType->IsEnemyDockingAllowed());
 
 	//	Paint order
 
@@ -4230,7 +4262,7 @@ void CStation::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
 	{
 	DEBUG_TRY
 
-    bool bCalcBounds = false;
+	bool bCalcBounds = false;
 	bool bCalcDeviceBonus = false;
 	int iTick = GetSystem()->GetTick() + GetDestiny();
 
@@ -4305,8 +4337,8 @@ void CStation::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
 
 	//	Update as necessary
 
-    if (bCalcDeviceBonus)
-        CalcDeviceBonus();
+	if (bCalcDeviceBonus)
+		CalcDeviceBonus();
 
 	if (bCalcBounds)
 		CalcBounds();
@@ -4490,6 +4522,7 @@ void CStation::OnWriteToStream (IWriteStream *pStream)
 	dwSave |= (m_fIsSegment ?		    0x00100000 : 0);
 	dwSave |= (m_fForceMapLabel ?		0x00200000 : 0);
 	dwSave |= (m_fHasMissileDefense ?	0x00400000 : 0);
+	dwSave |= (m_fAllowEnemyDocking ?	0x00800000 : 0);
 	pStream->Write(dwSave);
 
 	//	Paint order
@@ -4797,16 +4830,16 @@ void CStation::PaintSatellites (CG32bitImage &Dest, int x, int y, DWORD dwPaintO
 	bool bOldInPaintSubordinate = Ctx.bInPaintSubordinate;
 	Ctx.bInPaintSubordinate = true;
 
-    //  Loop over all our subordinates and paint any segments.
+	//  Loop over all our subordinates and paint any segments.
 
-    for (int i = 0; i < m_Subordinates.GetCount(); i++)
-        {
-        CSpaceObject *pObj = m_Subordinates.GetObj(i);
+	for (int i = 0; i < m_Subordinates.GetCount(); i++)
+		{
+		CSpaceObject *pObj = m_Subordinates.GetObj(i);
 
 		//	If not a satellite, then ignore.
 
 		CPaintOrder::Types iPaintOrder;
-        if (!pObj->IsSatelliteSegmentOf(*this, &iPaintOrder))
+		if (!pObj->IsSatelliteSegmentOf(*this, &iPaintOrder))
 			continue;
 
 		//	If not the right paint order, then skip.
@@ -4825,7 +4858,7 @@ void CStation::PaintSatellites (CG32bitImage &Dest, int x, int y, DWORD dwPaintO
 			Ctx.pObj = pObj;
 			pObj->Paint(Dest, xObj, yObj, Ctx);
 			}
-        }
+		}
 
 	Ctx.pObj = pOldObj;
 	Ctx.bInPaintSubordinate = bOldInPaintSubordinate;
@@ -5272,9 +5305,19 @@ bool CStation::SetProperty (const CString &sName, ICCItem *pValue, CString *rets
 			SetAngry();
 		return true;
 		}
+	else if (strEquals(sName, PROPERTY_ALLOW_ENEMY_DOCKING))
+		{
+		m_fAllowEnemyDocking = !pValue->IsNil();
+		return true;
+		}
 	else if (strEquals(sName, PROPERTY_BARRIER))
 		{
 		m_fBlocksShips = !pValue->IsNil();
+		return true;
+		}
+	else if (strEquals(sName, PROPERTY_DESTROY_WHEN_EMPTY))
+		{
+		m_fDestroyIfEmpty = !pValue->IsNil();
 		return true;
 		}
 	else if (strEquals(sName, PROPERTY_EXPLORED))

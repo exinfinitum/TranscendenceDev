@@ -209,7 +209,7 @@ bool IDockScreenDisplay::GetDisplayOptions (SInitCtx &Ctx, SDisplayOptions *retO
 	//
 	//	NOTE: This RECT is relative to Ctx.rcRect.
 
-	if (retOptions->BackgroundDesc.iType != EDockScreenBackground::default)
+	if (retOptions->BackgroundDesc.iType != EDockScreenBackground::defaultBackground)
 		{
 		retOptions->rcControl.left = 4;
 		retOptions->rcControl.top = 12;
@@ -443,6 +443,20 @@ ALERROR IDockScreenDisplay::Init (SInitCtx &Ctx, const SDisplayOptions &Options,
 	return OnInit(Ctx, Options, retsError); 
 	}
 
+ICCItemPtr IDockScreenDisplay::OnGetListAsCCItem (void) const
+
+//	OnGetListAsCCItem
+//
+//	REturns the entire list as an item.
+
+	{
+	IListData *pList = GetListData();
+	if (!pList)
+		return ICCItemPtr::Nil();
+
+	return pList->GetAsCCItem();
+	}
+
 ICCItemPtr IDockScreenDisplay::OnGetProperty (const CString &sProperty) const
 
 //	OnGetProperty
@@ -606,7 +620,7 @@ bool IDockScreenDisplay::ParseBackgrounDesc (ICCItem *pDesc, SDockScreenBackgrou
 	//	Nil means no default value
 
 	if (pDesc->IsNil())
-		retDesc->iType = EDockScreenBackground::default;
+		retDesc->iType = EDockScreenBackground::defaultBackground;
 
 	//	If we have a struct, we expect a certain format
 

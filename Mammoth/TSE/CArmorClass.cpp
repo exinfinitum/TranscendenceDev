@@ -67,6 +67,7 @@
 #define PROPERTY_ARMOR_CLASS					CONSTLIT("armorClass")
 #define PROPERTY_BALANCE_ADJ					CONSTLIT("balanceAdj")
 #define PROPERTY_BLINDING_IMMUNE				CONSTLIT("blindingImmune")
+#define PROPERTY_DAMAGE							CONSTLIT("damage")
 #define PROPERTY_DAMAGE_ADJ						CONSTLIT("damageAdj")
 #define PROPERTY_DECAY							CONSTLIT("decay")
 #define PROPERTY_DEVICE_DAMAGE_IMMUNE			CONSTLIT("deviceDamageImmune")
@@ -178,7 +179,7 @@ static CArmorClass::SStdStats STD_STATS[MAX_ITEM_LEVEL] =
 		{	20000,	800000000,	13800,	160000000,	3000, },
 	};
 
-static char *CACHED_EVENTS[CArmorClass::evtCount] =
+static const char *CACHED_EVENTS[CArmorClass::evtCount] =
 	{
 		"GetMaxHP",
 		"OnArmorConsumePower",
@@ -1685,7 +1686,7 @@ bool CArmorClass::FindDataField (const CString &sField, CString *retsValue)
 	if (strEquals(sField, FIELD_HP))
 		*retsValue = strFromInt(m_Stats.iHitPoints);
 	else if (strEquals(sField, FIELD_BALANCE))
-		*retsValue = strFromInt(CalcBalance(ArmorItem, CArmorItem::SBalance()));
+		*retsValue = strFromInt(CalcBalance(ArmorItem));
 	else if (strEquals(sField, FIELD_EFFECTIVE_HP))
 		{
 		int iHP;
@@ -1957,7 +1958,8 @@ int CArmorClass::GetDamageEffectiveness (const CArmorItem &ArmorItem, CSpaceObje
 //	> 100	The weapon is more effective than average.
 
 	{
-	const DamageDesc *pDamage = pWeapon->GetDamageDesc(CItemCtx(pAttacker, pWeapon));
+	CItemCtx ItemCtx(pAttacker, pWeapon);
+	const DamageDesc *pDamage = pWeapon->GetDamageDesc(ItemCtx);
 	if (pDamage == NULL)
 		return 100;
 
@@ -2659,7 +2661,13 @@ ESetPropertyResult CArmorClass::SetItemProperty (CItemCtx &Ctx, CItem &Item, con
 	CSpaceObject *pSource = Ctx.GetSource();
 	CInstalledArmor *pArmor = Ctx.GetArmor();
 
-	if (strEquals(sProperty, PROPERTY_HP))
+	if (strEquals(sProperty, PROPERTY_DAMAGE))
+		{
+		int iDamage = Max(0, Value.GetIntegerValue());
+		int iNewHP = Max(0, ArmorItem.GetMaxHP() - iDamage);
+		return SetItemProperty(Ctx, Item, PROPERTY_HP, *ICCItemPtr(iNewHP), retsError);
+		}
+	else if (strEquals(sProperty, PROPERTY_HP))
 		{
 		int iHP = Value.GetIntegerValue();
 

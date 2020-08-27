@@ -16,7 +16,6 @@ const int EXTRA_BACKGROUND_IMAGE =	128;
 #define NEUROHACK_TAG				CONSTLIT("Neurohack")
 #define ON_DISPLAY_INIT_TAG			CONSTLIT("OnDisplayInit")
 #define ON_INIT_TAG					CONSTLIT("OnInit")
-#define ON_PANE_INIT_TAG			CONSTLIT("OnPaneInit")
 #define ON_SCREEN_INIT_TAG			CONSTLIT("OnScreenInit")
 #define ON_SCREEN_UPDATE_TAG		CONSTLIT("OnScreenUpdate")
 #define PANES_TAG					CONSTLIT("Panes")
@@ -734,6 +733,19 @@ CG32bitImage *CDockScreen::GetDisplayCanvas (const CString &sID)
 	return &pCanvasControl->GetCanvas();
 	}
 
+ICCItemPtr CDockScreen::GetListAsCCItem (void) const
+
+//	GetListAsCCItem
+//
+//	Returns the entire list.
+
+	{
+	if (m_pDisplay == NULL)
+		return ICCItemPtr::Nil();
+
+	return m_pDisplay->GetListAsCCItem();
+	}
+
 ICCItemPtr CDockScreen::GetProperty (const CString &sProperty) const
 
 //	GetProperty
@@ -1392,10 +1404,10 @@ ALERROR CDockScreen::InitScreen (CDockSession &DockSession,
 	//	If we have a deferred background setting, then use that (and reset it
 	//	so that we don't use it again).
 
-	if (m_DeferredBackground.iType != EDockScreenBackground::default)
+	if (m_DeferredBackground.iType != EDockScreenBackground::defaultBackground)
 		{
 		DisplayOptions.BackgroundDesc = m_DeferredBackground;
-		m_DeferredBackground.iType = EDockScreenBackground::default;
+		m_DeferredBackground.iType = EDockScreenBackground::defaultBackground;
 		}
 
 	//	Creates the title area
@@ -1471,7 +1483,7 @@ ALERROR CDockScreen::InitScreen (CDockSession &DockSession,
 	//	to do so.
 
 	SDockScreenBackgroundDesc BackgroundDesc = DisplayOptions.BackgroundDesc;
-	if (BackgroundDesc.iType == EDockScreenBackground::default)
+	if (BackgroundDesc.iType == EDockScreenBackground::defaultBackground)
 		{
 		m_pDisplay->GetDefaultBackground(&BackgroundDesc);
 
@@ -1482,9 +1494,9 @@ ALERROR CDockScreen::InitScreen (CDockSession &DockSession,
 	//	If we've got a default background and we're a nested frame, then use the
 	//	background of the previous frame.
 
-	if (BackgroundDesc.iType == EDockScreenBackground::default
+	if (BackgroundDesc.iType == EDockScreenBackground::defaultBackground
 			&& m_pDockSession->GetFrameStack().GetCount() > 1
-			&& m_pDockSession->GetFrameStack().GetCallingFrame().BackgroundDesc.iType != EDockScreenBackground::default)
+			&& m_pDockSession->GetFrameStack().GetCallingFrame().BackgroundDesc.iType != EDockScreenBackground::defaultBackground)
 		{
 		BackgroundDesc = m_pDockSession->GetFrameStack().GetCallingFrame().BackgroundDesc;
 		}
@@ -1879,7 +1891,7 @@ void CDockScreen::SetBackground (const SDockScreenBackgroundDesc &Desc)
 
 	//	Use a default, if necessary
 
-	if (Desc.iType == EDockScreenBackground::default)
+	if (Desc.iType == EDockScreenBackground::defaultBackground)
 		{
 		SDockScreenBackgroundDesc DefaultDesc;
 

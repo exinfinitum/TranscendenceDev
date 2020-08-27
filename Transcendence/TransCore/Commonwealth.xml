@@ -24,7 +24,14 @@
 			alignment="constructive chaos"
 			inherit="&unidCommonText;"
 			>
-		
+
+		<ItemEncounterDesc>
+			<Frequency criteria="* +commonwealth;" frequency="common"	systemCriteria="+commonwealthSpace;" />
+			<Frequency criteria="* +commonwealth;" frequency="uncommon" systemCriteria="+humanSpace; -commonwealthSpace;"/>
+
+			<Frequency criteria="* +commonwealth;" frequency="notRandom" />
+		</ItemEncounterDesc>
+
 		<AttributeDesc>
 			<!-- These item attributes are used across all Human Space (not just for
 				Commonwealth). -->
@@ -308,14 +315,6 @@
 		
 		<!-- Events and Data -->
 
-		<StaticData>
-			<NPCService>
-				(	;	service					level	margin
-					(	'repairArmor			5		100		)
-					)
-			</NPCService>
-		</StaticData>
-
 		<Events>
 			<OnCreate>
 				(sysAddObjRecurringTimerEvent 150 gSource "OnTrafficControl")
@@ -565,14 +564,6 @@
 		
 		<!-- Events and Data -->
 
-		<StaticData>
-			<NPCService>
-				(	;	service					level	margin
-					(	'repairArmor			7		100		)
-					)
-			</NPCService>
-		</StaticData>
-
 		<Events>
 			<OnCreate>
 				(sysAddObjRecurringTimerEvent 150 gSource "OnTrafficControl")
@@ -735,14 +726,6 @@
 		</DockScreens>
 
 		<!-- Behavior & Language -->
-
-		<StaticData>
-			<NPCService>
-				(	;	service					level	margin
-					(	'repairArmor			8		100		)
-					)
-			</NPCService>
-		</StaticData>
 
 		<Language>
 			<Text id="descWelcome">Your ship is in dry dock.</Text>
@@ -1085,7 +1068,6 @@
 								(rpgMissionAssignment {
 									missionCriteria: "n +commonwealthHabitat;"
 									maxActive: 1
-									intervalPerType: (+ 5400 (* (objGetDestiny gSource) 10))
 									missionGiver: (rpgCharacterGetInfo gSource 'stationMaster)
 									noMissionTextID: 'descNoMissions
 									})
@@ -1364,14 +1346,6 @@
 		</DockScreens>
 		
 		<!-- Events and Data -->
-
-		<StaticData>
-			<NPCService>
-				(	;	service					level	margin
-					(	'repairArmor			8		100		)
-					)
-			</NPCService>
-		</StaticData>
 
 		<Language>
 			<Text id="descWelcome">

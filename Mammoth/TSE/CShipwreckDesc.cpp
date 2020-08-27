@@ -10,6 +10,8 @@
 #define EXPLOSION_TYPE_ATTRIB					CONSTLIT("explosionType")
 #define LEAVES_WRECK_ATTRIB						CONSTLIT("leavesWreck")
 #define MAX_STRUCTURAL_HIT_POINTS_ATTRIB		CONSTLIT("maxStructuralHitPoints")
+#define NO_INSTALLED_ITEMS_ATTRIB				CONSTLIT("noInstalledItems")
+#define NO_ITEMS_ATTRIB							CONSTLIT("noItems")
 #define RADIOACTIVE_WRECK_ATTRIB				CONSTLIT("radioactiveWreck")
 #define STRUCTURAL_HIT_POINTS_ATTRIB			CONSTLIT("structuralHitPoints")
 #define WRECK_TYPE_ATTRIB						CONSTLIT("wreckType")
@@ -47,10 +49,15 @@ void CShipwreckDesc::AddItemsToWreck (CShip *pShip, CSpaceObject *pWreck) const
 
 		if (WreckItem.IsInstalled())
 			{
+			//	If we don't want installed items, then skip.
+
+			if (m_bNoInstalledItems)
+				{ }
+
 			//	Make sure that the armor item reflects the current
 			//	state of the ship's armor.
 
-			if (const CArmorItem ArmorItem = WreckItem.AsArmorItem())
+			else if (const CArmorItem ArmorItem = WreckItem.AsArmorItem())
 				{
 				//	Most armor is destroyed
 
@@ -132,7 +139,7 @@ void CShipwreckDesc::AddItemsToWreck (CShip *pShip, CSpaceObject *pWreck) const
 		//	Non-installed virtual items are always lost
 
 		else if (WreckItem.IsVirtual())
-			continue;
+			{ }
 
 		//	Otherwise, if this is just cargo, add to wreck
 
@@ -352,7 +359,8 @@ bool CShipwreckDesc::CreateWreck (CShip *pShip, CSpaceObject **retpWreck) const
 
 	//	Add items to the wreck
 
-	AddItemsToWreck(pShip, pWreck);
+	if (!m_bNoItems)
+		AddItemsToWreck(pShip, pWreck);
 
 	//	Done
 
@@ -364,7 +372,7 @@ bool CShipwreckDesc::CreateWreck (CShip *pShip, CSpaceObject **retpWreck) const
 	DEBUG_CATCH
 	}
 
-bool CShipwreckDesc::CreateWreckImage (CShipClass *pClass, int iRotationFrame, CObjectImageArray &Result) const
+bool CShipwreckDesc::CreateWreckImage (const CShipClass *pClass, int iRotationFrame, CObjectImageArray &Result) const
 
 //	CreateWreckImage
 //
@@ -460,7 +468,7 @@ size_t CShipwreckDesc::GetMemoryUsage (void) const
 	return dwTotal;
 	}
 
-CObjectImageArray *CShipwreckDesc::GetWreckImage (CShipClass *pClass, int iRotation) const
+CObjectImageArray *CShipwreckDesc::GetWreckImage (const CShipClass *pClass, int iRotation) const
 
 //	GetWreckImage
 //
@@ -569,10 +577,17 @@ ALERROR CShipwreckDesc::InitFromXML (SDesignLoadCtx &Ctx, CXMLElement *pDesc, Me
 	if (pWreck == NULL)
 		pWreck = pDesc;
 
+	//	Assume this is set to defaults unless some setting is set.
+
+	m_bIsDefault = true;
+
 	//	Miscellaneous
 
 	if (pWreck->FindAttributeInteger(LEAVES_WRECK_ATTRIB, &m_iLeavesWreck))
+		{
 		m_iLeavesWreck = Max(0, m_iLeavesWreck);
+		m_bIsDefault = false;
+		}
 	else
 		{
 		//	Chance of wreck is a function of mass:
@@ -585,19 +600,46 @@ ALERROR CShipwreckDesc::InitFromXML (SDesignLoadCtx &Ctx, CXMLElement *pDesc, Me
 	if (ALERROR error = m_pWreckType.LoadUNID(Ctx, pWreck->GetAttribute(WRECK_TYPE_ATTRIB)))
 		return error;
 
-	m_bRadioactiveWreck = pWreck->GetAttributeBool(RADIOACTIVE_WRECK_ATTRIB);
-	m_iStructuralHP = pWreck->GetAttributeIntegerBounded(STRUCTURAL_HIT_POINTS_ATTRIB, 0, -1, -1);
-	if (m_iStructuralHP == -1)
-		m_iStructuralHP = pWreck->GetAttributeIntegerBounded(MAX_STRUCTURAL_HIT_POINTS_ATTRIB, 0, -1, 0);
+	if (m_pWreckType.GetUNID())
+		m_bIsDefault = false;
+
+	LoadXMLBool(*pWreck, NO_INSTALLED_ITEMS_ATTRIB, m_bNoInstalledItems);
+	LoadXMLBool(*pWreck, NO_ITEMS_ATTRIB, m_bNoItems);
+	LoadXMLBool(*pWreck, RADIOACTIVE_WRECK_ATTRIB, m_bRadioactiveWreck);
+
+	if (pWreck->FindAttributeInteger(STRUCTURAL_HIT_POINTS_ATTRIB, &m_iStructuralHP)
+			|| pWreck->FindAttributeInteger(MAX_STRUCTURAL_HIT_POINTS_ATTRIB, &m_iStructuralHP))
+		{
+		m_iStructuralHP = Max(0, m_iStructuralHP);
+		m_bIsDefault = false;
+		}
+	else
+		m_iStructuralHP = 0;
 
 	//	Explosion
 
 	if (ALERROR error = m_pExplosionType.LoadUNID(Ctx, pWreck->GetAttribute(EXPLOSION_TYPE_ATTRIB)))
 		return error;
 
+	if (m_pExplosionType.GetUNID())
+		m_bIsDefault = false;
+
 	//	Done
 
 	return NOERROR;
+	}
+
+void CShipwreckDesc::LoadXMLBool (const CXMLElement &Desc, const CString &sAttrib, bool &retbValue)
+
+//	LoadXMLBool
+//
+//	Load XML boolean.
+
+	{
+	if (Desc.FindAttributeBool(sAttrib, &retbValue))
+		m_bIsDefault = false;
+	else
+		retbValue = false;
 	}
 
 void CShipwreckDesc::MarkImages (CShipClass *pClass, int iRotation) const

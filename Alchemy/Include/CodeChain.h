@@ -39,11 +39,11 @@ class IPrimitiveImpl
 
 typedef struct
 	{
-	char *pszName;
+	const char *pszName;
 	PRIMITIVEPROC pfFunction;
 	DWORD dwData;
-	char *pszDescription;
-	char *pszArguments;
+	const char *pszDescription;
+	const char *pszArguments;
 	DWORD dwFlags;
 	} PRIMITIVEPROCDEF, *PPRIMITIVEPROCDEF;
 
@@ -128,7 +128,7 @@ class ICCItem : public CObject
 		virtual ICCItem *GetElement (int iIndex) const = 0;
 		virtual ICCItem *GetElement (const CString &sKey) const { return NULL; }
 		virtual ICCItem *GetElement (CCodeChain *pCC, int iIndex) const;
-        virtual CString GetKey (int iIndex) { return NULL_STR; }
+        virtual CString GetKey (int iIndex) const { return NULL_STR; }
 		virtual bool HasReferenceTo (ICCItem *pSrc) { return (pSrc == this); }
 		virtual ICCItem *Head (CCodeChain *pCC) = 0;
 		bool IsList (void) const { return IsNil() || !IsAtom(); }
@@ -190,6 +190,7 @@ class ICCItem : public CObject
 		CString GetStringAt (const CString &sKey, const CString &sDefault = NULL_STR) const;
 		void SetAt (const CString &sKey, ICCItem *pValue);
 		void SetBooleanAt (const CString &sKey, bool bValue);
+		void SetDoubleAt (const CString &sKey, double rValue);
 		void SetIntegerAt (const CString &sKey, int iValue);
 		void SetStringAt (const CString &sKey, const CString &sValue);
 
@@ -678,7 +679,7 @@ class CCVector : public ICCVector
 		void SetContext (CCodeChain *pCC) { m_pCC = pCC;  }
 		void SetShape (CCodeChain *pCC, TArray<int> vNewShape) { m_vShape = vNewShape; }
 		void SetArrayData (CCodeChain *pCC, TArray<double> vNewData) { m_vData = vNewData; }
-		CString CCVector::PrintWithoutShape (CCodeChain *pCC, DWORD dwFlags) const;
+		CString PrintWithoutShape (CCodeChain *pCC, DWORD dwFlags) const;
 		
 		void Append (CCodeChain *pCC, ICCItem *pItem, ICCItem **retpError = NULL);
 		void Sort (CCodeChain *pCC, int iOrder, int iIndex = -1);
@@ -767,7 +768,7 @@ class CCSymbolTable : public ICCList
 		virtual ICCItem *GetElement (int iIndex) const override;
 		virtual ICCItem *GetElement (const CString &sKey) const override;
 		virtual ICCItem *GetElement (CCodeChain *pCC, int iIndex) const override;
-        virtual CString GetKey (int iIndex) override { return m_Symbols.GetKey(iIndex); }
+        virtual CString GetKey (int iIndex) const override { return m_Symbols.GetKey(iIndex); }
 		virtual bool HasReferenceTo (ICCItem *pSrc) override;
 		virtual ICCItem *Head (CCodeChain *pCC) override { return GetElement(0); }
 		virtual ICCItem *Tail (CCodeChain *pCC) override { return GetElement(1); }
@@ -926,7 +927,8 @@ class CCodeChain
 		ICCItem *GetNil (void) { return &m_Nil; }
 		ICCItem *GetTrue (void) { return &m_True; }
 		ICCItem *Eval (CEvalContext *pEvalCtx, ICCItem *pItem);
-		static ICCItemPtr LinkCode (const CString &sString, SLinkOptions &Options = SLinkOptions()) { return ICCItemPtr(Link(sString, Options)); }
+		static ICCItemPtr LinkCode (const CString &sString) { return ICCItemPtr(Link(sString)); }
+		static ICCItemPtr LinkCode (const CString &sString, SLinkOptions &Options) { return ICCItemPtr(Link(sString, Options)); }
 		ICCItem *LookupGlobal (const CString &sGlobal, LPVOID pExternalCtx);
 		ICCItemPtr TopLevel (const ICCItem &Code, const SRunOptions &Options);
 		static CString Unlink (ICCItem *pItem);
@@ -958,7 +960,8 @@ class CCodeChain
 		static ICCItemPtr CreateIntegerIfPossible (const CString &sString);
 		static ICCItemPtr CreateParseError (int iLine, const CString &sError);
 		ICCItemPtr EvalLiteralStruct (CEvalContext *pCtx, ICCItem &Item);
-		static ICCItem *Link (const CString &sString, SLinkOptions &Options = SLinkOptions());
+		static ICCItem *Link (const CString &sString, SLinkOptions &Options);
+		static ICCItem *Link (const CString &sString) { SLinkOptions Options; return Link(sString, Options); }
 		static ICCItemPtr LinkFragment (const CString &sString, int iOffset = 0, int *retiLinked = NULL, int *ioiCurLine = NULL);
 		ICCItemPtr Lookup (CEvalContext *pCtx, ICCItem &Item);
 		ICCItemPtr LookupFunction (CEvalContext *pCtx, ICCItem &Name);

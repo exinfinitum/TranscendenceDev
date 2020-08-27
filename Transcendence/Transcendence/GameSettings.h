@@ -225,6 +225,7 @@ class CGameSettings
 			defaultBuyTab,					//	Default tab when buying items
 			noMouseAim,						//	Disable mouse aiming
 			forcePermadeath,				//	We treat a game file as ended when we would normally resurrect
+			showIconBar,					//	Show or hide icon bar
 
 			//	Installation options
 			useTDB,							//	Force use of .TDB
@@ -276,7 +277,7 @@ class CGameSettings
 			introSpoilers,					//	Show high-level ships in intro
 
 			//	Constants
-			OPTIONS_COUNT = 53,
+			OPTIONS_COUNT = 54,
 			};
 
 		CGameSettings (IExtraSettingsHandler *pExtra = NULL) : m_pExtra(pExtra) { }
@@ -321,7 +322,7 @@ class CGameSettings
 		void SetValueInteger (int iOption, int iValue, bool bSetSettings = false);
 		void SetValueString (int iOption, const CString &sValue, bool bSetSettings = false);
 
-		IExtraSettingsHandler *m_pExtra;	//	Additional settings handler
+		IExtraSettingsHandler *m_pExtra = NULL;	//	Additional settings handler
 		SOption m_Options[OPTIONS_COUNT];	//	Options
 		CGameKeys m_KeyMap;					//	Key map
 		CExtensionListMap m_Extensions;		//	Default extensions
@@ -332,6 +333,6 @@ class CGameSettings
 
 		CString m_sSaveFile;				//	Optional save file to open on game start
 
-		bool m_bModified;					//	If TRUE, we need to save out settings
+		bool m_bModified = false;			//	If TRUE, we need to save out settings
 	};
 
