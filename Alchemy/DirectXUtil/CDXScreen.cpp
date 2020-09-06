@@ -665,12 +665,12 @@ void CDXScreen::Render (void)
 		if (m_pOpenGLTextureBG && m_pOpenGLTextureFG)
 			{
 			Layer.BackBuffer.InitOpenGL();
-			m_pOGLContext->renderCanvasBackgroundFromTexture(m_pOpenGLTextureBG, true);
+			m_pOGLContext->renderCanvasBackgroundFromTexture(m_pOpenGLTextureBG, 1.0f - 0.000001f, true);
 			// Set a pointer to the canvas in the Master Render Queue, so we only render textures if we are rendering with that as the DEST
 			Layer.BackBuffer.GetMasterRenderQueue()->setPointerToCanvas(&Layer.BackBuffer);
 			Layer.BackBuffer.GetMasterRenderQueue()->setCanvasDimensions(Layer.BackBuffer.GetWidth(), Layer.BackBuffer.GetHeight());
 			Layer.BackBuffer.GetMasterRenderQueue()->renderAllQueues();
-			m_pOGLContext->renderCanvasBackgroundFromTexture(m_pOpenGLTextureFG);
+			m_pOGLContext->renderCanvasBackgroundFromTexture(m_pOpenGLTextureFG, 0.000001f);
 			Layer.FrontBuffer.Set(CG32bitPixel(0, 0, 0, 0)); // TODO: Replace once we get the proper method from George
 			//Layer.BackBuffer.GetInstancedRenderQueue()->Render(Layer.BackBuffer.GetInstancedRenderQueue()->getShader(), Layer.BackBuffer.GetInstancedRenderQueue()->getVAO());
 			//delete m_pOpenGLTexture;

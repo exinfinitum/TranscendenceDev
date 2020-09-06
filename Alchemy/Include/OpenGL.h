@@ -88,7 +88,7 @@ public:
 	void renderScene (void);
 	void testRender ();
 	void renderCanvasBackground ();
-	void renderCanvasBackgroundFromTexture (OpenGLTexture *texture, bool clear = false);
+	void renderCanvasBackgroundFromTexture (OpenGLTexture *texture, float depth, bool clear = false);
 	void prepSquareCanvas ();
 	void prepTextureCanvas ();
 	void prepTestScene ();
@@ -142,6 +142,11 @@ public:
 
 		blendModeCount = 6,
 	};
+	enum renderOrder {
+		renderOrderProper = 0,
+		renderOrderSimplified = 1,
+		renderOrderTextureFirst = 2,
+	};
 	OpenGLRenderLayer(void) {
 		m_rayRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendScreen.setBlendMode(blendMode::blendScreen);
@@ -156,7 +161,18 @@ public:
 	void renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader,
 		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
 	void GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader);
+	void setRenderOrder(renderOrder iRenderOrder) {
+		m_renderOrder = iRenderOrder;
+	};
 private:
+	void renderAllQueuesWithProperRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
+		renderAllQueuesWithBasicRenderOrder(batchesToRender, false);
+	};
+	void renderAllQueuesWithSimplifiedRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
+		renderAllQueuesWithBasicRenderOrder(batchesToRender, true);
+	};
+	void renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, bool useSimplifiedRenderOrder);
+	void renderAllQueuesWithTextureFirstRenderOrder();
 	void addProceduralEffectToProperRenderQueue(OpenGLInstancedBatchRenderRequestRay renderRequest, OpenGLRenderLayer::blendMode blendMode) {
 		OpenGLInstancedBatchRay& rayRenderBatch = m_rayRenderBatchBlendNormal;
 		switch (blendMode) {
@@ -192,10 +208,27 @@ private:
 	std::mutex m_texRenderQueueAddMutex;
 	std::vector<std::shared_ptr<OpenGLTexture>> m_texturesForDeletion;
 	std::vector<OpenGLTexture*> m_texturesNeedingGlowmaps;
+	renderOrder m_renderOrder = renderOrder::renderOrderProper;
 };
 
 class OpenGLMasterRenderQueue {
 public:
+	enum LayerEnum
+		// This should match the enum in TSESystem.h::CSystem.
+	{
+		layerFirst = 0,
+
+		layerBackground = 0,
+		layerSpace = 1,
+		layerStations = 2,
+		layerBGWeaponFire = 3,
+		layerShips = 4,
+		layerFGWeaponFire = 5,
+		layerEffects = 6,
+		layerOverhang = 7,
+
+		layerCount = 8
+	};
 	OpenGLMasterRenderQueue (void);
 	~OpenGLMasterRenderQueue (void);
 	void renderAllQueues (void);

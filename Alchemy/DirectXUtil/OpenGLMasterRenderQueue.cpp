@@ -3,8 +3,9 @@
 #include "PreComp.h"
 #include <mutex>
 
-const float OpenGLMasterRenderQueue::m_fDepthDelta = 0.000001f; // Up to one million different depth levels
-const float OpenGLMasterRenderQueue::m_fDepthStart = 0.999998f; // Up to one million different depth levels
+const int MAX_DEPTH_LEVELS = 100000;
+const float OpenGLMasterRenderQueue::m_fDepthDelta = float(1.0 / MAX_DEPTH_LEVELS); // Up to 100k different depth levels
+const float OpenGLMasterRenderQueue::m_fDepthStart = 1.0f - float(1.0 / MAX_DEPTH_LEVELS); // Up to 100k different depth levels
 
 namespace {
 
@@ -29,6 +30,9 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(512, 512, 64);
 	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader);
 	m_pActiveRenderLayer = &m_renderLayers[0];
+	m_renderLayers[layerStations - NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
+	m_renderLayers[layerShips - NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
+	m_renderLayers[layerEffects - NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
 #ifdef OPENGL_FPS_COUNTER_ENABLE
 	m_pOpenGLIndicatorFont = std::make_unique<CG16bitFont>();
 	m_pOpenGLIndicatorFont->Create(CONSTLIT("Arial"), -16);

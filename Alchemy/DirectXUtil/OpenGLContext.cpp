@@ -272,7 +272,7 @@ void OpenGLContext::renderCanvasBackground ()
 	m_pCanvasShader->unbind(); // Unbind our shader
 	}
 
-void OpenGLContext::renderCanvasBackgroundFromTexture (OpenGLTexture* texture, bool clear)
+void OpenGLContext::renderCanvasBackgroundFromTexture (OpenGLTexture* texture, float depth, bool clear)
 {
 
 	// Create our new shader
@@ -307,6 +307,7 @@ void OpenGLContext::renderCanvasBackgroundFromTexture (OpenGLTexture* texture, b
 
 	int rotationMatrixLocation = glGetUniformLocation(m_pCanvasShader->id(), "rotationMatrix");
 	glUniform1i(glGetUniformLocation(m_pCanvasShader->id(), "ourTexture"), 0);
+	glUniform1f(glGetUniformLocation(m_pCanvasShader->id(), "depth"), depth);
 
 	// Send our matrices into the shader variables
 	glUniformMatrix4fv(rotationMatrixLocation, 1, GL_FALSE, &rotationMatrix[0][0]);
