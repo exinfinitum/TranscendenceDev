@@ -172,7 +172,7 @@ private:
 		renderAllQueuesWithBasicRenderOrder(batchesToRender, true);
 	};
 	void renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, bool useSimplifiedRenderOrder);
-	void renderAllQueuesWithTextureFirstRenderOrder();
+	void renderAllQueuesWithTextureFirstRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& textureBatchesToRender, std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& nonTextureBatchesToRender);
 	void addProceduralEffectToProperRenderQueue(OpenGLInstancedBatchRenderRequestRay renderRequest, OpenGLRenderLayer::blendMode blendMode) {
 		OpenGLInstancedBatchRay& rayRenderBatch = m_rayRenderBatchBlendNormal;
 		switch (blendMode) {

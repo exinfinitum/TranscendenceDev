@@ -160,18 +160,126 @@ void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pai
 	}
 }
 
+void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& textureBatchesToRender, std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& nonTextureBatchesToRender) {
+	// This render mode uses depth testing for textured objects only.
+	glEnable(GL_DEPTH_TEST);
+
+	int iDeepestBatchIndex = -1;
+	float fDeepestBatchLastElementDepth = 0.0;
+
+	blendMode prevBlendMode = blendMode::blendNormal;
+	// First, render textured batches while setting depth buffer.
+	glDepthMask(GL_TRUE);
+	while (true) {
+		// Phase 0: Reset tracking vars
+		iDeepestBatchIndex = -1;
+		fDeepestBatchLastElementDepth = -1.0;
+
+		unsigned int iCurrBatchIndex = 0;
+		// Phase 1: Get deepest textured batches
+		for (const auto& p : textureBatchesToRender) {
+			OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
+			float fBatchDepth = pInstancedRenderBatch->getDepthOfDeepestObject();
+			if (fBatchDepth > fDeepestBatchLastElementDepth) {
+				//iSecondDeepestBatchIndex = iDeepestBatchIndex;
+				//fSecondDeepestBatchLastElementDepth = fDeepestBatchLastElementDepth;
+				iDeepestBatchIndex = iCurrBatchIndex;
+				fDeepestBatchLastElementDepth = fBatchDepth;
+			}
+			iCurrBatchIndex += 1;
+		}
+
+		// Phase 2: If deepest batch depth is less than zero, we're done.
+		if (fDeepestBatchLastElementDepth < 0) {
+			break;
+		}
+
+		// Phase 3: Render from deepest batch up to depth of second deepest batch's deepest object
+		auto batchToRenderShader = textureBatchesToRender[iDeepestBatchIndex].first;
+		auto batchToRender = textureBatchesToRender[iDeepestBatchIndex].second;
+		int currBlendMode = batchToRender->getBlendMode();
+
+		if (currBlendMode != int(prevBlendMode)) {
+			switch (currBlendMode) {
+				case int(blendMode::blendNormal) :
+					prevBlendMode = blendMode::blendNormal;
+					setBlendModeNormal();
+					break;
+					case int(blendMode::blendScreen) :
+						prevBlendMode = blendMode::blendScreen;
+						setBlendModeScreen();
+						break;
+					default:
+						prevBlendMode = blendMode::blendNormal;
+						setBlendModeNormal();
+			}
+		}
+
+		batchToRender->RenderUpToGivenDepth(batchToRenderShader, -1.0);
+
+	}
+	glDepthMask(GL_FALSE);
+	// Render non-texture (procedural) effects. Do not update depth buffer while doing so.
+	// TODO: Include radiation effect in this phase, not in the texture phase
+	while (true) {
+		// Phase 0: Reset tracking vars
+		iDeepestBatchIndex = -1;
+		fDeepestBatchLastElementDepth = -1.0;
+
+		unsigned int iCurrBatchIndex = 0;
+		// Phase 1: Get deepest textured batches
+		for (const auto& p : nonTextureBatchesToRender) {
+			OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
+			float fBatchDepth = pInstancedRenderBatch->getDepthOfDeepestObject();
+			if (fBatchDepth > fDeepestBatchLastElementDepth) {
+				//iSecondDeepestBatchIndex = iDeepestBatchIndex;
+				//fSecondDeepestBatchLastElementDepth = fDeepestBatchLastElementDepth;
+				iDeepestBatchIndex = iCurrBatchIndex;
+				fDeepestBatchLastElementDepth = fBatchDepth;
+			}
+			iCurrBatchIndex += 1;
+		}
+
+		// Phase 2: If deepest batch depth is less than zero, we're done.
+		if (fDeepestBatchLastElementDepth < 0) {
+			break;
+		}
+
+		// Phase 3: Render from deepest batch up to depth of second deepest batch's deepest object
+		auto batchToRenderShader = nonTextureBatchesToRender[iDeepestBatchIndex].first;
+		auto batchToRender = nonTextureBatchesToRender[iDeepestBatchIndex].second;
+		int currBlendMode = batchToRender->getBlendMode();
+
+		if (currBlendMode != int(prevBlendMode)) {
+			switch (currBlendMode) {
+				case int(blendMode::blendNormal) :
+					prevBlendMode = blendMode::blendNormal;
+					setBlendModeNormal();
+					break;
+					case int(blendMode::blendScreen) :
+						prevBlendMode = blendMode::blendScreen;
+						setBlendModeScreen();
+						break;
+					default:
+						prevBlendMode = blendMode::blendNormal;
+						setBlendModeNormal();
+			}
+		}
+
+		batchToRender->RenderUpToGivenDepth(batchToRenderShader, -1.0);
+
+	}
+	glDepthMask(GL_TRUE);
+
+	glDisable(GL_DEPTH_TEST);
+
+}
+
 void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
 {
 	// For each render queue in the ships render queue, render that render queue. We need to set the texture and do a glBindTexture before doing so.
-	// Render order is Texture, Orb, Ray, Lightning
-	
-	// TODO: Render in proper order - by order requested in CPU code. We can do this via the following:
-	// Use a while loop that repeats while we still have stuff left in our render batches.
-	// In this loop, iterate through our batches, and find the ones with the first and second largest depths
-	// for their last elements. On the one with the first largest, render all of the objects up to and excluding
-	// the first one whose depth is smaller than the second largest. Delete those from CPU memory. Remember that all batches
-	// are in order to render.
 
+	glClear(GL_DEPTH_BUFFER_BIT);
 	// Delete textures scheduled for deletion.
 	// TODO: Remove? We don't seem to use m_texturesForDeletion anymore
 	if (m_texturesForDeletion.size() > 0)
@@ -184,9 +292,11 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 	m_texturesForDeletion.clear();
 
 	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> batchesToRender;
+	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> nonTextureBatchesToRender;
 
 	// Set uniforms for all render batches and append them to our list of batches to render
 	// Note, setUniforms is persistent across calls to any Render() function since it sets things in the batch object, not in OpenGL
+	// Non-texture render batches should always be last in batchesToRender
 	for (const auto& p : m_texRenderBatches)
 	{
 		OpenGLTexture* pTextureToUse = p.first;
@@ -200,9 +310,10 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 	}
 	std::array<std::string, 3> rayAndLightningUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise" };
 	m_rayRenderBatchBlendNormal.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
-	batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
 	m_rayRenderBatchBlendScreen.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
-	batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
+	nonTextureBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
+	nonTextureBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
+
 
 	int iDeepestBatchIndex = -1;
 	int iSecondDeepestBatchIndex = -1;
@@ -213,12 +324,23 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 
 	switch (m_renderOrder) {
 	case renderOrder::renderOrderProper:
+		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
+		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
 		renderAllQueuesWithProperRenderOrder(batchesToRender);
 		break;
 	case renderOrder::renderOrderSimplified:
+		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
+		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
 		renderAllQueuesWithSimplifiedRenderOrder(batchesToRender);
 		break;
+	case renderOrder::renderOrderTextureFirst:
+		renderAllQueuesWithTextureFirstRenderOrder(batchesToRender, nonTextureBatchesToRender);
+		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
+		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
+		break;
 	default:
+		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
+		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
 		renderAllQueuesWithProperRenderOrder(batchesToRender);
 		break;
 	}

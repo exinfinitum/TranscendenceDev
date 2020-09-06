@@ -104,7 +104,6 @@ void OpenGLContext::setBlendMode ()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// TODO: Make this a function in the instanced render queue.
 	glBlendEquation(GL_FUNC_ADD); // Requires KHR_blend_equation_advanced; https://www.khronos.org/registry/OpenGL/extensions/KHR/KHR_blend_equation_advanced.txt
-	//glEnable(GL_DEPTH_TEST);
 
 	}
 

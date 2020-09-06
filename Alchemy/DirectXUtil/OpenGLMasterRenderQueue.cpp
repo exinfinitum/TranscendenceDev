@@ -30,9 +30,11 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(512, 512, 64);
 	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader);
 	m_pActiveRenderLayer = &m_renderLayers[0];
-	m_renderLayers[layerStations - NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
-	m_renderLayers[layerShips - NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
-	m_renderLayers[layerEffects - NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
+	m_renderLayers[layerStations + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderProper);
+	m_renderLayers[layerFGWeaponFire + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
+	m_renderLayers[layerShips + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
+	m_renderLayers[layerOverhang + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
+	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
 #ifdef OPENGL_FPS_COUNTER_ENABLE
 	m_pOpenGLIndicatorFont = std::make_unique<CG16bitFont>();
 	m_pOpenGLIndicatorFont->Create(CONSTLIT("Arial"), -16);
@@ -181,11 +183,11 @@ void OpenGLMasterRenderQueue::renderAllQueues(void)
 	for (OpenGLRenderLayer &renderLayer : m_renderLayers) {
 		renderLayer.renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight), m_pObjectTextureShader,
 			m_pRayShader, m_pGlowmapShader, m_pOrbShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
+		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 	}
 	for (OpenGLRenderLayer &renderLayer : m_renderLayers) {
 		renderLayer.GenerateGlowmaps(fbo, m_pCanvasVAO, m_pGlowmapShader);
 	}
-	m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 }
 
 void OpenGLMasterRenderQueue::clear(void)
