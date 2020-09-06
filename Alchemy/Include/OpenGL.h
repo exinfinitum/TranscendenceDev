@@ -233,6 +233,7 @@ public:
 	OpenGLMasterRenderQueue (void);
 	~OpenGLMasterRenderQueue (void);
 	void renderAllQueues (void);
+	void renderToGlowmaps (void);
 	void setObjectTextureShader (OpenGLShader *shader) { m_pObjectTextureShader = shader; }
 	OpenGLShader* getObjectTextureShader (void) { return m_pObjectTextureShader; }
 	void addTextureToRenderQueue (int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,

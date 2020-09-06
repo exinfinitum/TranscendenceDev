@@ -185,11 +185,14 @@ void OpenGLMasterRenderQueue::renderAllQueues(void)
 			m_pRayShader, m_pGlowmapShader, m_pOrbShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
 		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 	}
-	for (OpenGLRenderLayer &renderLayer : m_renderLayers) {
+
+}
+void OpenGLMasterRenderQueue::renderToGlowmaps(void)
+{
+	for (OpenGLRenderLayer& renderLayer : m_renderLayers) {
 		renderLayer.GenerateGlowmaps(fbo, m_pCanvasVAO, m_pGlowmapShader);
 	}
 }
-
 void OpenGLMasterRenderQueue::clear(void)
 {
 	// Clear our queue vectors, and our textures.
