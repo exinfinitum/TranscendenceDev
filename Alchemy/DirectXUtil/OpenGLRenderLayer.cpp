@@ -14,7 +14,7 @@ OpenGLRenderLayer::~OpenGLRenderLayer(void)
 }
 
 void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions, glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength,
-											 float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, float startingDepth)
+											 float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth)
 {
 	// Note, image is a pointer to the CG32bitPixel* we want to use as a texture. We can use CG32bitPixel->GetPixelArray() to get this pointer.
 	// To get the width and height, we can use pSource->GetWidth() and pSource->GetHeight() respectively.
@@ -22,14 +22,14 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	// different threads, but it's a very bad idea to run OpenGL on multiple threads at the same time - so texture initialization (which involves
 	// OpenGL function calls) must all be done on the OpenGL thread
 	const std::unique_lock<std::mutex> lock(m_texRenderQueueAddMutex);
-
+	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> &texRenderBatchToUse = (!useDepthTesting) && (m_renderOrder == renderOrder::renderOrderTextureFirst) ? m_texRenderBatchesNoDepthTesting : m_texRenderBatches;
 	// Check to see if we have a render queue with that texture already loaded.
 	ASSERT(image);
-	if (!m_texRenderBatches.count(image))
+	if (!texRenderBatchToUse.count(image))
 	{
 		// If we don't have a render queue with that texture loaded, then add one.
 		// Note, we clear after every render, in order to prevent seg fault issues; also creating an instanced batch is not very expensive anymore.
-		m_texRenderBatches[image] = new OpenGLInstancedBatchTexture();
+		texRenderBatchToUse[image] = new OpenGLInstancedBatchTexture();
 	}
 
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
@@ -42,7 +42,7 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	// Add this quad to the render queue.
 	auto renderRequest = OpenGLInstancedBatchRenderRequestTexture(vTexPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, alphaStrength, glowColor, glowNoise);
 	renderRequest.set_depth(startingDepth);
-	m_texRenderBatches[image]->addObjToRender(renderRequest);
+	texRenderBatchToUse[image]->addObjToRender(renderRequest);
 }
 
 void OpenGLRenderLayer::addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode)
@@ -291,13 +291,25 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		}
 	m_texturesForDeletion.clear();
 
-	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> batchesToRender;
-	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> nonTextureBatchesToRender;
+	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> depthTestBatchesToRender;
+	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> nonDepthTestBatchesToRender;
 
 	// Set uniforms for all render batches and append them to our list of batches to render
 	// Note, setUniforms is persistent across calls to any Render() function since it sets things in the batch object, not in OpenGL
 	// Non-texture render batches should always be last in batchesToRender
 	for (const auto& p : m_texRenderBatches)
+	{
+		std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &renderBatchToUse = (m_renderOrder == renderOrder::renderOrderTextureFirst) ? depthTestBatchesToRender : nonDepthTestBatchesToRender;
+		OpenGLTexture* pTextureToUse = p.first;
+		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
+		pTextureToUse->initTextureFromOpenGLThread();
+		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
+		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
+		std::array<std::string, 4> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise" };
+		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse, currentTick, perlinNoise);
+		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
+	}
+	for (const auto& p : m_texRenderBatchesNoDepthTesting)
 	{
 		OpenGLTexture* pTextureToUse = p.first;
 		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
@@ -306,13 +318,13 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
 		std::array<std::string, 4> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise" };
 		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse, currentTick, perlinNoise);
-		batchesToRender.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
+		nonDepthTestBatchesToRender.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
 	}
 	std::array<std::string, 3> rayAndLightningUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise" };
 	m_rayRenderBatchBlendNormal.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
 	m_rayRenderBatchBlendScreen.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
-	nonTextureBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
-	nonTextureBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
+	nonDepthTestBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
+	nonDepthTestBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
 
 
 	int iDeepestBatchIndex = -1;
@@ -324,28 +336,24 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 
 	switch (m_renderOrder) {
 	case renderOrder::renderOrderProper:
-		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
-		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
-		renderAllQueuesWithProperRenderOrder(batchesToRender);
+		renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	case renderOrder::renderOrderSimplified:
-		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
-		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
-		renderAllQueuesWithSimplifiedRenderOrder(batchesToRender);
+		renderAllQueuesWithSimplifiedRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	case renderOrder::renderOrderTextureFirst:
-		renderAllQueuesWithTextureFirstRenderOrder(batchesToRender, nonTextureBatchesToRender);
-		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
-		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
+		renderAllQueuesWithTextureFirstRenderOrder(depthTestBatchesToRender, nonDepthTestBatchesToRender);
 		break;
 	default:
-		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
-		batchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
-		renderAllQueuesWithProperRenderOrder(batchesToRender);
+		renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	}
 
-	for (const auto& p : batchesToRender) {
+	for (const auto& p : depthTestBatchesToRender) {
+		OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
+		pInstancedRenderBatch->clear();
+	}
+	for (const auto& p : nonDepthTestBatchesToRender) {
 		OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
 		pInstancedRenderBatch->clear();
 	}
@@ -360,6 +368,7 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 	*/
 
 	m_texRenderBatches.clear();
+	m_texRenderBatchesNoDepthTesting.clear();
 	setBlendModeNormal();
 }
 

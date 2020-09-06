@@ -153,7 +153,7 @@ public:
 	};
 	~OpenGLRenderLayer(void);
 	void addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions,
-		glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength, float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, float startingDepth);
+		glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength, float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth);
 	void addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
 	void addLightningToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, float rotation, float seed, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
 	void addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition, float rotation, float intensity, float opacity, int animation,
@@ -201,6 +201,7 @@ private:
 		effectTypeCount = 5
 	};
 	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatches;
+	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatchesNoDepthTesting;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendNormal;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendScreen;
 	OpenGLInstancedBatchRay m_rayRenderBatch;
@@ -237,7 +238,7 @@ public:
 	void addTextureToRenderQueue (int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
  int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture *image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight, 
 		int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength = 1.0, float glowR = 0.0, float glowG = 0.0, 
-		float glowB = 0.0, float glowA = 0.0, float glowNoise = 0.0);
+		float glowB = 0.0, float glowA = 0.0, float glowNoise = 0.0, bool useDepthTesting = true);
 	void addRayToEffectRenderQueue (int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
 		int iColorTypes, int iOpacityTypes, int iWidthAdjType, int iReshape, int iTexture, std::tuple<int, int, int> primaryColor,
 		std::tuple<int, int, int> secondaryColor, int iIntensity, float waveCyclePos, int opacityAdj, OpenGLRenderLayer::blendMode blendMode);

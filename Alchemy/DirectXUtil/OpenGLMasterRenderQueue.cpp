@@ -106,7 +106,7 @@ void OpenGLMasterRenderQueue::deinitCanvasVAO(void)
 void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int startPixelY, int sizePixelX,
  int sizePixelY, int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture *image, int texWidth, int texHeight, 
 	int texQuadWidth, int texQuadHeight, int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength,
-	float glowR, float glowG, float glowB, float glowA, float glowNoise)
+	float glowR, float glowG, float glowB, float glowA, float glowNoise, bool useDepthTesting)
 	{
 	glm::vec2 vTexPositions((float)startPixelX / (float)texWidth, (float)startPixelY / (float)texHeight);
 	glm::vec2 vSpriteSheetPositions((float)spriteSheetStartX / (float)texWidth, (float)spriteSheetStartY / (float)texHeight);
@@ -119,7 +119,7 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 	image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1]);
 
 	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, glowColor, alphaStrength,
-		glowNoise, numFramesPerRow, numFramesPerCol, image, m_fDepthLevel);
+		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel);
 	m_fDepthLevel -= m_fDepthDelta;
 	}
 
