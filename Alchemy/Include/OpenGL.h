@@ -148,6 +148,7 @@ public:
 		renderOrderTextureFirst = 2,
 	};
 	OpenGLRenderLayer(void) {
+		m_particleRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendScreen.setBlendMode(blendMode::blendScreen);
 	};
@@ -158,8 +159,21 @@ public:
 	void addLightningToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, float rotation, float seed, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
 	void addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition, float rotation, float intensity, float opacity, int animation,
 		int style, int detail, int distortion, int animationSeed, int lifetime, int currFrame, glm::vec3 primaryColor, glm::vec3 secondaryColor, float secondaryOpacity, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
+	void addParticleToEffectRenderQueue(glm::vec4 sizeAndPosition,
+		float rotation,
+		float opacity,
+		int style,
+		int lifetime,
+		int currFrame,
+		int destiny,
+		float minRadius,
+		float maxRadius,
+		glm::vec3 primaryColor,
+		glm::vec3 secondaryColor,
+		float startingDepth,
+		OpenGLRenderLayer::blendMode blendMode);
 	void renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader,
-		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
+		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, OpenGLShader* particleShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
 	void GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader);
 	void setRenderOrder(renderOrder iRenderOrder) {
 		m_renderOrder = iRenderOrder;
@@ -204,6 +218,8 @@ private:
 	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatchesNoDepthTesting;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendNormal;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendScreen;
+	OpenGLInstancedBatchParticle m_particleRenderBatchBlendNormal;
+	OpenGLInstancedBatchParticle m_particleRenderBatchBlendScreen;
 	OpenGLInstancedBatchRay m_rayRenderBatch;
 	OpenGLInstancedBatchOrb m_orbRenderBatch;
 	std::mutex m_texRenderQueueAddMutex;
@@ -262,6 +278,19 @@ public:
 		float secondaryOpacity,
 		OpenGLRenderLayer::blendMode blendMode
 	);
+	void addParticleToEffectRenderQueue(int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY,
+		float rotation,
+		float opacity,
+		int style,
+		int lifetime,
+		int currFrame,
+		int destiny,
+		float minRadius,
+		float maxRadius,
+		std::tuple<int, int, int> primaryColor,
+		std::tuple<int, int, int> secondaryColor,
+		OpenGLRenderLayer::blendMode blendMode
+	);
 	void setCurrentTick (int currTick) { m_iCurrentTick = currTick; }
 	void setCanvasDimensions(int width, int height) { m_iCanvasHeight = height; m_iCanvasWidth = width; }
 	void handOffTextureForDeletion(std::shared_ptr<OpenGLTexture> texPtr) {
@@ -285,6 +314,7 @@ private:
 	OpenGLShader *m_pRayShader;
 	OpenGLShader *m_pOrbShader;
 	OpenGLShader *m_pPerlinNoiseShader;
+	OpenGLShader *m_pParticleShader;
 	std::unique_ptr<OpenGLAnimatedNoise> m_pPerlinNoiseTexture;
 	// TODO: Maybe use filenames of texture images as the key rather than pointer to OpenGLTextures? Using pointers as map keys is not reliable.
 	OpenGLRenderLayer* m_pActiveRenderLayer;
@@ -307,6 +337,7 @@ private:
 	unsigned int rbo;
 	std::mutex m_shipRenderQueueAddMutex;
 	void* m_pCanvas;
+	bool m_bPrevObjAddedIsParticle = false;
 #ifdef OPENGL_FPS_COUNTER_ENABLE
 	std::unique_ptr<CG16bitFont> m_pOpenGLIndicatorFont;
 

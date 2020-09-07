@@ -26,6 +26,7 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_pObjectTextureShader = new OpenGLShader("./shaders/instanced_vertex_shader.glsl", "./shaders/instanced_fragment_shader.glsl");
 	m_pRayShader = new OpenGLShader("./shaders/ray_vertex_shader.glsl", "./shaders/ray_fragment_shader.glsl");
 	m_pOrbShader = new OpenGLShader("./shaders/orb_vertex_shader.glsl", "./shaders/orb_fragment_shader.glsl");
+	m_pParticleShader = new OpenGLShader("./shaders/particle_vertex_shader.glsl", "./shaders/particle_fragment_shader.glsl");
 	m_pPerlinNoiseShader = new OpenGLShader("./shaders/fbm_vertex_shader.glsl", "./shaders/fbm_fragment_shader.glsl");
 	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(512, 512, 64);
 	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader);
@@ -117,7 +118,10 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
 	image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1]);
-
+	if (m_bPrevObjAddedIsParticle) {
+		m_fDepthLevel -= m_fDepthDelta;
+		m_bPrevObjAddedIsParticle = false;
+	}
 	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, glowColor, alphaStrength,
 		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel);
 	m_fDepthLevel -= m_fDepthDelta;
@@ -135,7 +139,10 @@ void OpenGLMasterRenderQueue::addRayToEffectRenderQueue(int posPixelX, int posPi
 	glm::ivec4 shapes(iWidthAdjType, iReshape, 0, 0);
 	glm::vec3 intensitiesAndCycles(float(iIntensity), waveCyclePos, float(opacityAdj) / 255.0f);
 	glm::ivec4 styles(iColorTypes, iOpacityTypes, iTexture, 0);
-
+	if (m_bPrevObjAddedIsParticle) {
+		m_fDepthLevel -= m_fDepthDelta;
+		m_bPrevObjAddedIsParticle = false;
+	}
 	m_pActiveRenderLayer->addRayToEffectRenderQueue(vPrimaryColor, vSecondaryColor, sizeAndPosition, shapes, intensitiesAndCycles, styles, rotation, m_fDepthLevel, blendMode);
 	m_fDepthLevel -= m_fDepthDelta;
 }
@@ -159,9 +166,35 @@ void OpenGLMasterRenderQueue::addOrbToEffectRenderQueue(
 	{
 	glm::vec4 sizeAndPosition((float)sizePixelX, (float)sizePixelY,
 		(float)posPixelX / (float)canvasSizeX, (float)posPixelY / (float)canvasSizeY);
+	if (m_bPrevObjAddedIsParticle) {
+		m_fDepthLevel -= m_fDepthDelta;
+		m_bPrevObjAddedIsParticle = false;
+	}
 	m_pActiveRenderLayer->addOrbToEffectRenderQueue(sizeAndPosition, rotation, intensity, opacity, animation, style, detail, distortion, animationSeed, lifetime, currFrame, primaryColor, secondaryColor, secondaryOpacity,
 		m_fDepthLevel, blendMode);
 	m_fDepthLevel -= m_fDepthDelta;
+	}
+
+void OpenGLMasterRenderQueue::addParticleToEffectRenderQueue(int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY,
+	float rotation,
+	float opacity,
+	int style,
+	int lifetime,
+	int currFrame,
+	int destiny,
+	float minRadius,
+	float maxRadius,
+	std::tuple<int, int, int> primaryColor,
+	std::tuple<int, int, int> secondaryColor,
+	OpenGLRenderLayer::blendMode blendMode)
+	{
+	glm::vec4 sizeAndPosition((float)sizePixelX, (float)sizePixelY,
+		(float)posPixelX / (float)canvasSizeX, (float)posPixelY / (float)canvasSizeY);
+	glm::vec3 vPrimaryColor = glm::vec3(std::get<0>(primaryColor), std::get<1>(primaryColor), std::get<2>(primaryColor)) / float(255.0);
+	glm::vec3 vSecondaryColor = glm::vec3(std::get<0>(secondaryColor), std::get<1>(secondaryColor), std::get<2>(secondaryColor)) / float(255.0);
+	m_pActiveRenderLayer->addParticleToEffectRenderQueue(sizeAndPosition, rotation, opacity, style, lifetime, currFrame, destiny, minRadius, maxRadius, vPrimaryColor, vSecondaryColor, m_fDepthLevel, blendMode);
+	// Note that we do not change the depth level when adding particles.
+	m_bPrevObjAddedIsParticle = true;
 	}
 
 void OpenGLMasterRenderQueue::addLightningToEffectRenderQueue(int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
@@ -173,6 +206,10 @@ void OpenGLMasterRenderQueue::addLightningToEffectRenderQueue(int posPixelX, int
 	glm::vec4 sizeAndPosition((float)sizePixelX, (float)sizePixelY,
 		(float)posPixelX / (float)canvasSizeX, (float)posPixelY / (float)canvasSizeY);
 	glm::ivec4 shapes(iWidthAdjType, iReshape, 0, 0);
+	if (m_bPrevObjAddedIsParticle) {
+		m_fDepthLevel -= m_fDepthDelta;
+		m_bPrevObjAddedIsParticle = false;
+	}
 
 	m_pActiveRenderLayer->addLightningToEffectRenderQueue(vPrimaryColor, vSecondaryColor, sizeAndPosition, shapes, rotation, seed, m_fDepthLevel, blendMode);
 	m_fDepthLevel -= m_fDepthDelta;
@@ -182,7 +219,7 @@ void OpenGLMasterRenderQueue::renderAllQueues(void)
 {
 	for (OpenGLRenderLayer &renderLayer : m_renderLayers) {
 		renderLayer.renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight), m_pObjectTextureShader,
-			m_pRayShader, m_pGlowmapShader, m_pOrbShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
+			m_pRayShader, m_pGlowmapShader, m_pOrbShader, m_pParticleShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
 		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 	}
 

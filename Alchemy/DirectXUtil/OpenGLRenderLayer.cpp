@@ -90,6 +90,25 @@ void OpenGLRenderLayer::addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition,
 	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
 }
 
+void OpenGLRenderLayer::addParticleToEffectRenderQueue(glm::vec4 sizeAndPosition,
+	float rotation,
+	float opacity,
+	int style,
+	int lifetime,
+	int currFrame,
+	int destiny,
+	float minRadius,
+	float maxRadius,
+	glm::vec3 primaryColor,
+	glm::vec3 secondaryColor,
+	float startingDepth,
+	OpenGLRenderLayer::blendMode blendMode)
+{
+	auto renderRequest = OpenGLInstancedBatchRenderRequestParticle(sizeAndPosition, rotation, primaryColor, secondaryColor, style, destiny, lifetime, currFrame, maxRadius, minRadius, opacity, blendMode);
+	renderRequest.set_depth(startingDepth);
+	m_particleRenderBatchBlendNormal.addObjToRender(renderRequest);
+}
+
 void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, bool useSimplifiedRenderOrder) {
 	int iDeepestBatchIndex = -1;
 	int iSecondDeepestBatchIndex = -1;
@@ -275,7 +294,7 @@ void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(std::vector<s
 
 }
 
-void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
+void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, OpenGLShader* particleShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
 {
 	// For each render queue in the ships render queue, render that render queue. We need to set the texture and do a glBindTexture before doing so.
 
@@ -321,10 +340,13 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		nonDepthTestBatchesToRender.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
 	}
 	std::array<std::string, 3> rayAndLightningUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise" };
+	std::array<std::string, 1> particleUniformNames = { "aCanvasAdjustedDimensions" };
 	m_rayRenderBatchBlendNormal.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
-	m_rayRenderBatchBlendScreen.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
 	nonDepthTestBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
+	m_rayRenderBatchBlendScreen.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
 	nonDepthTestBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
+	m_particleRenderBatchBlendNormal.setUniforms(particleUniformNames, canvasDimensions);
+	nonDepthTestBatchesToRender.push_back(std::pair(particleShader, &m_particleRenderBatchBlendNormal));
 
 
 	int iDeepestBatchIndex = -1;

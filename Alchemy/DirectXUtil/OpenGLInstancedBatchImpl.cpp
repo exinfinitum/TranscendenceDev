@@ -10,3 +10,5 @@ std::unique_ptr<OpenGLVAO> OpenGLInstancedBatchRenderRequestTexture::vao = nullp
 std::unique_ptr<OpenGLVAO> OpenGLInstancedBatchRenderRequestRay::vao = nullptr;
 
 std::unique_ptr<OpenGLVAO> OpenGLInstancedBatchRenderRequestOrb::vao = nullptr;
+
+std::unique_ptr<OpenGLVAO> OpenGLInstancedBatchRenderRequestParticle::vao = nullptr;
