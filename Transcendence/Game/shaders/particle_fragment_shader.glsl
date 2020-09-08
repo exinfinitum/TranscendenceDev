@@ -86,11 +86,11 @@ vec4 calcParticleColorFlame(float fMaxRadius, float fMinRadius, float fOpacity, 
     vec3 rgbOuterColor = (float(useFlameOuterColor) * FLAME_OUTER_COLOR) + (float(!useFlameOuterColor) * rgbSmokeColor);
     
     bool useCoreColor = fCurrFrame <= fCore;
-    vec3 coreColor = mix(FLAME_CORE_COLOR, FLAME_MIDDLE_COLOR, float(fCurrFrame) / fCore) * float(useCoreColor);
+    vec3 coreColor = mix(FLAME_CORE_COLOR, FLAME_MIDDLE_COLOR, min(1.0, float(fCurrFrame) / fCore)) * float(useCoreColor);
     bool useFlameColor = (fCurrFrame <= fFlame) && !useCoreColor;
-    vec3 flameColor = mix(FLAME_MIDDLE_COLOR, rgbOuterColor, max(0.0, float(fCurrFrame - fCore) / (fFlame - fCore))) * float(useFlameColor);
+    vec3 flameColor = mix(FLAME_MIDDLE_COLOR, rgbOuterColor, max(0.0, min(1.0, float(fCurrFrame - fCore) / (fFlame - fCore)))) * float(useFlameColor);
     bool useSmokeColor = (fCurrFrame <= fSmoke) && (!useCoreColor) && (!useFlameColor);
-    vec3 smokeColor = mix(rgbOuterColor, rgbSmokeColor, max(0.0, float(fCurrFrame - fFlame) / (fSmoke - fFlame))) * float(useSmokeColor);
+    vec3 smokeColor = mix(rgbOuterColor, rgbSmokeColor, max(0.0, min(1.0, float(fCurrFrame - fFlame) / (fSmoke - fFlame)))) * float(useSmokeColor);
     bool useFadeColor = fCurrFrame > fSmoke;
     vec3 fadeColor = rgbSmokeColor * float(useFadeColor);
     
