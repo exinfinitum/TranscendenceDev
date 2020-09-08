@@ -136,7 +136,7 @@ void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pai
 			}
 			iCurrBatchIndex += 1;
 		}
-		if (useSimplifiedRenderOrder) {
+		if (!useSimplifiedRenderOrder) {
 			iCurrBatchIndex = 0;
 			for (const auto& p : batchesToRender) {
 				OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;

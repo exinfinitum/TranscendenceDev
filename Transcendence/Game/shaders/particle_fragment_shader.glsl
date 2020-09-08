@@ -139,6 +139,9 @@ void main(void)
 
     vec3 finalColorRGB = (vec3(finalColor[0], finalColor[1], finalColor[2]) * float(!usePreMultipliedAlpha)) + (vec3(finalColor[0], finalColor[1], finalColor[2]) * float(usePreMultipliedAlpha) * finalColor[3]);
     //finalColorRGB = (vec3(float(lifetime)));
+	float epsilon = 0.01;
+	bool alphaIsZero = finalColor[3] < epsilon;
+	gl_FragDepth = depth + float(alphaIsZero && (finalColor[3] < epsilon));
     fragColor = vec4(finalColorRGB, finalColor[3]);
     //fragColor = vec4(finalColor);
 }
