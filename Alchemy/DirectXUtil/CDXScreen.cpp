@@ -626,6 +626,36 @@ void CDXScreen::Render (void)
 			last_frame_finished_time,
 			last_frame_graphics_time);
 #endif
+#ifdef OPENGL_OBJ_COUNTER_ENABLE
+		char szBufferObjs[256];
+		if (Layer.BackBuffer.GetMasterRenderQueue()) {
+			auto layerObjs = Layer.BackBuffer.GetMasterRenderQueue()->getNumElementsInEachRenderLayer();
+			if (layerObjs.size() >= 10) {
+				int i0 = layerObjs[0];
+				int i1 = layerObjs[1];
+				int i2 = layerObjs[2];
+				int i3 = layerObjs[3];
+				int i4 = layerObjs[4];
+				int i5 = layerObjs[5];
+				int i6 = layerObjs[6];
+				int i7 = layerObjs[7];
+				int i8 = layerObjs[8];
+				int i9 = layerObjs[9];
+				int iLenObjs = wsprintf(szBufferObjs, "Number of objects by layer: %d(0), %d(1), %d(2), %d(3), %d(4), %d(5), %d(6), %d(7), %d(8), %d(9)",
+					i0,
+					i1,
+					i2,
+					i3,
+					i4,
+					i5,
+					i6,
+					i7,
+					i8,
+					i9);
+				Layer.FrontBuffer.DrawText(300, 20, Layer.BackBuffer.GetMasterRenderQueue()->getOpenGLIndicatorFont(), CG32bitPixel(180, 180, 180), CString(szBufferObjs, iLenObjs));
+			}
+		}
+#endif
 		while(!m_bOpenGLAttached)
 			{
 			// Use a while loop and sleep in order to avoid a weird race condition where OpenGL initializes before
