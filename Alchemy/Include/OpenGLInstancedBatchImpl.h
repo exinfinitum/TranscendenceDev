@@ -61,8 +61,42 @@ private:
 	static std::unique_ptr<OpenGLVAO> vao;
 };
 
+class OpenGLInstancedBatchRenderRequestParticle : public OpenGLInstancedBatchRenderRequest<
+	glm::vec4,
+	float,
+	glm::vec3,
+	glm::vec3,
+	int,
+	int,
+	int,
+	int,
+	float,
+	float,
+	float,
+	int> {
+public:
+	OpenGLInstancedBatchRenderRequestParticle(
+		glm::vec4 aSizeAndPosition,
+		float aRotation,
+		glm::vec3 aPrimaryColor,
+		glm::vec3 aSecondaryColor,
+		int aStyle,
+		int aDestiny,
+		int aLifetime,
+		int aCurrFrame,
+		float aMaxRadius,
+		float aMinRadius,
+		float aOpacity,
+		int aBlendMode) : OpenGLInstancedBatchRenderRequest{ aSizeAndPosition, aRotation, aPrimaryColor, aSecondaryColor, aStyle, aDestiny, aLifetime, aCurrFrame, aMaxRadius, aMinRadius, aOpacity, aBlendMode } {};
+	OpenGLVAO& getVAOForInstancedBatchType() override { if (!vao) { vao = std::move(setUpVAO()); } return *(vao.get()); }
+	int getRenderRequestSize() override { return sizeof(*this); }
+private:
+	static std::unique_ptr<OpenGLVAO> vao;
+};
+
 // Define uniforms for each shader
 
 typedef OpenGLInstancedBatch<OpenGLInstancedBatchRenderRequestRay, std::tuple<float, glm::vec2, const OpenGLAnimatedNoise*>> OpenGLInstancedBatchRay;
 typedef OpenGLInstancedBatch<OpenGLInstancedBatchRenderRequestOrb, std::tuple<float, glm::vec2>> OpenGLInstancedBatchOrb;
+typedef OpenGLInstancedBatch<OpenGLInstancedBatchRenderRequestParticle, std::tuple<glm::vec2>> OpenGLInstancedBatchParticle;
 typedef OpenGLInstancedBatch<OpenGLInstancedBatchRenderRequestTexture, std::tuple<OpenGLTexture*, OpenGLTexture*, int, const OpenGLAnimatedNoise*>> OpenGLInstancedBatchTexture;

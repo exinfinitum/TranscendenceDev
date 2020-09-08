@@ -88,7 +88,7 @@ public:
 	void renderScene (void);
 	void testRender ();
 	void renderCanvasBackground ();
-	void renderCanvasBackgroundFromTexture (OpenGLTexture *texture);
+	void renderCanvasBackgroundFromTexture (OpenGLTexture *texture, float depth, bool clear = false);
 	void prepSquareCanvas ();
 	void prepTextureCanvas ();
 	void prepTestScene ();
@@ -142,21 +142,51 @@ public:
 
 		blendModeCount = 6,
 	};
+	enum renderOrder {
+		renderOrderProper = 0,
+		renderOrderSimplified = 1,
+		renderOrderTextureFirst = 2,
+	};
 	OpenGLRenderLayer(void) {
+		m_particleRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendScreen.setBlendMode(blendMode::blendScreen);
 	};
 	~OpenGLRenderLayer(void);
 	void addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions,
-		glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength, float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, float startingDepth);
+		glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength, float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth);
 	void addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
 	void addLightningToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, float rotation, float seed, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
 	void addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition, float rotation, float intensity, float opacity, int animation,
 		int style, int detail, int distortion, int animationSeed, int lifetime, int currFrame, glm::vec3 primaryColor, glm::vec3 secondaryColor, float secondaryOpacity, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
+	void addParticleToEffectRenderQueue(glm::vec4 sizeAndPosition,
+		float rotation,
+		float opacity,
+		int style,
+		int lifetime,
+		int currFrame,
+		int destiny,
+		float minRadius,
+		float maxRadius,
+		glm::vec3 primaryColor,
+		glm::vec3 secondaryColor,
+		float startingDepth,
+		OpenGLRenderLayer::blendMode blendMode);
 	void renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader,
-		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
+		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, OpenGLShader* particleShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
 	void GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader);
+	void setRenderOrder(renderOrder iRenderOrder) {
+		m_renderOrder = iRenderOrder;
+	};
 private:
+	void renderAllQueuesWithProperRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
+		renderAllQueuesWithBasicRenderOrder(batchesToRender, false);
+	};
+	void renderAllQueuesWithSimplifiedRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
+		renderAllQueuesWithBasicRenderOrder(batchesToRender, true);
+	};
+	void renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, bool useSimplifiedRenderOrder);
+	void renderAllQueuesWithTextureFirstRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& textureBatchesToRender, std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& nonTextureBatchesToRender);
 	void addProceduralEffectToProperRenderQueue(OpenGLInstancedBatchRenderRequestRay renderRequest, OpenGLRenderLayer::blendMode blendMode) {
 		OpenGLInstancedBatchRay& rayRenderBatch = m_rayRenderBatchBlendNormal;
 		switch (blendMode) {
@@ -185,26 +215,47 @@ private:
 		effectTypeCount = 5
 	};
 	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatches;
+	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatchesNoDepthTesting;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendNormal;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendScreen;
+	OpenGLInstancedBatchParticle m_particleRenderBatchBlendNormal;
+	OpenGLInstancedBatchParticle m_particleRenderBatchBlendScreen;
 	OpenGLInstancedBatchRay m_rayRenderBatch;
 	OpenGLInstancedBatchOrb m_orbRenderBatch;
 	std::mutex m_texRenderQueueAddMutex;
 	std::vector<std::shared_ptr<OpenGLTexture>> m_texturesForDeletion;
 	std::vector<OpenGLTexture*> m_texturesNeedingGlowmaps;
+	renderOrder m_renderOrder = renderOrder::renderOrderProper;
 };
 
 class OpenGLMasterRenderQueue {
 public:
+	enum LayerEnum
+		// This should match the enum in TSESystem.h::CSystem.
+	{
+		layerFirst = 0,
+
+		layerBackground = 0,
+		layerSpace = 1,
+		layerStations = 2,
+		layerBGWeaponFire = 3,
+		layerShips = 4,
+		layerFGWeaponFire = 5,
+		layerEffects = 6,
+		layerOverhang = 7,
+
+		layerCount = 8
+	};
 	OpenGLMasterRenderQueue (void);
 	~OpenGLMasterRenderQueue (void);
 	void renderAllQueues (void);
+	void renderToGlowmaps (void);
 	void setObjectTextureShader (OpenGLShader *shader) { m_pObjectTextureShader = shader; }
 	OpenGLShader* getObjectTextureShader (void) { return m_pObjectTextureShader; }
 	void addTextureToRenderQueue (int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
  int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture *image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight, 
 		int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength = 1.0, float glowR = 0.0, float glowG = 0.0, 
-		float glowB = 0.0, float glowA = 0.0, float glowNoise = 0.0);
+		float glowB = 0.0, float glowA = 0.0, float glowNoise = 0.0, bool useDepthTesting = true);
 	void addRayToEffectRenderQueue (int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
 		int iColorTypes, int iOpacityTypes, int iWidthAdjType, int iReshape, int iTexture, std::tuple<int, int, int> primaryColor,
 		std::tuple<int, int, int> secondaryColor, int iIntensity, float waveCyclePos, int opacityAdj, OpenGLRenderLayer::blendMode blendMode);
@@ -225,6 +276,19 @@ public:
 		glm::vec3 primaryColor,
 		glm::vec3 secondaryColor,
 		float secondaryOpacity,
+		OpenGLRenderLayer::blendMode blendMode
+	);
+	void addParticleToEffectRenderQueue(int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY,
+		float rotation,
+		float opacity,
+		int style,
+		int lifetime,
+		int currFrame,
+		int destiny,
+		float minRadius,
+		float maxRadius,
+		std::tuple<int, int, int> primaryColor,
+		std::tuple<int, int, int> secondaryColor,
 		OpenGLRenderLayer::blendMode blendMode
 	);
 	void setCurrentTick (int currTick) { m_iCurrentTick = currTick; }
@@ -250,6 +314,7 @@ private:
 	OpenGLShader *m_pRayShader;
 	OpenGLShader *m_pOrbShader;
 	OpenGLShader *m_pPerlinNoiseShader;
+	OpenGLShader *m_pParticleShader;
 	std::unique_ptr<OpenGLAnimatedNoise> m_pPerlinNoiseTexture;
 	// TODO: Maybe use filenames of texture images as the key rather than pointer to OpenGLTextures? Using pointers as map keys is not reliable.
 	OpenGLRenderLayer* m_pActiveRenderLayer;
@@ -272,6 +337,7 @@ private:
 	unsigned int rbo;
 	std::mutex m_shipRenderQueueAddMutex;
 	void* m_pCanvas;
+	bool m_bPrevObjAddedIsParticle = false;
 #ifdef OPENGL_FPS_COUNTER_ENABLE
 	std::unique_ptr<CG16bitFont> m_pOpenGLIndicatorFont;
 

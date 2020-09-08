@@ -1262,42 +1262,71 @@ void CParticleArray::PaintGaseous (CG32bitImage &Dest,
 		{
 		if (pParticle->fAlive)
 			{
-			int iLifeLeft = (pParticle->iLifeLeft == -1 ? iMaxLifetime : Min(pParticle->iLifeLeft, iMaxLifetime));
-			int iAge = iMaxLifetime - iLifeLeft;
-
-			//	Compute properties of the particle based on its life
-
-			CG32bitPixel rgbColor = 0;
-			int iFade = 0;
-			int iFade2 = 0;
-			int iWidth = 0;
-
-			if (iMaxLifetime > 0)
+			auto OpenGLMasterRenderQueue = Dest.GetMasterRenderQueue();
+			if (OpenGLMasterRenderQueue)
 				{
-				//	Particle fades out over time
-
-				iFade = Max(20, Min(255, (255 * iLifeLeft / iMaxLifetime)));
-				iFade2 = iFade / 2;
-
-				//	Particle grows over time
-
-				iWidth = iMinWidth + (iWidthRange * iAge / iMaxLifetime);
-
-				//	Particle color fades from primary to secondary
-
-				rgbColor = CG32bitPixel::Fade(rgbPrimaryColor, rgbSecondaryColor, 100 * iAge / iMaxLifetime);
+				std::tuple<int, int, int> primaryColor(int(rgbPrimaryColor.GetRed()), int(rgbPrimaryColor.GetGreen()), int(rgbPrimaryColor.GetBlue()));
+				std::tuple<int, int, int> secondaryColor(int(rgbSecondaryColor.GetRed()), int(rgbSecondaryColor.GetGreen()), int(rgbSecondaryColor.GetBlue()));
+				int iCanvasHeight = Dest.GetHeight();
+				int iCanvasWidth = Dest.GetWidth();
+				OpenGLMasterRenderQueue->addParticleToEffectRenderQueue(
+					xPos + pParticle->x / FIXED_POINT,
+					yPos + pParticle->y / FIXED_POINT,
+					iMaxWidth,
+					iMaxWidth,
+					iCanvasWidth,
+					iCanvasHeight,
+					float(-pParticle->iRotation + 180) * (float(PI) / 180.0f),
+					1.0,
+					ParticlePaintStyles::paintPlain,
+					iMaxLifetime,
+					iMaxLifetime - pParticle->iLifeLeft,
+					pParticle->iDestiny,
+					float(iMinWidth),
+					float(iMaxWidth),
+					primaryColor,
+					secondaryColor,
+					OpenGLRenderLayer::blendMode::blendNormal
+				);
 				}
+			else
+				{
+				int iLifeLeft = (pParticle->iLifeLeft == -1 ? iMaxLifetime : Min(pParticle->iLifeLeft, iMaxLifetime));
+				int iAge = iMaxLifetime - iLifeLeft;
 
-			//	Compute the position of the particle
+				//	Compute properties of the particle based on its life
 
-			int x = xPos + pParticle->x / FIXED_POINT;
-			int y = yPos + pParticle->y / FIXED_POINT;
+				CG32bitPixel rgbColor = 0;
+				int iFade = 0;
+				int iFade2 = 0;
+				int iWidth = 0;
 
-			//	Paint the particle
+				if (iMaxLifetime > 0)
+					{
+					//	Particle fades out over time
 
-			PAINT_GASEOUS_PARTICLE(Dest, x, y, iWidth, rgbColor, iFade, iFade2);
+					iFade = Max(20, Min(255, (255 * iLifeLeft / iMaxLifetime)));
+					iFade2 = iFade / 2;
+
+					//	Particle grows over time
+
+					iWidth = iMinWidth + (iWidthRange * iAge / iMaxLifetime);
+
+					//	Particle color fades from primary to secondary
+
+					rgbColor = CG32bitPixel::Fade(rgbPrimaryColor, rgbSecondaryColor, 100 * iAge / iMaxLifetime);
+					}
+
+				//	Compute the position of the particle
+
+				int x = xPos + pParticle->x / FIXED_POINT;
+				int y = yPos + pParticle->y / FIXED_POINT;
+
+				//	Paint the particle
+
+				PAINT_GASEOUS_PARTICLE(Dest, x, y, iWidth, rgbColor, iFade, iFade2);
+				}
 			}
-
 		//	Next
 
 		pParticle++;
@@ -1321,56 +1350,84 @@ void CParticleArray::PaintGlitter (CG32bitImage &Dest, int xPos, int yPos, SView
 		{
 		if (pParticle->fAlive)
 			{
-			//	Color flips to secondary color at certain angles
-
-			int iBearing = Absolute(AngleBearing(HIGHLIGHT_ANGLE, pParticle->iRotation));
-			CG32bitPixel rgbColor = (iBearing < HIGHLIGHT_RANGE ? CG32bitPixel::Fade(rgbSecondaryColor, rgbPrimaryColor, iBearing * 100 / HIGHLIGHT_RANGE) : rgbPrimaryColor);
-
-			//	Compute the position of the particle
-
-			int x = xPos + pParticle->x / FIXED_POINT;
-			int y = yPos + pParticle->y / FIXED_POINT;
-
-			//	Draw at appropriate size
-
-			switch (iWidth)
+			auto OpenGLMasterRenderQueue = Dest.GetMasterRenderQueue();
+			if (OpenGLMasterRenderQueue)
 				{
-				case 0:
-					Dest.SetPixel(x, y, rgbColor);
-					break;
+				std::tuple<int, int, int> primaryColor(int(rgbPrimaryColor.GetRed()), int(rgbPrimaryColor.GetGreen()), int(rgbPrimaryColor.GetBlue()));
+				std::tuple<int, int, int> secondaryColor(int(rgbSecondaryColor.GetRed()), int(rgbSecondaryColor.GetGreen()), int(rgbSecondaryColor.GetBlue()));
+				int iCanvasHeight = Dest.GetHeight();
+				int iCanvasWidth = Dest.GetWidth();
+				OpenGLMasterRenderQueue->addParticleToEffectRenderQueue(
+					xPos + pParticle->x / FIXED_POINT,
+					yPos + pParticle->y / FIXED_POINT,
+					iWidth,
+					iWidth,
+					iCanvasWidth,
+					iCanvasHeight,
+					float(-pParticle->iRotation + 180) * (float(PI) / 180.0f),
+					1.0,
+					ParticlePaintStyles::paintGlitter,
+					1337,
+					1337 - pParticle->iLifeLeft,
+					pParticle->iDestiny,
+					float(iWidth),
+					float(iWidth),
+					primaryColor,
+					secondaryColor,
+					OpenGLRenderLayer::blendMode::blendNormal);
+				}
+			else
+				{
+				//	Color flips to secondary color at certain angles
 
-				case 1:
-					Dest.SetPixel(x, y, rgbColor);
-					Dest.SetPixelTrans(x + 1, y, rgbColor, 0x80);
-					Dest.SetPixelTrans(x, y + 1, rgbColor, 0x80);
-					break;
+				int iBearing = Absolute(AngleBearing(HIGHLIGHT_ANGLE, pParticle->iRotation));
+				CG32bitPixel rgbColor = (iBearing < HIGHLIGHT_RANGE ? CG32bitPixel::Fade(rgbSecondaryColor, rgbPrimaryColor, iBearing * 100 / HIGHLIGHT_RANGE) : rgbPrimaryColor);
 
-				case 2:
-					Dest.SetPixel(x, y, rgbColor);
-					Dest.SetPixelTrans(x + 1, y, rgbColor, 0x80);
-					Dest.SetPixelTrans(x, y + 1, rgbColor, 0x80);
-					Dest.SetPixelTrans(x - 1, y, rgbColor, 0x80);
-					Dest.SetPixelTrans(x, y - 1, rgbColor, 0x80);
-					break;
+				//	Compute the position of the particle
 
-				case 3:
-					Dest.SetPixel(x, y, rgbColor);
-					Dest.SetPixel(x + 1, y, rgbColor);
-					Dest.SetPixel(x, y + 1, rgbColor);
-					Dest.SetPixel(x - 1, y, rgbColor);
-					Dest.SetPixel(x, y - 1, rgbColor);
-					Dest.SetPixelTrans(x + 1, y + 1, rgbColor, 0x80);
-					Dest.SetPixelTrans(x + 1, y - 1, rgbColor, 0x80);
-					Dest.SetPixelTrans(x - 1, y + 1, rgbColor, 0x80);
-					Dest.SetPixelTrans(x - 1, y - 1, rgbColor, 0x80);
-					break;
+				int x = xPos + pParticle->x / FIXED_POINT;
+				int y = yPos + pParticle->y / FIXED_POINT;
 
-				default:
-					CGDraw::Circle(Dest, x, y, (iWidth + 1) / 2, rgbColor);
-					break;
+				//	Draw at appropriate size
+
+				switch (iWidth)
+					{
+					case 0:
+						Dest.SetPixel(x, y, rgbColor);
+						break;
+
+					case 1:
+						Dest.SetPixel(x, y, rgbColor);
+						Dest.SetPixelTrans(x + 1, y, rgbColor, 0x80);
+						Dest.SetPixelTrans(x, y + 1, rgbColor, 0x80);
+						break;
+
+					case 2:
+						Dest.SetPixel(x, y, rgbColor);
+						Dest.SetPixelTrans(x + 1, y, rgbColor, 0x80);
+						Dest.SetPixelTrans(x, y + 1, rgbColor, 0x80);
+						Dest.SetPixelTrans(x - 1, y, rgbColor, 0x80);
+						Dest.SetPixelTrans(x, y - 1, rgbColor, 0x80);
+						break;
+
+					case 3:
+						Dest.SetPixel(x, y, rgbColor);
+						Dest.SetPixel(x + 1, y, rgbColor);
+						Dest.SetPixel(x, y + 1, rgbColor);
+						Dest.SetPixel(x - 1, y, rgbColor);
+						Dest.SetPixel(x, y - 1, rgbColor);
+						Dest.SetPixelTrans(x + 1, y + 1, rgbColor, 0x80);
+						Dest.SetPixelTrans(x + 1, y - 1, rgbColor, 0x80);
+						Dest.SetPixelTrans(x - 1, y + 1, rgbColor, 0x80);
+						Dest.SetPixelTrans(x - 1, y - 1, rgbColor, 0x80);
+						break;
+
+					default:
+						CGDraw::Circle(Dest, x, y, (iWidth + 1) / 2, rgbColor);
+						break;
+					}
 				}
 			}
-
 		//	Next
 
 		pParticle++;

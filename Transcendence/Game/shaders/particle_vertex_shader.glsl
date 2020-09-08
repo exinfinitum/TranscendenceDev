@@ -16,41 +16,34 @@
 layout (location = 0) in vec4 aPos;
 layout (location = 1) in vec4 aSizeAndPosition;
 layout (location = 2) in float aRotation;
-layout (location = 3) in ivec4 aShapes;
-layout (location = 4) in ivec4 aStyles;
-layout (location = 5) in vec4 aFloatParams;
-layout (location = 6) in vec3 aPrimaryColor;
-layout (location = 7) in vec3 aSecondaryColor;
-layout (location = 8) in float aSeed;
-layout (location = 9) in int aEffectType;
-layout (location = 10) in int aBlendMode;
-layout (location = 11) in float aDepth;
+layout (location = 3) in vec3 aPrimaryColor;
+layout (location = 4) in vec3 aSecondaryColor;
+layout (location = 5) in int aStyle;
+layout (location = 6) in int aDestiny;
+layout (location = 7) in int aLifetime;
+layout (location = 8) in int aCurrFrame;
+layout (location = 9) in float aMaxRadius;
+layout (location = 10) in float aMinRadius;
+layout (location = 11) in float aOpacity;
+layout (location = 12) in int aBlendMode;
+layout (location = 13) in float aDepth;
 
 uniform vec2 aCanvasAdjustedDimensions;
 
-layout (location = 0) out vec2 quadPos;
-layout (location = 1) flat out int rayReshape;
-layout (location = 2) flat out int rayWidthAdjType;
-layout (location = 3) flat out int rayOpacity;
-layout (location = 4) flat out int rayGrainyTexture;
-layout (location = 5) out float depth;
-layout (location = 6) out float intensity;
-layout (location = 7) out vec3 primaryColor;
-layout (location = 8) out vec3 secondaryColor;
-layout (location = 9) out float waveCyclePos;
-layout (location = 10) flat out int rayColorTypes;
-layout (location = 11) out float opacityAdj;
-layout (location = 12) flat out int effectType;
-layout (location = 13) out float seed;
-layout (location = 14) out vec2 quadSize;
-layout (location = 15) flat out int orbAnimation; //
-layout (location = 16) flat out int orbStyle; //
-layout (location = 17) flat out int orbDistortion;
-layout (location = 18) flat out int orbDetail;
-layout (location = 19) out float orbSecondaryOpacity;
-layout (location = 20) flat out int orbLifetime;
-layout (location = 21) flat out int orbCurrFrame;
-layout (location = 22) flat out int blendMode;
+layout (location = 0) out vec2 quadPos; //
+layout (location = 1) flat out int style;
+layout (location = 2) out float depth; //
+layout (location = 3) out vec3 primaryColor; //
+layout (location = 4) out vec3 secondaryColor; //
+layout (location = 5) out float opacityAdj;
+layout (location = 6) out vec2 quadSize; //
+layout (location = 7) out float orbRadius;
+layout (location = 8) flat out int lifetime; //
+layout (location = 9) flat out int currFrame; //
+layout (location = 10) flat out int destiny; //
+layout (location = 11) flat out float rotation; //
+layout (location = 12) flat out int blendMode; //
+layout (location = 13) flat out float minRadius;
 
 // This should match enum effectType in opengl.h.
 // Note that flares are under the ray category.
@@ -95,44 +88,28 @@ mat4 translationMatrix2D(float transX, float transY)
 
 void main(void)
 {
-    vec2 aSize = vec2(aSizeAndPosition[0], aSizeAndPosition[1]) * ((2.0*float(aEffectType == effectTypeOrb)) + (float(aEffectType != effectTypeOrb)));
+    // Note that we normally have to multiply aSize by 2 for orb effects, which particles are based off of, but since "width" in particles refers
+	// to diameter, we don't in this case
+    vec2 aSize = vec2(aSizeAndPosition[0], aSizeAndPosition[1]) * 12.0;
     vec2 aPosOnCanvas = (vec2(aSizeAndPosition[2], aSizeAndPosition[3]) - vec2(0.5, 0.5)) * 2.0;
 	vec4 final_pos = aPos * scalingMatrix2D(aSize[0], aSize[1]) * rotationMatrix2D(aRotation) * scalingMatrix2D(1.0 / aCanvasAdjustedDimensions[0], 1.0 / aCanvasAdjustedDimensions[1]) * translationMatrix2D(aPosOnCanvas[0], -aPosOnCanvas[1]);
 
 	quadPos = vec2(aPos[0], aPos[1]) * 2.0;
 
-    // For rays and lightning, aShapes, aStyles and aFloatParams are, in order:
-	// aShapes: widthAdjType, reshape, blank, blank
-	// aStyles: colorTypes, opacity, graintyTexture, blank
-	// aFloatParams: intensity, waveCyclePos, opacityAdj, blank
-	// For orbs, aShapes, aStyles and aFloatParams are, in order:
-	// aShapes: orbLifetime, orbCurrFrame, orbDistortion, orbDetail
-	// aStyles: orbStyle, orbAnimation, opacity, blank
-	// aFloatParams: intensity, orbSecondaryOpacity, opacityAdj, blank
 
+    opacityAdj = aOpacity;
+	orbRadius = aMaxRadius * 1.5;
+	minRadius = aMinRadius * 1.5;
 
-    rayWidthAdjType = aShapes[0];
-    rayReshape = aShapes[1];
-    rayColorTypes = aStyles[0];
-    rayOpacity = aStyles[1];
-    rayGrainyTexture = aStyles[2];
-    orbLifetime = aShapes[0];
-    orbCurrFrame = aShapes[1];
-    orbDistortion = aShapes[2];
-    orbDetail = aShapes[3];
-    orbStyle = aStyles[0];
-    orbAnimation = aStyles[1];
-    orbSecondaryOpacity = aFloatParams[1];
-
+	style = aStyle;
+	lifetime = aLifetime;
+	currFrame = aCurrFrame;
+	rotation = aRotation;
+	destiny = aDestiny;
     depth = aDepth;
-    intensity = aFloatParams[0];
-    waveCyclePos = aFloatParams[1];
-    opacityAdj = aFloatParams[2];
     primaryColor = aPrimaryColor;
     secondaryColor = aSecondaryColor;
     quadSize = aSize;
     gl_Position = final_pos;
-	seed = aSeed;
-	effectType = aEffectType;
 	blendMode = aBlendMode;
 }

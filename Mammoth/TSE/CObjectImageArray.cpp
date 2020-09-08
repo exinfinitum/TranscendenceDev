@@ -1530,7 +1530,8 @@ void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, 
 			auto[iNumRows, iNumCols] = GetNumColsAndRows();
 			pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
  iCanvasWidth,
-				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, (byOpacity == 0 ? 1.0f : (float)(static_cast<int>(byOpacity) / 255.0f)));
+				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, (byOpacity == 0 ? 1.0f : (float)(static_cast<int>(byOpacity) / 255.0f)),
+				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, false); // TODO (heliogenesis): Experiment with depth testing on cloaked ships
 			}
 		else
 			{
@@ -1677,13 +1678,13 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 		auto[iNumRows, iNumCols] = GetNumColsAndRows();
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iGQuadWidth, iGQuadHeight, x - (iGQuadWidth / 2), y - (iGQuadHeight / 2), iCanvasHeight,
  iCanvasWidth,
-			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, 0.0f, 1.0f, 0.0f, fStrength, 0.0f);
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, 0.0f, 1.0f, 0.0f, fStrength, 0.0f, false);
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
  iCanvasWidth,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top);
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iGQuadWidth, iGQuadHeight, x - (iGQuadWidth / 2), y - (iGQuadHeight / 2), iCanvasHeight,
  iCanvasWidth,
-			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, 0.0f, 1.0f, 0.0f, fStrength / 4.5f, 0.0f);
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, 0.0f, 1.0f, 0.0f, fStrength / 4.5f, 0.0f, false);
 		return;
 	}
 
