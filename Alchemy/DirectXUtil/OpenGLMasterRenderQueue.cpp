@@ -37,7 +37,7 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_renderLayers[layerShips + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
 	m_renderLayers[layerOverhang + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
 	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
-#ifdef OPENGL_FPS_COUNTER_ENABLE
+#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)
 	m_pOpenGLIndicatorFont = std::make_unique<CG16bitFont>();
 	m_pOpenGLIndicatorFont->Create(CONSTLIT("Arial"), -16);
 #endif

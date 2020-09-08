@@ -178,6 +178,17 @@ public:
 	void setRenderOrder(renderOrder iRenderOrder) {
 		m_renderOrder = iRenderOrder;
 	};
+	int getNumObjects() {
+		int numObjs = 0;
+		for (auto& batch_pair : m_texRenderBatches) {
+			auto batch = batch_pair.second;
+			numObjs = numObjs + batch->getNumObjectsToRender();
+		}
+		numObjs = numObjs + m_rayRenderBatchBlendNormal.getNumObjectsToRender();
+		numObjs = numObjs + m_rayRenderBatchBlendScreen.getNumObjectsToRender();
+		numObjs = numObjs + m_particleRenderBatchBlendNormal.getNumObjectsToRender();
+		return numObjs;
+	}
 private:
 	void renderAllQueuesWithProperRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
 		renderAllQueuesWithBasicRenderOrder(batchesToRender, false);
@@ -299,9 +310,18 @@ public:
 	void setPointerToCanvas(void* canvas) { m_pCanvas = canvas; }
 	void *getPointerToCanvas() { return m_pCanvas; }
 	void setActiveRenderLayer(int iRenderLayer) { m_pActiveRenderLayer = &m_renderLayers[iRenderLayer]; }
-#ifdef OPENGL_FPS_COUNTER_ENABLE
+#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)
 	CG16bitFont& getOpenGLIndicatorFont() {
 		return *(m_pOpenGLIndicatorFont.get());
+	}
+#endif
+#ifdef OPENGL_OBJ_COUNTER_ENABLE
+	std::vector<int> getNumElementsInEachRenderLayer() {
+		std::vector<int> numElements;
+		for (auto& layer : m_renderLayers) {
+			numElements.push_back(layer.getNumObjects());
+		}
+		return numElements;
 	}
 #endif
 private:
@@ -338,7 +358,7 @@ private:
 	std::mutex m_shipRenderQueueAddMutex;
 	void* m_pCanvas;
 	bool m_bPrevObjAddedIsParticle = false;
-#ifdef OPENGL_FPS_COUNTER_ENABLE
+#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)
 	std::unique_ptr<CG16bitFont> m_pOpenGLIndicatorFont;
 
 	//OpenGLInstancedBatchRay m_FPSCounterRayRenderQueue;
