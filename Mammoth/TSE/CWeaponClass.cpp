@@ -2313,9 +2313,9 @@ bool CWeaponClass::FireWeapon (CInstalledDevice &Device,
 
 	//	Set the device angle so that repeating weapons can get access to it.
 
+	Device.SetTarget(Shots[0].pTarget);
 	if (bSetFireAngle)
 		{
-		Device.SetTarget(Shots[0].pTarget);
 		Device.SetFireAngle(iFireAngle);
 		}
 	else if (ActivateCtx.iRepeatingCount == 0)
@@ -3839,7 +3839,7 @@ int CWeaponClass::GetWeaponEffectiveness (const CDeviceItem &DeviceItem, CSpaceO
 
 		if (pTarget->IsParalyzed() 
 				|| pTarget->GetCategory() != CSpaceObject::catShip
-				|| pTarget->IsImmuneTo(CConditionSet::cndParalyzed))
+				|| pTarget->IsImmuneTo(ECondition::paralyzed))
 			return -100;
 
 		iScore += 100;
@@ -3855,7 +3855,7 @@ int CWeaponClass::GetWeaponEffectiveness (const CDeviceItem &DeviceItem, CSpaceO
 
 		if (pTarget->IsBlind()
 				|| pTarget->GetCategory() != CSpaceObject::catShip
-				|| pTarget->IsImmuneTo(CConditionSet::cndBlind))
+				|| pTarget->IsImmuneTo(ECondition::blind))
 			return -100;
 
 		iScore += 100;
