@@ -148,7 +148,6 @@ public:
 		renderOrderTextureFirst = 2,
 	};
 	OpenGLRenderLayer(void) {
-		m_particleRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendScreen.setBlendMode(blendMode::blendScreen);
 	};
@@ -172,8 +171,9 @@ public:
 		glm::vec3 secondaryColor,
 		float startingDepth,
 		OpenGLRenderLayer::blendMode blendMode);
-	void renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader,
-		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, OpenGLShader* particleShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
+	void renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions,
+ OpenGLShader *objectTextureShader,
+		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
 	void GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader);
 	void setRenderOrder(renderOrder iRenderOrder) {
 		m_renderOrder = iRenderOrder;
@@ -189,7 +189,6 @@ public:
 		}
 		numObjs = numObjs + m_rayRenderBatchBlendNormal.getNumObjectsToRender();
 		numObjs = numObjs + m_rayRenderBatchBlendScreen.getNumObjectsToRender();
-		numObjs = numObjs + m_particleRenderBatchBlendNormal.getNumObjectsToRender();
 		return numObjs;
 	}
 private:
@@ -338,7 +337,6 @@ private:
 	OpenGLShader *m_pRayShader;
 	OpenGLShader *m_pOrbShader;
 	OpenGLShader *m_pPerlinNoiseShader;
-	OpenGLShader *m_pParticleShader;
 	std::unique_ptr<OpenGLAnimatedNoise> m_pPerlinNoiseTexture;
 	// TODO: Maybe use filenames of texture images as the key rather than pointer to OpenGLTextures? Using pointers as map keys is not reliable.
 	OpenGLRenderLayer* m_pActiveRenderLayer;
