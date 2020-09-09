@@ -19,6 +19,8 @@ private:
 	static std::unique_ptr<OpenGLVAO> vao;
 };
 
+// Ray, orb, and lightning shader
+// 26 x 4 bytes in size
 class OpenGLInstancedBatchRenderRequestRay : public OpenGLInstancedBatchRenderRequest<glm::vec4, float, glm::ivec4, glm::ivec4, glm::vec4, glm::vec3, glm::vec3, float, int, int> {
 public:
 	OpenGLInstancedBatchRenderRequestRay(
@@ -61,6 +63,8 @@ private:
 	static std::unique_ptr<OpenGLVAO> vao;
 };
 
+// Particle effects shader
+// 19 x 4 bytes in size
 class OpenGLInstancedBatchRenderRequestParticle : public OpenGLInstancedBatchRenderRequest<
 	glm::vec4,
 	float,

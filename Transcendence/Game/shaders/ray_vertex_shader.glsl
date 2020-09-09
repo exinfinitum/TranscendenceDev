@@ -51,6 +51,9 @@ layout (location = 19) out float orbSecondaryOpacity;
 layout (location = 20) flat out int orbLifetime;
 layout (location = 21) flat out int orbCurrFrame;
 layout (location = 22) flat out int blendMode;
+layout (location = 23) flat out float rotation;
+layout (location = 24) flat out int particleDestiny;
+layout (location = 25) flat out float particleMinRadius;
 
 // This should match enum effectType in opengl.h.
 // Note that flares are under the ray category.
@@ -105,10 +108,19 @@ void main(void)
 	// aShapes: widthAdjType, reshape, blank, blank
 	// aStyles: colorTypes, opacity, graintyTexture, blank
 	// aFloatParams: intensity, waveCyclePos, opacityAdj, blank
+
 	// For orbs, aShapes, aStyles and aFloatParams are, in order:
 	// aShapes: orbLifetime, orbCurrFrame, orbDistortion, orbDetail
 	// aStyles: orbStyle, orbAnimation, opacity, blank
 	// aFloatParams: intensity, orbSecondaryOpacity, opacityAdj, blank
+
+	// For particles, aShapes, aStyles and aFloatParams are, in order:
+	// aShapes: orbLifetime, orbCurrFrame, orbDistortion, blank
+	// aStyles: orbStyle, particleDestiny, opacity, blank
+	// aFloatParams: minRadius, maxRadius, opacityAdj, blank
+	// Note, rotation is already supplied separately as aRotation, and orbRadius is reused as maxRadius, along with orbStyle as style
+	// and orbLifetime/orbCurrFrame as lifetime/currFrame respectively.
+	// orbRadius, particleMinRadius, primaryColor, secondaryColor, opacityAdj, lifetime, currFrame, rotation, style, particleDestiny
 
 
     rayWidthAdjType = aShapes[0];
@@ -116,6 +128,8 @@ void main(void)
     rayColorTypes = aStyles[0];
     rayOpacity = aStyles[1];
     rayGrainyTexture = aStyles[2];
+    particleDestiny = aStyles[1];
+    particleMinRadius = aFloatParams[0];
     orbLifetime = aShapes[0];
     orbCurrFrame = aShapes[1];
     orbDistortion = aShapes[2];
@@ -125,6 +139,7 @@ void main(void)
     orbSecondaryOpacity = aFloatParams[1];
 
     depth = aDepth;
+    rotation = aRotation;
     intensity = aFloatParams[0];
     waveCyclePos = aFloatParams[1];
     opacityAdj = aFloatParams[2];

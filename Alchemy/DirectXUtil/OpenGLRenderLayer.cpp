@@ -103,17 +103,24 @@ void OpenGLRenderLayer::addParticleToEffectRenderQueue(glm::vec4 sizeAndPosition
 	glm::vec3 secondaryColor,
 	float startingDepth,
 	OpenGLRenderLayer::blendMode blendMode)
+	// aShapes: orbLifetime, orbCurrFrame, orbDistortion, blank
+	// aStyles: orbStyle, particleDestiny, opacity, blank
+	// aFloatParams: minRadius, maxRadius, opacityAdj, blank
 {
-	auto renderRequest = OpenGLInstancedBatchRenderRequestParticle(sizeAndPosition, rotation, primaryColor, secondaryColor, style, destiny, lifetime, currFrame, maxRadius, minRadius, opacity, blendMode);
+	glm::ivec4 shapes(lifetime, currFrame, 0, 0);
+	glm::ivec4 styles(style, destiny, 0, 0);
+	glm::vec4 floatParams(minRadius, maxRadius, opacity, 0.0);
+	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, floatParams, primaryColor, secondaryColor, 0, OpenGLRenderLayer::effectType::effectTypeParticle, blendMode);
 	renderRequest.set_depth(startingDepth);
-	m_particleRenderBatchBlendNormal.addObjToRender(renderRequest);
+	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
 }
 
-void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, bool useSimplifiedRenderOrder) {
+void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, const int maxDrawCallsWithProperOrder) {
 	int iDeepestBatchIndex = -1;
 	int iSecondDeepestBatchIndex = -1;
 	float fDeepestBatchLastElementDepth = 0.0;
 	float fSecondDeepestBatchLastElementDepth = 0.0;
+	int iNumProperOrderDrawCallsLeft = maxDrawCallsWithProperOrder;
 
 	blendMode prevBlendMode = blendMode::blendNormal;
 	while (true) {
@@ -136,7 +143,7 @@ void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pai
 			}
 			iCurrBatchIndex += 1;
 		}
-		if (!useSimplifiedRenderOrder) {
+		if (iNumProperOrderDrawCallsLeft > 0) {
 			iCurrBatchIndex = 0;
 			for (const auto& p : batchesToRender) {
 				OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
@@ -147,6 +154,7 @@ void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pai
 				}
 				iCurrBatchIndex += 1;
 			}
+			iNumProperOrderDrawCallsLeft -= 1;
 		}
 
 		// Phase 2: If deepest batch depth is less than zero, we're done.

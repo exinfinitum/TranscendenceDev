@@ -40,7 +40,7 @@ layout (location = 6) out vec2 quadSize; //
 layout (location = 7) out float orbRadius;
 layout (location = 8) flat out int lifetime; //
 layout (location = 9) flat out int currFrame; //
-layout (location = 10) flat out int destiny; //
+layout (location = 10) flat out int particleDestiny; //
 layout (location = 11) flat out float rotation; //
 layout (location = 12) flat out int blendMode; //
 layout (location = 13) flat out float minRadius;
@@ -105,7 +105,7 @@ void main(void)
 	lifetime = aLifetime;
 	currFrame = aCurrFrame;
 	rotation = aRotation;
-	destiny = aDestiny;
+	particleDestiny = aDestiny;
     depth = aDepth;
     primaryColor = aPrimaryColor;
     secondaryColor = aSecondaryColor;

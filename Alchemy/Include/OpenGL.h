@@ -178,6 +178,9 @@ public:
 	void setRenderOrder(renderOrder iRenderOrder) {
 		m_renderOrder = iRenderOrder;
 	};
+	void setMaxProperRenderOrderDrawCalls(int num) {
+		m_iMaxProperRenderOrderDrawCalls = num;
+	}
 	int getNumObjects() {
 		int numObjs = 0;
 		for (auto& batch_pair : m_texRenderBatches) {
@@ -191,12 +194,12 @@ public:
 	}
 private:
 	void renderAllQueuesWithProperRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
-		renderAllQueuesWithBasicRenderOrder(batchesToRender, false);
+		renderAllQueuesWithBasicRenderOrder(batchesToRender, 1000);
 	};
 	void renderAllQueuesWithSimplifiedRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
-		renderAllQueuesWithBasicRenderOrder(batchesToRender, true);
+		renderAllQueuesWithBasicRenderOrder(batchesToRender, m_iMaxProperRenderOrderDrawCalls);
 	};
-	void renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, bool useSimplifiedRenderOrder);
+	void renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, const int maxDrawCallsWithProperOrder);
 	void renderAllQueuesWithTextureFirstRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& textureBatchesToRender, std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& nonTextureBatchesToRender);
 	void addProceduralEffectToProperRenderQueue(OpenGLInstancedBatchRenderRequestRay renderRequest, OpenGLRenderLayer::blendMode blendMode) {
 		OpenGLInstancedBatchRay& rayRenderBatch = m_rayRenderBatchBlendNormal;
@@ -237,6 +240,7 @@ private:
 	std::vector<std::shared_ptr<OpenGLTexture>> m_texturesForDeletion;
 	std::vector<OpenGLTexture*> m_texturesNeedingGlowmaps;
 	renderOrder m_renderOrder = renderOrder::renderOrderProper;
+	int m_iMaxProperRenderOrderDrawCalls = 0;
 };
 
 class OpenGLMasterRenderQueue {
