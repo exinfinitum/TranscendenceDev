@@ -25,6 +25,9 @@ layout (location = 19) in float orbSecondaryOpacity;
 layout (location = 20) flat in int orbLifetime;
 layout (location = 21) flat in int orbCurrFrame;
 layout (location = 22) flat in int blendMode;
+layout (location = 23) flat in float rotation;
+layout (location = 24) flat in int particleDestiny;
+layout (location = 25) flat in float particleMinRadius;
 
 uniform float current_tick;
 uniform sampler3D perlin_noise;
@@ -33,50 +36,50 @@ out vec4 fragColor;
 
 // This should match enum blendMode in opengl.h.
 
-int blendNormal = 0;      //      Normal drawing
-int blendMultiply = 1;      //      Darkens images
-int blendOverlay = 2;      //      Combine multiply/screen
-int blendScreen = 3;      //      Brightens images
-int blendHardLight = 4;
-int blendCompositeNormal = 5;
+const int blendNormal = 0;      //      Normal drawing
+const int blendMultiply = 1;      //      Darkens images
+const int blendOverlay = 2;      //      Combine multiply/screen
+const int blendScreen = 3;      //      Brightens images
+const int blendHardLight = 4;
+const int blendCompositeNormal = 5;
 
 // This should match enum effectType in opengl.h.
 
-int effectTypeRay = 0;
-int effectTypeLightning = 1;
-int effectTypeOrb = 2;
-int effectTypeFlare = 3;
-int effectTypeParticle = 4;
+const int effectTypeRay = 0;
+const int effectTypeLightning = 1;
+const int effectTypeOrb = 2;
+const int effectTypeFlare = 3;
+const int effectTypeParticle = 4;
 
-float PI = 3.14159;
-float BLOB_WAVE_SIZE = 0.3;
-float WAVY_WAVELENGTH_FACTOR = 1.0;
-float JAGGED_AMPLITUDE = 0.45;
-float JAGGED_WAVELENGTH_FACTOR = 0.33;
-float WHIPTAIL_AMPLITUDE = 0.45;
-float WHIPTAIL_WAVELENGTH_FACTOR = 1.0;
-float WHIPTAIL_DECAY = 0.13;
+const float PI = 3.14159;
+const float BLOB_WAVE_SIZE = 0.3;
+const float WAVY_WAVELENGTH_FACTOR = 1.0;
+const float JAGGED_AMPLITUDE = 0.45;
+const float JAGGED_WAVELENGTH_FACTOR = 0.33;
+const float WHIPTAIL_AMPLITUDE = 0.45;
+const float WHIPTAIL_WAVELENGTH_FACTOR = 1.0;
+const float WHIPTAIL_DECAY = 0.13;
 
 // Copy of EWidthAdjTypes enum from SFXRay.cpp
-int widthAdjStraight = 0;
-int widthAdjBlob = 1;
-int widthAdjDiamond = 2;
-int widthAdjJagged = 3;
-int widthAdjOval = 4;
-int widthAdjTaper = 5;
-int widthAdjCone = 6;
-int widthAdjWhiptail = 7;
-int widthAdjSword = 8;
+const int widthAdjStraight = 0;
+const int widthAdjBlob = 1;
+const int widthAdjDiamond = 2;
+const int widthAdjJagged = 3;
+const int widthAdjOval = 4;
+const int widthAdjTaper = 5;
+const int widthAdjCone = 6;
+const int widthAdjWhiptail = 7;
+const int widthAdjSword = 8;
 
 // Copy of EOpacityTypes enum from SFXRay.cpp (except for opacityFlareGlow)
-int opacityGlow = 1;
-int opacityGrainy = 2;
-int opacityTaperedGlow = 3;
-int opacityTaperedExponentialGlow = 4;
-int opacityFlareGlow = -1;
+const int opacityGlow = 1;
+const int opacityGrainy = 2;
+const int opacityTaperedGlow = 3;
+const int opacityTaperedExponentialGlow = 4;
+const int opacityFlareGlow = -1;
 
 
-//  Classic Perlin 3D Noise 
+//  Classic Perlin 3D Noise
 //  by Stefan Gustavson
 //
 //  Found at https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
@@ -143,43 +146,43 @@ float widthOval(float rInputValue)
     float rAfterMidpointValue = sqrt((rQuadHalfLength - (rInputValue * rInputValue)) * (1 / rQuadHalfLength)) * float(rInputValue > rMidPoint);
     return rBeforeMidpointValue + rAfterMidpointValue;
     }
-    
+
 float widthWave(float rInputValue, float rAmplitude, float rWavelength, float rDecay, float rPhase)
     {
     //  Wavelength decays (increases with each cycle)
     float rStartWavelength = max(0.001, rWavelength);
-    
+
     //  Cycle around a mid point which is 1.0 - amplitude
     float rPos = 1.0 - rAmplitude;
-    
+
     //  Offset wave to produce an animation
     float rAngleStart = 2.0 * PI * (1.0 - rPhase);
-    
+
     //  Determine the wavelength and the angle
     float rPointWavelength = (rStartWavelength + (rInputValue * rDecay));
     float rAngle = rAngleStart + (2.0 * PI * (rInputValue / rPointWavelength));
     return (sin(rAngle) * rAmplitude) + rPos;
-    
-    
+
+
     }
 
 float widthRandomWaves(float rInputValue, float rAmplitude, float rWavelength, float seed)
     //  Note, rAmplitude and rWavelength both assume that the quad's size is 2.0.
-    //  
+    //
     {
     int i, v;
     int iNumHarmonics = 2;
-    
+
     //  Peak size is related to intensity.
     float iStdPeakSize = max(0.001, rWavelength);
     //  Cycle around the mid-point
     float rPos = 1.0 - rAmplitude;
-    
+
     //  Set a value to store the last sine function result
     float rRandValue = rand(vec2(current_tick + seed, current_tick + seed));
     float rPrevSinValue = int(rRandValue * 100.0);
     float rTotalSumValue = 0;
-    
+
     //  Loop 5 times
     for (i = 0; i < iNumHarmonics; i++)
         {
@@ -203,7 +206,7 @@ vec3 blendVectors(vec3 rgbFrom, vec3 rgbTo, float rFade)
     vec3 diff = rgbTo - rgbFrom;
     return (rgbFrom + (diff * rFadeVal));
 }
-    
+
 vec3 calcColorGlow(vec3 primaryColor, vec3 secondaryColor, float rWidthCount, float iIntensity, float distanceFromCenter)
 {
     // Note, Intensity should be a percentage of the ray's width.
@@ -212,10 +215,10 @@ vec3 calcColorGlow(vec3 primaryColor, vec3 secondaryColor, float rWidthCount, fl
     float centerBlendIntensity = min(50.0, iIntensity) / 50.0;
     float rBrightPoint = BRIGHT_FACTOR * rWidthCount * iIntensity;
     vec3 innerColor = blendVectors(primaryColor, vec3(1.0, 1.0, 1.0), centerBlendIntensity);
-    
+
     float rFadeInc = max(0.0f, 1.0f / (rWidthCount - rBrightPoint)) * (distanceFromCenter - rBrightPoint);
     vec3 outerColor = blendVectors(secondaryColor, primaryColor, 1.0f - rFadeInc);
-    
+
     float useInnerColor = float(distanceFromCenter < rBrightPoint);
     float useOuterColor = float(distanceFromCenter >= rBrightPoint);
     return (innerColor * useInnerColor) + (outerColor * useOuterColor);
@@ -226,18 +229,18 @@ float calcOpacityGlow(float rWidthCount, float rIntensity, float distanceFromCen
     float SOLID_FACTOR = 0.004;
     float MIN_GLOW_LEVEL = 0.6;
     float GLOW_FACTOR = 0.004;
-    
+
     // Solid opacity from center to peak
     float rPeakPoint = SOLID_FACTOR * rIntensity * rWidthCount;
     float useSolid = float(distanceFromCenter < rPeakPoint);
-    
+
     // Decay exponentially to edge
     float useNonSolid = float(distanceFromCenter >= rPeakPoint);
     float rGlowLevel = MIN_GLOW_LEVEL + (rIntensity * GLOW_FACTOR);
     float rGlowInc = max(0.0f, 1.0f / (rWidthCount - rPeakPoint)) * (distanceFromCenter - rPeakPoint);
     float rGlow = 1.0;
     float outerGlow = rGlowLevel * (rGlow - rGlowInc) * (rGlow - rGlowInc);
-    
+
     return (useSolid) + (useNonSolid * outerGlow);
 }
 
@@ -247,21 +250,21 @@ float calcOpacityTaperedGlow(float rWidthCount, float rIntensity, float distance
     float MIN_GLOW_LEVEL = 0.6;
     float GLOW_FACTOR = 0.004;
     float rLengthCount = 1.0;
-    
+
     float rPeakPoint = SOLID_FACTOR * rIntensity * rWidthCount;
     // Fade out linearly after the 1/3 point
     float rMinFadePoint = 0.0; // TODO: fix this to 300 pixels
     float rFadePoint = max(rMinFadePoint, 0.3);
     float rTaperInc = max(0.0, 1.0 / (2.0 - rFadePoint));
-    
+
     // Solid from center to peak plus taper
     // If before the fade point lengthwise, and before the peak point widthwise, then solid
     float useSolid = float(distanceFromCenter_w < rPeakPoint);// && (coordinate_l < rFadePoint));
-    
+
     // Otherwise, if after the fade point lengthwise, decrease by taperInc
     float taperComponent = (1.0 - (max(0.0, rFadePoint - coordinate_l)) * rTaperInc);
-    
-    
+
+
     // Decay exponentially to edge
     float useNontaperedOpacity = float(coordinate_l < rFadePoint);
     float useNonSolid = float(distanceFromCenter_w >= rPeakPoint);
@@ -269,7 +272,7 @@ float calcOpacityTaperedGlow(float rWidthCount, float rIntensity, float distance
     float rGlowInc = max(0.0f, 1.0f / (rWidthCount - rPeakPoint)) * (distanceFromCenter_w - rPeakPoint);
     float rGlow = 1.0;
     float outerGlow = rGlowLevel * (rGlow - rGlowInc) * (rGlow - rGlowInc) * taperComponent;
-    
+
     return (useSolid * taperComponent) + (useNonSolid * outerGlow);
 }
 
@@ -279,21 +282,21 @@ float calcOpacityTaperedExponentialGlow(float rWidthCount, float rIntensity, flo
     float MIN_GLOW_LEVEL = 0.6;
     float GLOW_FACTOR = 0.004;
     float rLengthCount = 1.0;
-    
+
     float rPeakPoint = SOLID_FACTOR * rIntensity * rWidthCount;
     // Fade out linearly after the 1/3 point
     float rMinFadePoint = 0.0; // TODO: fix this to 300 pixels
     float rFadePoint = max(rMinFadePoint, 0.3);
     float rTaperInc = max(0.0, 1.0 / (2.0 - rFadePoint));
-    
+
     // Solid from center to peak plus taper
     // If before the fade point lengthwise, and before the peak point widthwise, then solid
     float useSolid = float(distanceFromCenter_w < rPeakPoint);// && (coordinate_l < rFadePoint));
-    
+
     // Otherwise, if after the fade point lengthwise, decrease by taperInc
     float taperComponent = (1.0 - (max(0.0, rFadePoint - coordinate_l)) * rTaperInc);
-    
-    
+
+
     // Decay exponentially to edge
     float useNontaperedOpacity = float(coordinate_l < rFadePoint);
     float useNonSolid = float(distanceFromCenter_w >= rPeakPoint);
@@ -301,7 +304,7 @@ float calcOpacityTaperedExponentialGlow(float rWidthCount, float rIntensity, flo
     float rGlowInc = max(0.0f, 1.0f / (rWidthCount - rPeakPoint)) * (distanceFromCenter_w - rPeakPoint);
     float rGlow = 1.0;
     float outerGlow = rGlowLevel * (rGlow - rGlowInc) * (rGlow - rGlowInc) * taperComponent * taperComponent;
-    
+
     return (useSolid * taperComponent * taperComponent) + (useNonSolid * outerGlow);
 }
 
@@ -430,51 +433,51 @@ vec4 calcRayLightningColor(vec2 quadSize, vec2 real_texcoord, float waveCyclePos
     float straightWidth = 1.0;
 
     float taperAdjTop = (
-        (straightWidth * float(reshape == widthAdjStraight)) + 
-        (blobWidthTop * float(reshape == widthAdjBlob)) + 
-        (diamondWidth * float(reshape == widthAdjDiamond)) + 
-        (coneWidth * float(reshape == widthAdjCone)) + 
-        (taperWidth * float(reshape == widthAdjTaper)) + 
-        (ovalWidth * float(reshape == widthAdjOval)) + 
-        (jaggedWidthTop * float(reshape == widthAdjJagged)) + 
+        (straightWidth * float(reshape == widthAdjStraight)) +
+        (blobWidthTop * float(reshape == widthAdjBlob)) +
+        (diamondWidth * float(reshape == widthAdjDiamond)) +
+        (coneWidth * float(reshape == widthAdjCone)) +
+        (taperWidth * float(reshape == widthAdjTaper)) +
+        (ovalWidth * float(reshape == widthAdjOval)) +
+        (jaggedWidthTop * float(reshape == widthAdjJagged)) +
         (whiptailWidthTop * float(reshape == widthAdjWhiptail)) +
 		(swordWidth * float(reshape == widthAdjSword))
     );
     float taperAdjBottom = (
-        (straightWidth * float(reshape == widthAdjStraight)) + 
-        (blobWidthBottom * float(reshape == widthAdjBlob)) + 
-        (diamondWidth * float(reshape == widthAdjDiamond)) + 
-        (coneWidth * float(reshape == widthAdjCone)) + 
-        (taperWidth * float(reshape == widthAdjTaper)) + 
-        (ovalWidth * float(reshape == widthAdjOval)) + 
-        (jaggedWidthBottom * float(reshape == widthAdjJagged)) + 
+        (straightWidth * float(reshape == widthAdjStraight)) +
+        (blobWidthBottom * float(reshape == widthAdjBlob)) +
+        (diamondWidth * float(reshape == widthAdjDiamond)) +
+        (coneWidth * float(reshape == widthAdjCone)) +
+        (taperWidth * float(reshape == widthAdjTaper)) +
+        (ovalWidth * float(reshape == widthAdjOval)) +
+        (jaggedWidthBottom * float(reshape == widthAdjJagged)) +
         (whiptailWidthBottom * float(reshape == widthAdjWhiptail)) +
 		(swordWidth * float(reshape == widthAdjSword))
     );
-    
+
     float widthAdjTop = (
-        (straightWidth * float(widthAdjType == widthAdjStraight)) + 
-        (blobWidthTop * float(widthAdjType == widthAdjBlob)) + 
-        (diamondWidth * float(widthAdjType == widthAdjDiamond)) + 
-        (coneWidth * float(widthAdjType == widthAdjCone)) + 
-        (taperWidth * float(widthAdjType == widthAdjTaper)) + 
-        (ovalWidth * float(widthAdjType == widthAdjOval)) + 
-        (jaggedWidthTop * float(widthAdjType == widthAdjJagged)) + 
+        (straightWidth * float(widthAdjType == widthAdjStraight)) +
+        (blobWidthTop * float(widthAdjType == widthAdjBlob)) +
+        (diamondWidth * float(widthAdjType == widthAdjDiamond)) +
+        (coneWidth * float(widthAdjType == widthAdjCone)) +
+        (taperWidth * float(widthAdjType == widthAdjTaper)) +
+        (ovalWidth * float(widthAdjType == widthAdjOval)) +
+        (jaggedWidthTop * float(widthAdjType == widthAdjJagged)) +
         (whiptailWidthTop * float(widthAdjType == widthAdjWhiptail)) +
 		(swordWidth * float(widthAdjType == widthAdjSword))
     );
     float widthAdjBottom = (
-        (straightWidth * float(widthAdjType == widthAdjStraight)) + 
-        (blobWidthBottom * float(widthAdjType == widthAdjBlob)) + 
-        (diamondWidth * float(widthAdjType == widthAdjDiamond)) + 
-        (coneWidth * float(widthAdjType == widthAdjCone)) + 
-        (taperWidth * float(widthAdjType == widthAdjTaper)) + 
-        (ovalWidth * float(widthAdjType == widthAdjOval)) + 
-        (jaggedWidthBottom * float(widthAdjType == widthAdjJagged)) + 
+        (straightWidth * float(widthAdjType == widthAdjStraight)) +
+        (blobWidthBottom * float(widthAdjType == widthAdjBlob)) +
+        (diamondWidth * float(widthAdjType == widthAdjDiamond)) +
+        (coneWidth * float(widthAdjType == widthAdjCone)) +
+        (taperWidth * float(widthAdjType == widthAdjTaper)) +
+        (ovalWidth * float(widthAdjType == widthAdjOval)) +
+        (jaggedWidthBottom * float(widthAdjType == widthAdjJagged)) +
         (whiptailWidthBottom * float(widthAdjType == widthAdjWhiptail)) +
 		(swordWidth * float(widthAdjType == widthAdjSword))
     );
-    
+
 	vec4 rayColor = calcRayColor(taperAdjTop, taperAdjBottom, widthAdjTop, widthAdjBottom, ray_center_x, real_texcoord, intensity, distanceFromCenter, grains, opacityAdj);
 	vec4 lightningColor = calcLightningColor(taperAdjTop, widthAdjTop, real_texcoord);
 
@@ -490,38 +493,38 @@ vec4 calcRayLightningColor(vec2 quadSize, vec2 real_texcoord, float waveCyclePos
 // BEGIN ORB SUBSHADER
 float pixelsDistanceFromCenter = length(quadPos) * (quadSize[0] / 2);
 
-float SHELL_EDGE_WIDTH_RATIO = 0.05;
-float orb_fbm_time_divisor = 160.0;
-float orb_fbm_space_divisor = 55.0;
+const float SHELL_EDGE_WIDTH_RATIO = 0.05;
+const float orb_fbm_time_divisor = 160.0;
+const float orb_fbm_space_divisor = 55.0;
 
 // Copy of EAnimationTypes enum from SFXOrb.cpp
-int animateNone =           0;
-int animateDissipate =      1;
-int animateExplode =        2;
-int animateFade =           3;
-int animateFlicker =        4;
-int animateDim =            5;
+const int animateNone =           0;
+const int animateDissipate =      1;
+const int animateExplode =        2;
+const int animateFade =           3;
+const int animateFlicker =        4;
+const int animateDim =            5;
 
 // Copy of EOrbStyles enum from SFXOrb.cpp
-int styleSmooth =           1;
-int styleFlare =            2;
-int styleCloud =            3;
-int styleFireblast =        4;
-int styleSmoke =            5;
-int styleDiffraction =      6;
-int styleFirecloud =        7;
-int styleBlackHole =        8;
-int styleLightning =        9;
-int styleShell =            10;
-int styleCloudshell =       11;
-int styleFireCloudshell =   12;
+const int styleSmooth =           1;
+const int styleFlare =            2;
+const int styleCloud =            3;
+const int styleFireblast =        4;
+const int styleSmoke =            5;
+const int styleDiffraction =      6;
+const int styleFirecloud =        7;
+const int styleBlackHole =        8;
+const int styleLightning =        9;
+const int styleShell =            10;
+const int styleCloudshell =       11;
+const int styleFireCloudshell =   12;
 
 vec3 getExplosionColor(float fRadius, float fMaxRadius, float fIntensity, vec3 vPrimaryColor, vec3 vSecondaryColor) {
     const float SIGMA_MAX =                    0.01;
     const float SIGMA_DECAY =                  1.07;
     const float MAX_INTENSITY =                100.0;
-    
-    
+
+
     const float CORE_HEAT_LEVEL =              0.5;
     const float FRINGE_HEAT_LEVEL =            0.35;
     const float FRINGE_HEAT_RANGE =            (CORE_HEAT_LEVEL - FRINGE_HEAT_LEVEL);
@@ -529,25 +532,25 @@ vec3 getExplosionColor(float fRadius, float fMaxRadius, float fIntensity, vec3 v
     const float FLAME_HEAT_RANGE =             (FRINGE_HEAT_LEVEL - FLAME_HEAT_LEVEL);
     const float MIN_HEAT_LEVEL =               0.1;
     const float MIN_HEAT_RANGE =               (FLAME_HEAT_LEVEL - MIN_HEAT_LEVEL);
-    
+
     float fHeatCalcIntensity = min(fIntensity, 100);
     float fHeatCountRadius = fRadius / fMaxRadius;
-    
+
     float fSigma2 = SIGMA_MAX * pow(SIGMA_DECAY, MAX_INTENSITY - fHeatCalcIntensity);
     float fSigma = sqrt(fSigma2);
     float fMaxX = sqrt(2) * sqrt(fSigma2 * log(1.0 / (fSigma * MIN_HEAT_LEVEL * sqrt(2 * 3.14159))));
     float fX = fMaxX * (fHeatCountRadius);
     float fHeat = (1.0 / (fSigma * sqrt(2 * 3.14159))) * exp((-fX * fX) / (2.0 * fSigma2));
-    
+
     bool useCoreColor = (fHeat > CORE_HEAT_LEVEL);
     vec3 coreColor = float(useCoreColor) * vec3(1.0);
-    
+
     bool useFringeColor = (fHeat > FRINGE_HEAT_LEVEL) && !useCoreColor;
     vec3 fringeColor = float(useFringeColor) * mix(vPrimaryColor, vec3(1.0), (fHeat - FRINGE_HEAT_LEVEL) / FRINGE_HEAT_RANGE);
-    
+
     bool useFlameColor = (fHeat > FLAME_HEAT_LEVEL) && !useFringeColor && !useCoreColor;
     vec3 flameColor = float(useFlameColor) * mix(vSecondaryColor, vPrimaryColor, pow((fHeat - FLAME_HEAT_LEVEL) * float(useFlameColor) / FLAME_HEAT_RANGE, 0.5));
-    
+
     bool useSecondaryColor = (!useCoreColor) && (!useFringeColor) && (!useFlameColor);
     vec3 secondaryColor = float(useSecondaryColor) * vSecondaryColor;
     //return vec3(fHeat);
@@ -561,30 +564,30 @@ vec4 calcSmoothColorBase(float fRadius, float fIntensity, vec3 vPrimaryColor, ve
     float fFringeWidth = fFringeMaxRadius / 8.0;
     float fBlownRadius = fFringeMaxRadius - fFringeWidth;
     float fFadeWidth = fRadius - fFringeMaxRadius;
-    
+
     // White within blown radius, 100% opacity
     bool useBlownRadius = (pixelsDistanceFromCenter < fBlownRadius);
     vec4 blownRadiusColor = float(useBlownRadius) * vec4(blownColor, fOpacity);
-    
+
     // Mix between primary color and white in fringe radius
     bool useFringeRadius = (pixelsDistanceFromCenter < fFringeMaxRadius && fFringeWidth > 0.0 && pixelsDistanceFromCenter >= fBlownRadius);
     float fringeOpacityStep = (pixelsDistanceFromCenter - fBlownRadius);
     float fringeOpacity = (fringeOpacityStep * fOpacity) / fFringeWidth;
     vec3 fringeRadiusColorRGB = mix(vec3(1.0, 1.0, 1.0), vec3(vPrimaryColor), fringeOpacity);
     vec4 fringeRadiusColor = float(useFringeRadius) * vec4(fringeRadiusColorRGB, fOpacity);
-    
-    
+
+
     // Secondary color in fade radius
     bool useFadeRadius = (pixelsDistanceFromCenter < (fFringeMaxRadius + fFadeWidth) && (pixelsDistanceFromCenter >= fFringeMaxRadius || fFringeWidth <= 0.0) && fFadeWidth > 0.0);
     float fadeOpacityStep = (pixelsDistanceFromCenter - fFringeMaxRadius);
     float fadeOpacity = 1.0 - (fadeOpacityStep / fFadeWidth);
     fadeOpacity = (fadeOpacity * fadeOpacity) * fOpacity;
     vec4 fadeRadiusColor = float(useFadeRadius) * vec4(vSecondaryColor, fadeOpacity);
-    
+
     // Black otherwise
     bool useBlackRadius = (pixelsDistanceFromCenter > fRadius) || (pixelsDistanceFromCenter >= (fFringeMaxRadius + fFadeWidth));
     vec4 blackRadiusColor = float(useBlackRadius) * vec4(0.0);
-    
+
     return (blownRadiusColor + fringeRadiusColor + fadeRadiusColor + blackRadiusColor);
 }
 
@@ -620,7 +623,7 @@ float CalcShellOpacity(float fRadius, float fIntensity, float fOpacity) {
     */
     float fEdgeWidthForMaxRadius = fRadius * SHELL_EDGE_WIDTH_RATIO;
     float fShellMaxRadius = fRadius - fEdgeWidthForMaxRadius;
-    
+
     float fCappedIntensity = max(0.0, min(fIntensity, 100.0));
     fShellMaxRadius = min(fShellMaxRadius, fRadius);
     float fEdgeWidth = fRadius - fShellMaxRadius;
@@ -673,17 +676,17 @@ vec4 calcShellColor(float fRadius, float fIntensity, vec3 vPrimaryColor, vec3 vS
     float fEdgeWidth = fRadius * SHELL_EDGE_WIDTH_RATIO;
     float fShellMaxRadius = fRadius - fEdgeWidth;
     float fHoleRadius = fShellMaxRadius * fIntensity / 120;
-    
+
     bool useHoleColor = (pixelsDistanceFromCenter < fHoleRadius);
     vec4 holeColor = float(useHoleColor) * vec4(vSecondaryColor, fShellOpacity);
-    
+
     bool useShellColor = (!useHoleColor) && (pixelsDistanceFromCenter < fShellMaxRadius);
     float blend = (pixelsDistanceFromCenter - fHoleRadius) / (fShellMaxRadius - fHoleRadius);
     vec4 shellColor = float(useShellColor) * vec4(mix(vSecondaryColor, vPrimaryColor, blend), fShellOpacity);
-    
+
     bool useOuterColor = (!useHoleColor) && (!useShellColor);
     vec4 outerColor = float(useOuterColor) * vec4(vPrimaryColor, fShellOpacity);
-    
+
     return holeColor + shellColor + outerColor;
 }
 
@@ -732,7 +735,7 @@ vec4 calcSmokeRadialColor(float fRadius, float fIntensity, vec3 vPrimaryColor, v
 vec4 calcCloudPixelColor(float fRadius, float fIntensity, float fLookupValue, vec3 vPrimaryColor, vec3 vSecondaryColor, float fOpacity) {
     float fHighAdj = fOpacity;
     float fLowAdj = 1.0 - fHighAdj;
-    
+
     float newOpacity = fHighAdj + (fLookupValue * fLowAdj);
     return vec4(mix(vSecondaryColor, vPrimaryColor, fLookupValue), newOpacity);
 }
@@ -744,7 +747,7 @@ vec4 calcCloudColor(vec4 radialColor, vec4 pixelColor) {
 vec4 calcFirecloudPixelColor(float fRadius, float fIntensity, float fLookupValue, vec3 vPrimaryColor, vec3 vSecondaryColor, float fOpacity) {
     float fHighAdj = fOpacity;
     float fLowAdj = 1.0 - fHighAdj;
-    
+
     float newOpacity = fHighAdj + (fLookupValue * fLowAdj);
     return vec4(getExplosionColor(fLookupValue, 1.0, fIntensity, vPrimaryColor, vSecondaryColor), newOpacity);
 }
@@ -760,33 +763,33 @@ vec4 calcFireblastRadialColor(float fRadius, float fIntensity, float queryRadius
     float FADE_SIZE = GLOW_INTENSITY - FADE_INTENSITY;
     //CStepIncrementor Opacity(CStepIncrementor::styleSquare, byOpacity, 0.0, iRadius);
     FloatIncrementor(fOpacity, 2.0, fRadius, 0.0, pixelsDistanceFromCenter);
-    
+
     float fOpacityInc = FloatIncrementor(fOpacity, 8.0, fRadius, 0.0, queryRadius);
     float fRadiusInc = FloatIncrementor(0.0, 4.0, fRadius, 1.0, queryRadius);
-    
+
     bool useBlown = (fIntensity > BLOWN_INTENSITY);
     float fBlownFade = min(FloatIncrementor(100.0, 8.0, BLOWN_SIZE, 0.0, fIntensity - BLOWN_INTENSITY), 100.0);
     vec3 fColCenterBlown = mix(vec3(1.0), vPrimaryColor, fBlownFade / 100.0) * float(useBlown);
     vec3 fColEdgeBlown = mix(vec3(1.0), vPrimaryColor, fBlownFade / 100.0) * float(useBlown);
-    
+
     bool useFire = (fIntensity > FIRE_INTENSITY) && !useBlown;
     float fFireFade = min(FloatIncrementor(100.0, 8.0, FIRE_SIZE, 0.0, fIntensity - FIRE_INTENSITY), 100.0);
     vec3 fColCenterFire = vPrimaryColor * float(useFire);
     vec3 fColEdgeFire = mix(vPrimaryColor, vSecondaryColor, fFireFade / 100.0) * float(useFire);
-    
+
     bool useGlow = (fIntensity > GLOW_INTENSITY) && !useFire && !useBlown;
     float fGlowFade = min(FloatIncrementor(100.0, 8.0, GLOW_SIZE, 0.0, fIntensity - GLOW_INTENSITY), 100.0);
     vec3 fColCenterGlow = mix(vPrimaryColor, vSecondaryColor, fGlowFade / 100.0) * float(useGlow);
     vec3 fColEdgeGlow = vSecondaryColor * float(useGlow);
-    
+
     bool useFade = (fIntensity > FADE_INTENSITY) && !useGlow && !useFire && !useBlown;
     float fFadeFade = min(FloatIncrementor(100.0, 8.0, FADE_SIZE, 0.0, fIntensity - FADE_INTENSITY), 100.0);
     vec3 fColCenterFade = vSecondaryColor * float(useFade);
     vec3 fColEdgeFade = mix(vSecondaryColor, vec3(0.0), fFadeFade / 100.0) * float(useFade);
-    
+
     vec3 fColCenter = fColCenterBlown + fColCenterFire + fColCenterGlow + fColCenterFade;
     vec3 fColEdge = fColEdgeBlown + fColEdgeFire + fColEdgeGlow + fColEdgeFade;
-    
+
     //return vec4(vec3(fColCenterGlow), 1.0);
     return vec4(mix(fColCenter, fColEdge, fRadiusInc), fOpacityInc);
 }
@@ -795,10 +798,10 @@ vec4 calcFireblastPixelColor(float fRadius, float fIntensity, float queryRadius,
     float fIntensityInc = min(FloatIncrementor(100.0, 2.0, 100.0, 0.0, fIntensity), 100.0);
     float fOpacityInc = FloatIncrementor(fOpacity, 1.0, fRadius, 0.0, queryRadius);
     float fRadiusInc = FloatIncrementor(0.0, 1.0 / 8.0, fRadius, 1.0, queryRadius);
-    
+
     vec3 fColCenter = mix(vPrimaryColor, vSecondaryColor, fIntensityInc / 100.0);
     vec3 fColEdge = mix(vSecondaryColor, vec3(0.0), fIntensityInc / 100.0);
-    
+
     return vec4(mix(fColCenter, fColEdge, fRadiusInc), fOpacityInc);
 }
 
@@ -816,12 +819,12 @@ vec4 calcFireblastColor(float fRadius, float fIntensity, vec3 vPrimaryColor, vec
     float fAdjRadius = pixelsDistanceFromCenter * fRadAdjFactor;
     //float fAdjRadius = pixelsDistanceFromCenter;
     bool useBlack = (fAdjRadius >= fRadius);
-    
+
     float fNoiseValue = fbmAnimated((fAdjPos + 1.0) / orb_fbm_space_divisor, current_tick / orb_fbm_time_divisor) + 0.5;
 
-    vec4 fireblastPixelColor = calcFireblastPixelColor(fRadius, fIntensity, fAdjRadius, vPrimaryColor, vSecondaryColor, fOpacity);    
-    vec4 fireblastRadialColor = calcFireblastRadialColor(fRadius, fIntensity, fAdjRadius, vPrimaryColor, vSecondaryColor, fOpacity);    
-    
+    vec4 fireblastPixelColor = calcFireblastPixelColor(fRadius, fIntensity, fAdjRadius, vPrimaryColor, vSecondaryColor, fOpacity);
+    vec4 fireblastRadialColor = calcFireblastRadialColor(fRadius, fIntensity, fAdjRadius, vPrimaryColor, vSecondaryColor, fOpacity);
+
     //return vec4(fAdjRadius) / 300;
     return mix(fireblastRadialColor, fireblastPixelColor, fNoiseValue) * float(!useBlack);
 }
@@ -843,13 +846,13 @@ vec4 calcPrimaryColor(int iStyle, float fRadius, float fIntensity, vec3 vPrimary
     vec4 fireCloudshellColor = calcCloudColor(cloudShellRadialColor, firecloudPixelColor);
     vec4 cloudShellColor = calcCloudColor(cloudShellRadialColor, cloudPixelColor);
     vec4 smokeColor = calcCloudColor(smokeRadialColor, cloudPixelColor);
-    
+
     vec4 smoothColor = calcSmoothColor(fRadius, fIntensity, vPrimaryColor, vSecondaryColor, fOpacity);
     vec4 blackHoleColor = calcBlackHoleColor(fRadius, fIntensity, vPrimaryColor, vSecondaryColor, fOpacity);
     vec4 shellColor = calcShellColor(fRadius, fIntensity, vPrimaryColor, vSecondaryColor, shellOpacity);
     vec4 flareColor = calcFlareColor(fRadius, fIntensity, vPrimaryColor, vSecondaryColor, fOpacity);
     vec4 diffractionColor = calcDiffractionColor(fRadius, fIntensity, vPrimaryColor, vSecondaryColor, fOpacity, flareColor);
-    
+
     vec4 finalColor = (
         (cloudColor * float(orbStyle == styleCloud)) +
         (firecloudColor * float(orbStyle == styleFirecloud)) +
@@ -870,14 +873,14 @@ vec4 calcPrimaryColor(int iStyle, float fRadius, float fIntensity, vec3 vPrimary
 float calcAnimateExplodeSecondaryOpacity(float fRadius, float fOpacity, float fFrame) {
     float fEndFade = float(orbLifetime) / 3.0;
     float fEndFadeStart = float(orbLifetime) - fEndFade;
-    
+
     float useEndFadeStart = float(fFrame > fEndFadeStart);
     float fFadeOpacity = useEndFadeStart * (fEndFade - (fFrame - fEndFadeStart)) / fEndFade;
-    
+
     float useOpacity = float(fFrame <= fEndFadeStart);
-    
+
     return (fFadeOpacity * useEndFadeStart) + (fOpacity * useOpacity);
-    
+
 }
 
 vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius) {
@@ -907,7 +910,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
     float animateExplodeNoise = scaledNoise;
     float animateExplodeOpacity = calcAnimateExplodeSecondaryOpacity(orbRadius, opacityAdj, fCurrframe);
     float animateExplodeSecondaryOpacity = animateExplodeOpacity;
-    
+
     float animateFadeProgress = (fLifetime - fCurrframe) / fLifetime;
     float animateFadeRadius = orbRadius * animateFadeProgress;
     float animateFadeIntensity = intensity * animateFadeProgress;
@@ -917,7 +920,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
     float animateFadeNoise = scaledNoise;
     float animateFadeOpacity = opacityAdj;
     float animateFadeSecondaryOpacity = orbSecondaryOpacity;
-    
+
 	// Note that for flicker we just use the orb radius and intensity we're given. This is because those variables are
 	// supplied on the CPU end, so we can sync the flickering and flare effects.
     float animateFlickerRadius = orbRadius;
@@ -928,7 +931,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
     float animateFlickerNoise = scaledNoise;
     float animateFlickerOpacity = opacityAdj;
     float animateFlickerSecondaryOpacity = orbSecondaryOpacity;
-    
+
     float animateDimRadius = orbRadius;
     float animateDimIntensity = intensity;
     vec3 animateDimPrimaryColor = mix(primaryColor, secondaryColor, FloatIncrementor(0.0, 1.0, fLifetime, 1.0, fCurrframe));
@@ -936,7 +939,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
     float animateDimNoise = scaledNoise;
     float animateDimOpacity = FloatIncrementor(opacityAdj, 1.0, fLifetime, orbSecondaryOpacity, fCurrframe);
     float animateDimSecondaryOpacity = orbSecondaryOpacity;
-    
+
     float animateNoneRadius = orbRadius;
     float animateNoneIntensity = intensity;
     vec3 animateNonePrimaryColor = primaryColor;
@@ -944,7 +947,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
     float animateNoneNoise = scaledNoise;
     float animateNoneOpacity = opacityAdj;
     float animateNoneSecondaryOpacity = orbSecondaryOpacity;
-    
+
     float finalRadius = (
         (animateNoneRadius * float(orbAnimation == animateNone)) +
         (animateDissipateRadius * float(orbAnimation == animateDissipate)) +
@@ -953,7 +956,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
         (animateFlickerRadius * float(orbAnimation == animateFlicker)) +
         (animateDimRadius * float(orbAnimation == animateDim))
     );
-    
+
     float finalIntensity = (
         (animateNoneIntensity * float(orbAnimation == animateNone)) +
         (animateDissipateIntensity * float(orbAnimation == animateDissipate)) +
@@ -962,7 +965,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
         (animateFlickerIntensity * float(orbAnimation == animateFlicker)) +
         (animateDimIntensity * float(orbAnimation == animateDim))
     );
-    
+
     float finalDetail = (
         (animateNoneDetail * float(orbAnimation == animateNone)) +
         (animateDissipateDetail * float(orbAnimation == animateDissipate)) +
@@ -971,7 +974,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
         (animateFlickerDetail * float(orbAnimation == animateFlicker)) +
         (animateDimDetail * float(orbAnimation == animateDim))
     );
-    
+
     vec3 finalPrimaryColor = (
         (animateNonePrimaryColor * float(orbAnimation == animateNone)) +
         (animateDissipatePrimaryColor * float(orbAnimation == animateDissipate)) +
@@ -980,7 +983,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
         (animateFlickerPrimaryColor * float(orbAnimation == animateFlicker)) +
         (animateDimPrimaryColor * float(orbAnimation == animateDim))
     );
-    
+
     float finalNoise = (
         (animateNoneNoise * float(orbAnimation == animateNone)) +
         (animateDissipateNoise * float(orbAnimation == animateDissipate)) +
@@ -989,7 +992,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
         (animateFlickerNoise * float(orbAnimation == animateFlicker)) +
         (animateDimNoise * float(orbAnimation == animateDim))
     );
-    
+
     float finalOpacity = (
         (animateNoneOpacity * float(orbAnimation == animateNone)) +
         (animateDissipateOpacity * float(orbAnimation == animateDissipate)) +
@@ -998,7 +1001,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
         (animateFlickerOpacity * float(orbAnimation == animateFlicker)) +
         (animateDimOpacity * float(orbAnimation == animateDim))
     );
-    
+
     float finalSecondaryOpacity = (
         (animateNoneSecondaryOpacity * float(orbAnimation == animateNone)) +
         (animateDissipateSecondaryOpacity * float(orbAnimation == animateDissipate)) +
@@ -1007,7 +1010,7 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
         (animateFlickerSecondaryOpacity * float(orbAnimation == animateFlicker)) +
         (animateDimSecondaryOpacity * float(orbAnimation == animateDim))
     );
-    
+
 //    return vec4(0.5);
     // We only use secondary color table for fireblast.
     return calcPrimaryColor(orbStyle, finalRadius, finalIntensity, finalPrimaryColor, secondaryColor, finalOpacity, scaledNoise);
@@ -1025,6 +1028,112 @@ vec4 calcOrbColor (vec2 quadSize) {
     return finalColor;
 }
 
+// BEGIN PARTICLE SUBSHADER
+
+
+const int particleTypeGaseous = 1;
+const int particleTypeFire = 2;
+const int particleTypeSmoke = 3;
+const int particleTypeImage = 4; // This is not handled here; it is handled by the texture shader
+const int particleTypeLine = 5; // This is not handled here; it is handled by the ray shader
+const int particleTypeGlitter = 6;
+
+
+float AngleRange (float fMinAngle, float fMaxAngle) {
+    bool useCase1 = fMinAngle > fMaxAngle;
+    float case1 = fMaxAngle + (2 * PI) - fMinAngle;
+    float case2 = fMaxAngle - fMinAngle;
+    return (float(useCase1) * case1) + (float(!useCase1) * case2);
+}
+
+float AngleBearing (float fDir, float fTarget) {
+    float fBearing = AngleRange(fDir, fTarget);
+    bool over360 = (fBearing > PI);
+    return (float(over360) * (fBearing - (2 * PI))) + (float(!over360) * fBearing);
+}
+
+vec4 calcParticleColorGlitter(float fMaxRadius, float fMinRadius, vec3 vPrimaryColor, vec3 vSecondaryColor, float fOpacity, float particleRotation) {
+    const float HIGHLIGHT_ANGLE = (2 * PI) / 135;
+    const float HIGHLIGHT_RANGE = (2 * PI) / 30;
+    float fBearing = abs(AngleBearing(HIGHLIGHT_ANGLE, mod(particleRotation, (2*PI))));
+    bool bFaded = (fBearing < HIGHLIGHT_RANGE);
+    vec3 rgbColor = mix(vSecondaryColor, vPrimaryColor, min(1.0, fBearing / HIGHLIGHT_RANGE));
+    vec3 finalRgbColor = (rgbColor * float(bFaded)) + (vPrimaryColor * float(!bFaded));
+
+    float alpha = fOpacity * float(pixelsDistanceFromCenter < fMaxRadius);
+    return vec4(finalRgbColor, alpha);
+}
+
+
+vec4 calcParticleColorFlame(float fMaxRadius, float fMinRadius, float fOpacity, float fCore, float fFlame, float fSmoke, float fSmokeBrightness, int iLifetime, int iCurrFrame, int particleDestiny) {
+    vec3 FLAME_CORE_COLOR = vec3(1.0, 0.94, 0.90);
+    vec3 FLAME_MIDDLE_COLOR = vec3(1.0, 0.82, 0.0);
+    vec3 FLAME_OUTER_COLOR = vec3(1.0, 0.23, 0.11);
+
+    float fLifetime = float(max(1, iLifetime));
+	float fCurrFrame = float(iCurrFrame);
+    float fLifeLeft = fLifetime - fCurrFrame;
+
+    float fFade = max(20.0 / 255.0, min(1.0, (1.0 * fLifeLeft / fLifetime)));
+    float fFade2 = 0.0;
+    float fCurrRadius = fMinRadius + ((fMaxRadius - fMinRadius) * fCurrFrame / fLifetime);
+    float alpha = mix(fFade, fFade2, pixelsDistanceFromCenter / fCurrRadius) * float(pixelsDistanceFromCenter <= fCurrRadius);
+    float fSmokeColor = min(1.0, fSmokeBrightness + (2.0 * (1.0 / 255.0) * float(mod(particleDestiny, 25))));
+    vec3 rgbSmokeColor = vec3(fSmokeColor);
+    bool useFlameOuterColor = (mod(particleDestiny, 4) != 0);
+    vec3 rgbOuterColor = (float(useFlameOuterColor) * FLAME_OUTER_COLOR) + (float(!useFlameOuterColor) * rgbSmokeColor);
+
+    bool useCoreColor = fCurrFrame <= fCore;
+    vec3 coreColor = mix(FLAME_CORE_COLOR, FLAME_MIDDLE_COLOR, min(1.0, float(fCurrFrame) / fCore)) * float(useCoreColor);
+    bool useFlameColor = (fCurrFrame <= fFlame) && !useCoreColor;
+    vec3 flameColor = mix(FLAME_MIDDLE_COLOR, rgbOuterColor, max(0.0, min(1.0, float(fCurrFrame - fCore) / (fFlame - fCore)))) * float(useFlameColor);
+    bool useSmokeColor = (fCurrFrame <= fSmoke) && (!useCoreColor) && (!useFlameColor);
+    vec3 smokeColor = mix(rgbOuterColor, rgbSmokeColor, max(0.0, min(1.0, float(fCurrFrame - fFlame) / (fSmoke - fFlame)))) * float(useSmokeColor);
+    bool useFadeColor = fCurrFrame > fSmoke;
+    vec3 fadeColor = rgbSmokeColor * float(useFadeColor);
+
+    vec3 color = coreColor + flameColor + smokeColor + fadeColor;
+    return vec4(color, alpha);
+}
+
+vec4 calcParticleColorSmoke(float fMaxRadius, float fMinRadius, float fOpacity, int iLifetime, int iCurrFrame, int particleDestiny) {
+float fLifetime = float(iLifetime);
+return calcParticleColorFlame(fMaxRadius, fMinRadius, fOpacity, 1.0, max(1.0, fLifetime / 6.0), max(1.0, fLifetime / 4.0), 60.0, iLifetime, iCurrFrame, particleDestiny);
+}
+
+vec4 calcParticleColorFire(float fMaxRadius, float fMinRadius, float fOpacity, int iLifetime, int iCurrFrame, int particleDestiny) {
+float fLifetime = float(iLifetime);
+return calcParticleColorFlame(fMaxRadius, fMinRadius, fOpacity, max(1.0, fLifetime / 6.0), max(1.0, fLifetime / 2.0), max(1.0, 3.0 * (fLifetime / 4.0)), 80.0, iLifetime, iCurrFrame, particleDestiny);
+}
+
+vec4 calcParticleColorGaseous(float fMaxRadius, float fMinRadius, vec3 vPrimaryColor, vec3 vSecondaryColor, float fOpacity, int iLifetime, int iCurrFrame) {
+    float fLifetime = float(max(1, iLifetime));
+    float fCurrFrame = float(iCurrFrame);
+    float fLifeLeft = fLifetime - fCurrFrame;
+
+
+    float fFade = max(20.0 / 255.0, min(1.0, (1.0 * fLifeLeft / fLifetime)));
+    float fFade2 = fFade / 2.0;
+    //float fFade2 = 0.0;
+    float fCurrRadius = fMinRadius + ((fMaxRadius - fMinRadius) * fCurrFrame / fLifetime);
+    //float fCurrRadius = 500.0;
+    float alpha = mix(fFade, fFade2, min(4.0, pixelsDistanceFromCenter) / fCurrRadius) * float(pixelsDistanceFromCenter <= fCurrRadius);
+    //float alpha = max(0.0, fOpacity - ((pixelsDistanceFromCenter * fOpacity) / fRadius));
+    vec3 color = mix(vPrimaryColor, vSecondaryColor, fCurrFrame / fLifetime) * float(pixelsDistanceFromCenter <= fCurrRadius);
+    return vec4(color, fFade) * float(pixelsDistanceFromCenter <= fCurrRadius);
+}
+
+vec4 calcParticleColor(vec2 quadSize, float fMinRadius, vec3 primaryColor, vec3 secondaryColor, float opacityAdj, int lifeTime, int currFrame, float particleRotation, int style, int particleDestiny) {
+    float fMaxRadius = ((quadSize[0] + quadSize[1]) / 2.0) / 2.0;
+	vec4 finalColor = (
+			(calcParticleColorGaseous(fMaxRadius, fMinRadius, primaryColor, secondaryColor, opacityAdj, lifeTime, currFrame) * float(style == particleTypeGaseous)) +
+			(calcParticleColorGlitter(fMaxRadius, fMinRadius, primaryColor, secondaryColor, opacityAdj, particleRotation) * float(style == particleTypeGlitter)) +
+			(calcParticleColorFire(fMaxRadius, fMinRadius, opacityAdj, lifeTime, currFrame, particleDestiny) * float(style == particleTypeFire)) +
+			(calcParticleColorSmoke(fMaxRadius, fMinRadius, opacityAdj, lifeTime, currFrame, particleDestiny) * float(style == particleTypeSmoke))
+		);
+	return finalColor;
+}
+
 void main(void)
 {
     float center_point = 0.0; // Remember to remove this in the real shader!!
@@ -1032,7 +1141,8 @@ void main(void)
 
 	vec4 finalColor = (
 		(calcRayLightningColor(quadSize, real_texcoord, rayWaveCyclePos, rayGrainyTexture, rayReshape, rayWidthAdjType, center_point, opacityAdj) * float((effectType == effectTypeRay) || (effectType == effectTypeLightning))) +
-		(calcOrbColor(quadSize) * float(effectType == effectTypeOrb))
+		(calcOrbColor(quadSize) * float(effectType == effectTypeOrb)) +
+		(calcParticleColor(quadSize, particleMinRadius, primaryColor, secondaryColor, opacityAdj, orbLifetime, orbCurrFrame, rotation, orbStyle, particleDestiny) * float(effectType == effectTypeParticle))
 	);
 
 	bool usePreMultipliedAlpha = (

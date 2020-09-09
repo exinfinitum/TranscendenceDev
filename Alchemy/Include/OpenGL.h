@@ -148,7 +148,6 @@ public:
 		renderOrderTextureFirst = 2,
 	};
 	OpenGLRenderLayer(void) {
-		m_particleRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendScreen.setBlendMode(blendMode::blendScreen);
 	};
@@ -172,12 +171,16 @@ public:
 		glm::vec3 secondaryColor,
 		float startingDepth,
 		OpenGLRenderLayer::blendMode blendMode);
-	void renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader,
-		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, OpenGLShader* particleShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
+	void renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions,
+ OpenGLShader *objectTextureShader,
+		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
 	void GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader);
 	void setRenderOrder(renderOrder iRenderOrder) {
 		m_renderOrder = iRenderOrder;
 	};
+	void setMaxProperRenderOrderDrawCalls(int num) {
+		m_iMaxProperRenderOrderDrawCalls = num;
+	}
 	int getNumObjects() {
 		int numObjs = 0;
 		for (auto& batch_pair : m_texRenderBatches) {
@@ -186,17 +189,16 @@ public:
 		}
 		numObjs = numObjs + m_rayRenderBatchBlendNormal.getNumObjectsToRender();
 		numObjs = numObjs + m_rayRenderBatchBlendScreen.getNumObjectsToRender();
-		numObjs = numObjs + m_particleRenderBatchBlendNormal.getNumObjectsToRender();
 		return numObjs;
 	}
 private:
 	void renderAllQueuesWithProperRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
-		renderAllQueuesWithBasicRenderOrder(batchesToRender, false);
+		renderAllQueuesWithBasicRenderOrder(batchesToRender, 1000);
 	};
 	void renderAllQueuesWithSimplifiedRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
-		renderAllQueuesWithBasicRenderOrder(batchesToRender, true);
+		renderAllQueuesWithBasicRenderOrder(batchesToRender, m_iMaxProperRenderOrderDrawCalls);
 	};
-	void renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, bool useSimplifiedRenderOrder);
+	void renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, const int maxDrawCallsWithProperOrder);
 	void renderAllQueuesWithTextureFirstRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& textureBatchesToRender, std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& nonTextureBatchesToRender);
 	void addProceduralEffectToProperRenderQueue(OpenGLInstancedBatchRenderRequestRay renderRequest, OpenGLRenderLayer::blendMode blendMode) {
 		OpenGLInstancedBatchRay& rayRenderBatch = m_rayRenderBatchBlendNormal;
@@ -237,6 +239,7 @@ private:
 	std::vector<std::shared_ptr<OpenGLTexture>> m_texturesForDeletion;
 	std::vector<OpenGLTexture*> m_texturesNeedingGlowmaps;
 	renderOrder m_renderOrder = renderOrder::renderOrderProper;
+	int m_iMaxProperRenderOrderDrawCalls = 0;
 };
 
 class OpenGLMasterRenderQueue {
@@ -334,7 +337,6 @@ private:
 	OpenGLShader *m_pRayShader;
 	OpenGLShader *m_pOrbShader;
 	OpenGLShader *m_pPerlinNoiseShader;
-	OpenGLShader *m_pParticleShader;
 	std::unique_ptr<OpenGLAnimatedNoise> m_pPerlinNoiseTexture;
 	// TODO: Maybe use filenames of texture images as the key rather than pointer to OpenGLTextures? Using pointers as map keys is not reliable.
 	OpenGLRenderLayer* m_pActiveRenderLayer;

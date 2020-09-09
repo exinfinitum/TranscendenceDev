@@ -26,7 +26,6 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_pObjectTextureShader = new OpenGLShader("./shaders/instanced_vertex_shader.glsl", "./shaders/instanced_fragment_shader.glsl");
 	m_pRayShader = new OpenGLShader("./shaders/ray_vertex_shader.glsl", "./shaders/ray_fragment_shader.glsl");
 	m_pOrbShader = new OpenGLShader("./shaders/orb_vertex_shader.glsl", "./shaders/orb_fragment_shader.glsl");
-	m_pParticleShader = new OpenGLShader("./shaders/particle_vertex_shader.glsl", "./shaders/particle_fragment_shader.glsl");
 	m_pPerlinNoiseShader = new OpenGLShader("./shaders/fbm_vertex_shader.glsl", "./shaders/fbm_fragment_shader.glsl");
 	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(512, 512, 64);
 	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader);
@@ -36,6 +35,7 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_renderLayers[layerBGWeaponFire + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
 	m_renderLayers[layerShips + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
 	m_renderLayers[layerOverhang + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
+	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setMaxProperRenderOrderDrawCalls(30);
 	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
 #if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)
 	m_pOpenGLIndicatorFont = std::make_unique<CG16bitFont>();
@@ -189,11 +189,11 @@ void OpenGLMasterRenderQueue::addParticleToEffectRenderQueue(int posPixelX, int 
 	std::tuple<int, int, int> secondaryColor,
 	OpenGLRenderLayer::blendMode blendMode)
 	{
-	glm::vec4 sizeAndPosition((float)sizePixelX, (float)sizePixelY,
+	glm::vec4 sizeAndPosition((float)sizePixelX * 2.0f, (float)sizePixelY * 2.0f,
 		(float)posPixelX / (float)canvasSizeX, (float)posPixelY / (float)canvasSizeY);
 	glm::vec3 vPrimaryColor = glm::vec3(std::get<0>(primaryColor), std::get<1>(primaryColor), std::get<2>(primaryColor)) / float(255.0);
 	glm::vec3 vSecondaryColor = glm::vec3(std::get<0>(secondaryColor), std::get<1>(secondaryColor), std::get<2>(secondaryColor)) / float(255.0);
-	m_pActiveRenderLayer->addParticleToEffectRenderQueue(sizeAndPosition, rotation, opacity, style, lifetime, currFrame, destiny, minRadius, maxRadius, vPrimaryColor, vSecondaryColor, m_fDepthLevel, blendMode);
+	m_pActiveRenderLayer->addParticleToEffectRenderQueue(sizeAndPosition, rotation, opacity, style, lifetime, currFrame, destiny, minRadius * 2.0f, maxRadius * 2.0f, vPrimaryColor, vSecondaryColor, m_fDepthLevel, blendMode);
 	// Note that we do not change the depth level when adding particles.
 	m_bPrevObjAddedIsParticle = true;
 	}
@@ -219,8 +219,8 @@ void OpenGLMasterRenderQueue::addLightningToEffectRenderQueue(int posPixelX, int
 void OpenGLMasterRenderQueue::renderAllQueues(void)
 {
 	for (OpenGLRenderLayer &renderLayer : m_renderLayers) {
-		renderLayer.renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight), m_pObjectTextureShader,
-			m_pRayShader, m_pGlowmapShader, m_pOrbShader, m_pParticleShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
+		renderLayer.renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight),
+		m_pObjectTextureShader, m_pRayShader, m_pGlowmapShader, m_pOrbShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
 		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 	}
 
