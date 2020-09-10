@@ -14,10 +14,10 @@ OpenGLTexture::OpenGLTexture(int width, int height)
 void OpenGLTexture::initTexture2D(int width, int height)
 {
 
-	int iNumOfChannels = 4;
+	int iNumOfChannels = getNumberOfChannels();
 	int iDataSize = width * height * iNumOfChannels;
-	glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_FORMAT, 1, &m_pixelFormat);
-	glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_TYPE, 1, &m_pixelType);
+	glGetInternalformativ(GL_TEXTURE_2D, getInternalFormat(), GL_TEXTURE_IMAGE_FORMAT, 1, &m_pixelFormat);
+	glGetInternalformativ(GL_TEXTURE_2D, getInternalFormat(), GL_TEXTURE_IMAGE_TYPE, 1, &m_pixelType);
 
 	glGenBuffers(2, &pboID[0]);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboID[0]);
@@ -34,10 +34,10 @@ void OpenGLTexture::initTexture2D(int width, int height)
 	// set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
+	//glTexImage2D(GL_TEXTURE_2D, 0, getInternalFormat(), width, height, 0, getTexSubImageFormat(), getTexSubImageType(), texture);
 	// Using glTexStorage2D + glTexSubImage2D gives acceptable performance unlike initialization with glTexImage2D. Not sure why.
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, getInternalFormat(), width, height);
+	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, getTexSubImageFormat(), getTexSubImageType(), texture);
 	// glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	m_iHeight = height;
@@ -59,8 +59,8 @@ void OpenGLTexture::initTexture2D (GLvoid* texture, int width, int height)
 	{
 	int iNumOfChannels = 4;
 	int iDataSize = width * height * iNumOfChannels;
-	glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_FORMAT, 1, &m_pixelFormat);
-	glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_TYPE, 1, &m_pixelType);
+	glGetInternalformativ(GL_TEXTURE_2D, getInternalFormat(), GL_TEXTURE_IMAGE_FORMAT, 1, &m_pixelFormat);
+	glGetInternalformativ(GL_TEXTURE_2D, getInternalFormat(), GL_TEXTURE_IMAGE_TYPE, 1, &m_pixelType);
 
 	glGenBuffers(2, &pboID[0]);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboID[0]);
@@ -77,11 +77,11 @@ void OpenGLTexture::initTexture2D (GLvoid* texture, int width, int height)
 	// set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
+	//glTexImage2D(GL_TEXTURE_2D, 0, getInternalFormat(), width, height, 0, getTexSubImageFormat(), getTexSubImageType(), texture);
 	// Using glTexStorage2D + glTexSubImage2D gives acceptable performance unlike initialization with glTexImage2D. Not sure why.
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, getInternalFormat(), width, height);
+	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, getTexSubImageFormat(), getTexSubImageType(), texture);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, getTexSubImageFormat(), getTexSubImageType(), texture);
 	// glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	m_iHeight = height;
@@ -123,7 +123,7 @@ void OpenGLTexture::updateTexture2D (GLvoid* texture, int width, int height)
 		memcpy(pMappedBuffer, texture, iDataSize);
 		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	}
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, getTexSubImageFormat(), getTexSubImageType(), 0);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	}
@@ -148,7 +148,7 @@ OpenGLTexture* OpenGLTexture::GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, 
 
 	// TODO: Wrap this function in a for loop and make it private; the for loop should iterate through m_GlowmapTilesToRender and move completed ones to the completed queue
 	if (!m_pGlowMap) {
-		m_pGlowMap = std::make_unique<OpenGLTexture>(m_iWidth, m_iHeight);
+		m_pGlowMap = std::make_unique<OpenGLTextureRGBA32>(m_iWidth, m_iHeight);
 		m_pGlowMap.get()->initTextureFromOpenGLThread();
 	}
 	if (m_iWidth > 0 && m_iHeight > 0)
@@ -158,7 +158,7 @@ OpenGLTexture* OpenGLTexture::GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, 
 		// shader, but we do subdivision (gridding) in the fragment shader stage. We need to supply the quad size there.
 		// Vertical pass
 		// First, create a texture with the same size as the output.
-		OpenGLTexture pTempTexture = OpenGLTexture(m_iWidth, m_iHeight);
+		OpenGLTextureRGBA32 pTempTexture = OpenGLTextureRGBA32(m_iWidth, m_iHeight);
 		pTempTexture.initTextureFromOpenGLThread();
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pTempTexture.getTexture()[0], 0);
