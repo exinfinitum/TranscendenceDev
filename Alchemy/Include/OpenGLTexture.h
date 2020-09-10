@@ -80,7 +80,10 @@ public:
 		}
 		m_GlowmapTilesToRender.clear();
 	}
-
+	virtual GLint getInternalFormat() = 0;
+	virtual GLenum getTexSubImageFormat() = 0;
+	virtual GLenum getTexSubImageType() = 0;
+	virtual int getNumberOfChannels() = 0;
 private:
 	unsigned int m_pTextureID[1];
 	unsigned int pboID[2];
@@ -94,4 +97,42 @@ private:
 	std::unique_ptr<OpenGLTexture> m_pGlowMap = nullptr;
 	bool m_isOpaque;
 	bool m_bIsInited = false;
+};
+
+class OpenGLTextureRGBA32 : public OpenGLTexture {
+public:
+	OpenGLTextureRGBA32(void* texture, int width, int height, bool isOpaque) : OpenGLTexture(texture, width, height, isOpaque) {}
+	OpenGLTextureRGBA32(int width, int height) : OpenGLTexture(width, height) {}
+	~OpenGLTextureRGBA32(void) {};
+	GLint getInternalFormat() override {
+		return GL_RGBA8;
+	}
+	GLenum getTexSubImageFormat() override {
+		return GL_BGRA;
+	}
+	GLenum getTexSubImageType() override {
+		return GL_UNSIGNED_INT_8_8_8_8_REV;
+	}
+	int getNumberOfChannels() override {
+		return 4;
+	}
+};
+
+class OpenGLTextureRGB16 : public OpenGLTexture {
+public:
+	OpenGLTextureRGB16(void* texture, int width, int height, bool isOpaque) : OpenGLTexture(texture, width, height, isOpaque) {}
+	OpenGLTextureRGB16(int width, int height) : OpenGLTexture(width, height) {}
+	~OpenGLTextureRGB16(void) {};
+	GLint getInternalFormat() override {
+		return GL_RGB;
+	}
+	GLenum getTexSubImageFormat() override {
+		return GL_BGR;
+	}
+	GLenum getTexSubImageType() override {
+		return GL_UNSIGNED_SHORT_5_6_5_REV;
+	}
+	int getNumberOfChannels() override {
+		return 3;
+	}
 };

@@ -679,8 +679,8 @@ void CDXScreen::Render (void)
 				m_pOGLContext->ackResize();
 				}
 			if (!m_pOpenGLTextureBG) {
-				m_pOpenGLTextureBG = new OpenGLTexture(pPixelArrayBG, Layer.cxWidth, Layer.cyHeight, false);
-				m_pOpenGLTextureFG = new OpenGLTexture(pPixelArrayFG, Layer.cxWidth, Layer.cyHeight, false);
+				m_pOpenGLTextureBG = new OpenGLTextureRGBA32(pPixelArrayBG, Layer.cxWidth, Layer.cyHeight, false);
+				m_pOpenGLTextureFG = new OpenGLTextureRGBA32(pPixelArrayFG, Layer.cxWidth, Layer.cyHeight, false);
 				m_pOpenGLTextureBG->initTextureFromOpenGLThread();
 				m_pOpenGLTextureFG->initTextureFromOpenGLThread();
 				}
