@@ -163,6 +163,7 @@ class CG16bitImage : public TImagePlane<CG16bitImage>
 		BYTE *GetAlphaValue (int x, int y) const { return ((BYTE *)(m_pAlpha + y * m_iAlphaRowSize)) + x; }
 		WORD GetBackColor (void) const { return m_wBackColor; }
 		WORD *GetPixel (WORD *pRowStart, int x) const { return pRowStart + x; }
+		DWORD *GetPixelArray(void) const { return m_pRGB; }
 		WORD GetPixelAlpha (int x, int y);
 		WORD *GetRowStart (int y) const { return (WORD *)(m_pRGB + y * m_iRGBRowSize); }
 		LPDIRECTDRAWSURFACE7 GetSurface (void) const { return m_pSurface; }
