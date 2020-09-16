@@ -19,6 +19,7 @@ bool InitBlendPixelTables (void);
 AlphaArray5 g_Alpha5 [256];
 AlphaArray6 g_Alpha6 [256];
 bool g_bInit = InitBlendPixelTables();
+bool CG16bitImage::m_bOpenGLInitialized = false;
 
 CG16bitImage::CG16bitImage (void) : 
 		m_pRGB(NULL),

@@ -118,9 +118,28 @@ public:
 	}
 };
 
+class OpenGLTextureRGBA32GrayscaleSrc : public OpenGLTexture {
+public:
+	OpenGLTextureRGBA32GrayscaleSrc(void* texture, int width, int height) : OpenGLTexture(texture, width, height, false) {}
+	OpenGLTextureRGBA32GrayscaleSrc(int width, int height) : OpenGLTexture(width, height) {}
+	~OpenGLTextureRGBA32GrayscaleSrc(void) {};
+	GLint getInternalFormat() override {
+		return GL_RGBA8;
+	}
+	GLenum getTexSubImageFormat() override {
+		return GL_RED;
+	}
+	GLenum getTexSubImageType() override {
+		return GL_UNSIGNED_BYTE;
+	}
+	int getNumberOfChannels() override {
+		return 4;
+	}
+};
+
 class OpenGLTextureRGB16 : public OpenGLTexture {
 public:
-	OpenGLTextureRGB16(void* texture, int width, int height, bool isOpaque) : OpenGLTexture(texture, width, height, isOpaque) {}
+	OpenGLTextureRGB16(void* texture, int width, int height) : OpenGLTexture(texture, width, height, false) {}
 	OpenGLTextureRGB16(int width, int height) : OpenGLTexture(width, height) {}
 	~OpenGLTextureRGB16(void) {};
 	GLint getInternalFormat() override {
