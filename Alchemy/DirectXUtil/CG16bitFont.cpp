@@ -631,7 +631,29 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 
 		//	Paint
 
-		Dest.FillMask(0,
+		OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+			{
+			const CG16bitImage* pFontImgAddr = &m_FontImage;
+			const CG16bitImage* pPrevFontImageAddr = m_OpenGLFontImage.first;
+			if (int(pPrevFontImageAddr) != int(pFontImgAddr))
+				{
+				m_OpenGLFontImage = std::pair<const CG16bitImage*, std::shared_ptr<OpenGLTextureRGBA32GrayscaleSrc>>(pFontImgAddr, std::make_shared<OpenGLTextureRGBA32GrayscaleSrc>(
+					m_FontImage.GetAlphaArray(), m_FontImage.GetWidth(), m_FontImage.GetHeight()
+					));
+				}
+			int iCanvasHeight = Dest.GetHeight();
+			int iCanvasWidth = Dest.GetWidth();
+			int iQuadWidth = Metrics.cxWidth;
+			int iQuadHeight = m_cyHeight;
+			pRenderQueue->addTextureToRenderQueue(0, iIndex * m_cyHeight, iQuadWidth, iQuadHeight, xPos - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
+				iCanvasWidth,
+				m_OpenGLFontImage.second.get(), m_FontImage.GetWidth(), m_FontImage.GetHeight(), Metrics.cxWidth, m_cyHeight, 1, 1, 0, 0);
+
+			}
+		else
+			{
+			Dest.FillMask(0,
 				iIndex * m_cyHeight,
 				Metrics.cxWidth,
 				m_cyHeight,
@@ -639,6 +661,7 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 				rgbColor,
 				xPos,
 				y);
+			}
 
 		pPos++;
 		xPos += Metrics.cxAdvance;
