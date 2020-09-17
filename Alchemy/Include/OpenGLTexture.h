@@ -118,6 +118,7 @@ public:
 	}
 };
 
+// Grayscale version for fonts. Note that RED is the channel used as the font alpha, all other channels can be ignored.
 class OpenGLTextureRGBA32GrayscaleSrc : public OpenGLTexture {
 public:
 	OpenGLTextureRGBA32GrayscaleSrc(void* texture, int width, int height) : OpenGLTexture(texture, width, height, false) {}

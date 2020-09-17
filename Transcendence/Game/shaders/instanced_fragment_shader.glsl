@@ -9,6 +9,8 @@ layout (location = 6) in vec4 glow_color;
 layout (location = 7) in float glow_noise;
 layout (location = 8) in vec2 texture_bounds_min;
 layout (location = 9) in vec2 texture_bounds_max;
+layout (location = 10) flat in int render_category;
+
 out vec4 out_color;
 
 uniform sampler2D obj_texture;
@@ -16,7 +18,8 @@ uniform sampler2D glow_map;
 uniform int current_tick;
 uniform sampler3D perlin_noise;
 
-
+const int renderCategoryObject = 0;
+const int renderCategoryText = 1;
 
 //	Classic Perlin 3D Noise 
 //	by Stefan Gustavson
@@ -112,6 +115,15 @@ vec4 getGlowColor_Static(float epsilon, vec4 color, vec2 texture_size, vec2 text
 	return glowColor;
 }
 
+vec4 getTextColor(vec4 color, vec2 texture_uv)
+{
+	float textAlpha = texture(obj_texture, vec2(texture_uv[0], texture_uv[1]))[0];
+
+	vec4 textColor = vec4(color[0], color[1], color[2], textAlpha);
+
+	return textColor;
+}
+
 float sampleNoiseFBM(vec3 sampler) {
     return texture(perlin_noise, vec3(sampler[0], sampler[1], sampler[2]))[0];
 }
@@ -175,6 +187,7 @@ void main(void)
 	
 	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, fragment_pos, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, perlinNoise);
 	vec4 glowColorStatic = getGlowColor_Static(epsilon, realColor, texture_size, texture_uv, obj_texture);
+	vec4 textColor = getTextColor(glow_color, texture_uv);
 	bool useStaticNoise = (glow_noise < epsilon);
 	vec4 glowColor = (float(useStaticNoise) * glowColorStatic) + (float(!useStaticNoise) * glowColorPerlin);
 	
@@ -190,5 +203,9 @@ void main(void)
 	//vec4 perlin_noise_color = vec4(sampleNoiseFBM(vec3(fragment_pos[0], fragment_pos[1], ftime)));
 	//perlin_noise_color[3] = 1.0;
 	//out_color = perlin_noise_color;
-    out_color = (float(!useGlow) * textureColor) + (float(useGlow) * glowColor);
+	vec4 objectColor = (float(!useGlow) * textureColor) + (float(useGlow) * glowColor);
+    out_color = (
+        (objectColor * float(render_category == renderCategoryObject)) +
+        (textColor * float(render_category == renderCategoryText))
+	);
 }

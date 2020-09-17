@@ -14,7 +14,7 @@ OpenGLRenderLayer::~OpenGLRenderLayer(void)
 }
 
 void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions, glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength,
-											 float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth)
+											 float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth, textureRenderCategory textureRenderType)
 {
 	// Note, image is a pointer to the CG32bitPixel* we want to use as a texture. We can use CG32bitPixel->GetPixelArray() to get this pointer.
 	// To get the width and height, we can use pSource->GetWidth() and pSource->GetHeight() respectively.
@@ -40,7 +40,7 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	}
 
 	// Add this quad to the render queue.
-	auto renderRequest = OpenGLInstancedBatchRenderRequestTexture(vTexPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, alphaStrength, glowColor, glowNoise);
+	auto renderRequest = OpenGLInstancedBatchRenderRequestTexture(vTexPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, alphaStrength, glowColor, glowNoise, textureRenderType);
 	renderRequest.set_depth(startingDepth);
 	texRenderBatchToUse[image]->addObjToRender(renderRequest);
 }

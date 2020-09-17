@@ -108,7 +108,7 @@ void OpenGLMasterRenderQueue::deinitCanvasVAO(void)
 void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int startPixelY, int sizePixelX,
  int sizePixelY, int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture *image, int texWidth, int texHeight, 
 	int texQuadWidth, int texQuadHeight, int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength,
-	float glowR, float glowG, float glowB, float glowA, float glowNoise, bool useDepthTesting)
+	float glowR, float glowG, float glowB, float glowA, float glowNoise, bool useDepthTesting, OpenGLRenderLayer::textureRenderCategory textureRenderType)
 	{
 	glm::vec2 vTexPositions((float)startPixelX / (float)texWidth, (float)startPixelY / (float)texHeight);
 	glm::vec2 vSpriteSheetPositions((float)spriteSheetStartX / (float)texWidth, (float)spriteSheetStartY / (float)texHeight);
@@ -118,15 +118,27 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 	glm::vec4 glowColor(glowR, glowG, glowB, glowA);
 
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
-	image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1]);
+	if (!textureRenderType == OpenGLRenderLayer::textureRenderCategory::text) {
+		image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1]);
+	}
 	if (m_bPrevObjAddedIsParticle) {
 		m_fDepthLevel -= m_fDepthDelta;
 		m_bPrevObjAddedIsParticle = false;
 	}
 	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, glowColor, alphaStrength,
-		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel);
+		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel, textureRenderType);
 	m_fDepthLevel -= m_fDepthDelta;
 	}
+
+void OpenGLMasterRenderQueue::addTextToRenderQueue(int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
+	int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture* image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight,
+	std::tuple<int, int, int> textColor, bool useDepthTesting)
+{
+	addTextureToRenderQueue(startPixelX, startPixelY, sizePixelX, sizePixelY, posPixelX, posPixelY, canvasHeight, canvasWidth, image, texWidth, texHeight,
+		texQuadWidth, texQuadHeight, 1, 1, 0, 0, 1.0f,
+		float(std::get<0>(textColor)) / 255.0f, float(std::get<1>(textColor)) / 255.0f, float(std::get<2>(textColor)) / 255.0f,
+		0.0f, 0.0f, useDepthTesting, OpenGLRenderLayer::textureRenderCategory::text);
+}
 
 void OpenGLMasterRenderQueue::addRayToEffectRenderQueue(int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
 	int iColorTypes, int iOpacityTypes, int iWidthAdjType, int iReshape, int iTexture, std::tuple<int, int, int> primaryColor,

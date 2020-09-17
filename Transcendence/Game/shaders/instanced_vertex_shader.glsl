@@ -8,7 +8,8 @@ layout (location = 4) in vec2 aTexQuadSizes;
 layout (location = 5) in float aAlphaStrength;
 layout (location = 6) in vec4 aGlowColor;
 layout (location = 7) in float aGlowNoise;
-layout (location = 8) in float aDepth;
+layout (location = 8) in int aRenderCategory;
+layout (location = 9) in float aDepth;
 
 layout (location = 0) out vec2 texture_uv;
 layout (location = 1) out vec2 texture_pos;
@@ -20,6 +21,11 @@ layout (location = 6) out vec4 glow_color;
 layout (location = 7) out float glow_noise;
 layout (location = 8) out vec2 texture_bounds_min;
 layout (location = 9) out vec2 texture_bounds_max;
+layout (location = 10) flat out int render_category;
+
+const int renderCategoryObject = 0;
+const int renderCategoryText = 1;
+
 void main(void)
 {
 	// Fix positions and sizes
@@ -44,4 +50,5 @@ void main(void)
 	glow_noise = aGlowNoise;
 	texture_bounds_min = fixedTexPos;
 	texture_bounds_max = fixedTexPos + texPositionOffset*2;
+	render_category = aRenderCategory;
 }
