@@ -22,13 +22,16 @@ layout (location = 7) out float glow_noise;
 layout (location = 8) out vec2 texture_bounds_min;
 layout (location = 9) out vec2 texture_bounds_max;
 layout (location = 10) flat out int render_category;
+layout (location = 11) out vec2 texture_raw_pos;
 
 const int renderCategoryObject = 0;
 const int renderCategoryText = 1;
+const float PI = 3.14159;
 
 void main(void)
 {
 	// Fix positions and sizes
+	vec2 fragmentPos = vec2(aPos[0] + 0.5f, aPos[1] + 0.5f);
 	vec2 fixedSize = aCanvasQuadSizes * 2.0;
 	vec2 fixedTexSize = aTexQuadSizes * 1.0;
 	vec2 positionOffset = vec2(fixedSize[0], -fixedSize[1]) / 2.0;
@@ -44,11 +47,12 @@ void main(void)
     texture_uv = texPos2d;
 	texture_pos = aTexPositions;
 	texture_size = fixedTexSize;
-	fragment_pos = vec2(aPos[0] + 0.5f, aPos[1] + 0.5f);
+	fragment_pos = fragmentPos;
 	alpha_strength = aAlphaStrength;
 	glow_color = aGlowColor;
 	glow_noise = aGlowNoise;
 	texture_bounds_min = fixedTexPos;
 	texture_bounds_max = fixedTexPos + texPositionOffset*2;
 	render_category = aRenderCategory;
+	texture_raw_pos = vec2(aPos[0], aPos[1]);
 }

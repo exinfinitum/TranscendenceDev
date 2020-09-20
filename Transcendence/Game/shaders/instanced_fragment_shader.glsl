@@ -10,6 +10,7 @@ layout (location = 7) in float glow_noise;
 layout (location = 8) in vec2 texture_bounds_min;
 layout (location = 9) in vec2 texture_bounds_max;
 layout (location = 10) flat in int render_category;
+layout (location = 11) in vec2 texture_raw_pos;
 
 out vec4 out_color;
 
@@ -18,8 +19,10 @@ uniform sampler2D glow_map;
 uniform int current_tick;
 uniform sampler3D perlin_noise;
 
-const int renderCategoryObject = 0;
+const int renderCategoryObjectCartesian = 0;
 const int renderCategoryText = 1;
+const int renderCategoryObjectPolar = 2;
+const float PI = 3.14159;
 
 //	Classic Perlin 3D Noise 
 //	by Stefan Gustavson
@@ -166,6 +169,18 @@ float stackedPerlin(vec2 p, float time)
     return v / 2.0;
 }
 
+vec4 sampleCircular(sampler2D tex_sample) {
+    // This is used for shockwaves. Works just like regular texture painting, except we use the following UV mapping:
+	// x_tex to quad angle, and y_tex to quad distance from center
+	float distanceFromCenter = length(vec2(texture_raw_pos[0], texture_raw_pos[1]));
+	vec2 polarTexPos = vec2(atan(texture_raw_pos[1], texture_raw_pos[0]) / (2 * PI), 0.5 - (2.0 * distanceFromCenter));
+	vec2 fixedTexPos = texture_bounds_min;
+	vec2 texPositionOffset = (texture_bounds_max - fixedTexPos) / 2.0;
+	vec2 polarTexPos2d = vec2(polarTexPos[0] * texture_size[0], polarTexPos[1] * texture_size[1]) + fixedTexPos + texPositionOffset;
+	//return vec4(polarTexPos2d[0], 0.0, polarTexPos2d[1], 1.0);
+	return vec4(texture(tex_sample, polarTexPos2d)) * float(distanceFromCenter < 0.5);
+}
+
 float stackedPerlin(vec3 p) {
     return stackedPerlin(vec2(p.x, p.y), p.z);
 }
@@ -177,11 +192,17 @@ void main(void)
 	float alphaNoisePeriodXY = 1000.0f;
 	float glowNoisePeriodXY = 10.0f;
 
-	vec4 realColor = texture(obj_texture, vec2(texture_uv[0], texture_uv[1]));
+	vec4 realColorCartesian = texture(obj_texture, vec2(texture_uv[0], texture_uv[1]));
+	vec4 realColorPolar = sampleCircular(obj_texture);
+	vec4 realColor = (
+		(realColorCartesian * float(render_category == renderCategoryObjectCartesian)) +
+        (realColorPolar * float(render_category == renderCategoryObjectPolar))
+	);
+
 	bool alphaIsZero = realColor[3] < epsilon;
 	float alphaNoiseTimeAxis = (float(current_tick) / max(alphaNoisePeriodTime, epsilon));
 	float perlinNoise = (sampleNoiseFBM(vec3(fragment_pos[0] * alphaNoisePeriodXY, fragment_pos[1] * alphaNoisePeriodXY, alphaNoiseTimeAxis)) + 0.0f);
-	float alphaNoise = perlinNoise + float(alpha_strength > 0.9999);
+	float alphaNoise = perlinNoise + float(alpha_strength > 0.9999) * 0.0;
 	alphaNoise = (alpha_strength + (alphaNoise * alpha_strength));
 	alphaNoise = (float(alphaNoise > 0.5) * 2) - 1;
 	
@@ -205,7 +226,7 @@ void main(void)
 	//out_color = perlin_noise_color;
 	vec4 objectColor = (float(!useGlow) * textureColor) + (float(useGlow) * glowColor);
     out_color = (
-        (objectColor * float(render_category == renderCategoryObject)) +
+        (objectColor * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar)) +
         (textColor * float(render_category == renderCategoryText))
 	);
 }
