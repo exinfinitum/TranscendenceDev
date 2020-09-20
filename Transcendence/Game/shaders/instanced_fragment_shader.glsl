@@ -11,6 +11,8 @@ layout (location = 8) in vec2 texture_bounds_min;
 layout (location = 9) in vec2 texture_bounds_max;
 layout (location = 10) flat in int render_category;
 layout (location = 11) in vec2 texture_raw_pos;
+layout (location = 12) flat in int blendMode;
+
 
 out vec4 out_color;
 
@@ -23,6 +25,15 @@ const int renderCategoryObjectCartesian = 0;
 const int renderCategoryText = 1;
 const int renderCategoryObjectPolar = 2;
 const float PI = 3.14159;
+
+// This should match enum blendMode in opengl.h.
+
+const int blendNormal = 0;      //      Normal drawing
+const int blendMultiply = 1;      //      Darkens images
+const int blendOverlay = 2;      //      Combine multiply/screen
+const int blendScreen = 3;      //      Brightens images
+const int blendHardLight = 4;
+const int blendCompositeNormal = 5;
 
 //	Classic Perlin 3D Noise 
 //	by Stefan Gustavson
@@ -202,9 +213,10 @@ void main(void)
 	bool alphaIsZero = realColor[3] < epsilon;
 	float alphaNoiseTimeAxis = (float(current_tick) / max(alphaNoisePeriodTime, epsilon));
 	float perlinNoise = (sampleNoiseFBM(vec3(fragment_pos[0] * alphaNoisePeriodXY, fragment_pos[1] * alphaNoisePeriodXY, alphaNoiseTimeAxis)) + 0.0f);
-	float alphaNoise = perlinNoise + float(alpha_strength > 0.9999) * 0.0;
-	alphaNoise = (alpha_strength + (alphaNoise * alpha_strength));
-	alphaNoise = (float(alphaNoise > 0.5) * 2) - 1;
+	float alphaNoise = 1.0;
+	//float alphaNoise = perlinNoise + float(alpha_strength > 0.9999);
+	//alphaNoise = (alpha_strength + (alphaNoise * alpha_strength));
+	//alphaNoise = (float(alphaNoise > 0.5) * 2) - 1;
 	
 	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, fragment_pos, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, perlinNoise);
 	vec4 glowColorStatic = getGlowColor_Static(epsilon, realColor, texture_size, texture_uv, obj_texture);
@@ -225,8 +237,17 @@ void main(void)
 	//perlin_noise_color[3] = 1.0;
 	//out_color = perlin_noise_color;
 	vec4 objectColor = (float(!useGlow) * textureColor) + (float(useGlow) * glowColor);
-    out_color = (
+
+	bool usePreMultipliedAlpha = (
+		(blendMode == blendScreen)
+	);
+
+    vec4 finalColor = (
         (objectColor * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar)) +
         (textColor * float(render_category == renderCategoryText))
 	);
+
+	vec3 finalColorRGB = (vec3(finalColor[0], finalColor[1], finalColor[2]) * float(!usePreMultipliedAlpha)) + (vec3(finalColor[0], finalColor[1], finalColor[2]) * float(usePreMultipliedAlpha) * finalColor[3]);
+
+	out_color = vec4(finalColorRGB[0], finalColorRGB[1], finalColorRGB[2], finalColor[3]);
 }
