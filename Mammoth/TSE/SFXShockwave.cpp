@@ -803,10 +803,26 @@ void CShockwavePainter::PaintRing (SViewportPaintCtx &Ctx, CG32bitImage &Dest, i
 			CG32bitImage &Image = m_Image.GetImage(m_pCreator->GetUNIDString());
 			RECT rcImage = m_Image.GetImageRect();
 
-			CGDraw::CircleImage(Dest, x, y, iRadius, (BYTE)byOpacity, Image, m_iBlendMode, rcImage.left, rcImage.top, RectWidth(rcImage), RectHeight(rcImage));
+			OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+			if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+				{
+				int iCanvasHeight = Dest.GetHeight();
+				int iCanvasWidth = Dest.GetWidth();
+				int iQuadWidth = max(iRadius * 2, 1);
+				int iQuadHeight = max(iRadius * 2, 1);
+				int iTexQuadWidth = RectWidth(rcImage);
+				int iTexQuadHeight = RectHeight(rcImage);
+				pRenderQueue->addTextureToRenderQueue(rcImage.left, rcImage.top, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
+					iCanvasWidth,
+					Image.GetOpenGLTexture(), Image.GetWidth(), Image.GetHeight(), iTexQuadWidth, iTexQuadHeight, 1, 1, rcImage.left, rcImage.top, float(byOpacity / 255.0), 0.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, true, OpenGLRenderLayer::textureRenderCategory::polarUV);
+				}
+			else
+				{
+				CGDraw::CircleImage(Dest, x, y, iRadius, (BYTE)byOpacity, Image, m_iBlendMode, rcImage.left, rcImage.top, RectWidth(rcImage), RectHeight(rcImage));
+				}
 			break;
 			}
-
 		case styleGlowRing:
 			{
 			CGDraw::RingGlowing(Dest, x, y, iRadius, m_iGradientCount, m_ColorGradient, (BYTE)byOpacity);
