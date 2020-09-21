@@ -1263,7 +1263,7 @@ void CParticleArray::PaintGaseous (CG32bitImage &Dest,
 		if (pParticle->fAlive)
 			{
 			auto OpenGLMasterRenderQueue = Dest.GetMasterRenderQueue();
-			if (OpenGLMasterRenderQueue)
+			if (OpenGLMasterRenderQueue && (&(Dest) == OpenGLMasterRenderQueue->getPointerToCanvas()))
 				{
 				std::tuple<int, int, int> primaryColor(int(rgbPrimaryColor.GetRed()), int(rgbPrimaryColor.GetGreen()), int(rgbPrimaryColor.GetBlue()));
 				std::tuple<int, int, int> secondaryColor(int(rgbSecondaryColor.GetRed()), int(rgbSecondaryColor.GetGreen()), int(rgbSecondaryColor.GetBlue()));
@@ -1351,7 +1351,7 @@ void CParticleArray::PaintGlitter (CG32bitImage &Dest, int xPos, int yPos, SView
 		if (pParticle->fAlive)
 			{
 			auto OpenGLMasterRenderQueue = Dest.GetMasterRenderQueue();
-			if (OpenGLMasterRenderQueue)
+			if (OpenGLMasterRenderQueue && (&(Dest) == OpenGLMasterRenderQueue->getPointerToCanvas()))
 				{
 				std::tuple<int, int, int> primaryColor(int(rgbPrimaryColor.GetRed()), int(rgbPrimaryColor.GetGreen()), int(rgbPrimaryColor.GetBlue()));
 				std::tuple<int, int, int> secondaryColor(int(rgbSecondaryColor.GetRed()), int(rgbSecondaryColor.GetGreen()), int(rgbSecondaryColor.GetBlue()));

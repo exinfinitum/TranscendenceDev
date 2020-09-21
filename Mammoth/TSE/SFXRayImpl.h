@@ -186,7 +186,7 @@ template <class BLENDER> class CRayRasterizer : public TLinePainter32<CRayRaster
 		virtual void DrawWithOpenGL (CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iRotDegrees, bool& bSuccess, OpenGLRenderLayer::blendMode blendMode) override
 			{
 			OpenGLMasterRenderQueue *pRenderQueue = Dest.GetMasterRenderQueue();
-			if (!pRenderQueue)
+			if (!(pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())))
 				{
 				bSuccess = false;
 				return;
