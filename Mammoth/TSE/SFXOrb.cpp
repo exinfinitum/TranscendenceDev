@@ -1084,7 +1084,7 @@ void COrbEffectPainter::CompositeFlareRay (CG32bitImage &Dest, int xCenter, int 
     //  Paint the line
 
 	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
-	if (pRenderQueue) {
+	if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())) {
 		int xDest, yDest;
 		IntPolarToVector(iAngle, iLength, &xDest, &yDest);
 		int iDistX = xDest;
@@ -1264,7 +1264,7 @@ void COrbEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaintC
 
 	//	Paint
 	OpenGLMasterRenderQueue *pRenderQueue = Dest.GetMasterRenderQueue();
-	if (pRenderQueue) {
+	if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())) {
 		int iRadiusFlicker = m_FlareDesc[iTick % m_FlareDesc.GetCount()].iLength / FLARE_MULITPLE;
 		int iRadius = m_iAnimation == animateFlicker ? iRadiusFlicker : m_iRadius;
 		float fFlickerMultiplier = m_iAnimation == animateFlicker ? float(iRadiusFlicker) / float(m_iRadius) : 1.0f;
@@ -1414,7 +1414,7 @@ void COrbEffectPainter::PaintFlareRay (CG32bitImage &Dest, int xCenter, int yCen
     //  Paint the line
 
 	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
-	if (pRenderQueue) {
+	if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())) {
 		int xDest, yDest;
 		IntPolarToVector(iAngle, iLength, &xDest, &yDest);
 		int iCanvasHeight = Dest.GetHeight();
@@ -1470,7 +1470,7 @@ void COrbEffectPainter::PaintLightning (CG32bitImage &Dest, int xCenter, int yCe
 		{
 
 		OpenGLMasterRenderQueue *pRenderQueue = Dest.GetMasterRenderQueue();
-		if (pRenderQueue) {
+		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())) {
 			int xDest, yDest;
 			IntPolarToVector(iAngle + ((rand() % 20) - 10), FlareDesc.iLength + ((rand() % (FlareDesc.iLength / 8))) - FlareDesc.iLength / 8, &xDest, &yDest);
 			int iDistX = xDest;
