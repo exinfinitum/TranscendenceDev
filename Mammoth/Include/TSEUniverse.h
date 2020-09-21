@@ -341,6 +341,8 @@ class CUniverse
 		void AddTimeDiscontinuity (const CTimeSpan &Duration) { m_Time.AddDiscontinuity(m_iTick++, Duration); }
 		ALERROR AddStarSystem (CTopologyNode *pTopology, CSystem *pSystem);
 		void AdjustDamage (SDamageCtx &Ctx) const;
+		int AdjustDamage (const SDamageCtx &Ctx, int iDamage) const;
+		Metric AdjustDamage (const SDamageCtx &Ctx, Metric rDamage) const;
 		bool CancelEvent (CSpaceObject *pObj, bool bInDoEvent = false) { return m_Events.CancelEvent(pObj, bInDoEvent); }
 		bool CancelEvent (CSpaceObject *pObj, const CString &sEvent, bool bInDoEvent = false) { return m_Events.CancelEvent(pObj, sEvent, bInDoEvent); }
 		bool CancelEvent (CDesignType *pType, const CString &sEvent, bool bInDoEvent = false) { return m_Events.CancelEvent(pType, sEvent, bInDoEvent); }
@@ -371,7 +373,7 @@ class CUniverse
 		void FireOnGlobalUniverseLoad (void) { m_Design.FireOnGlobalUniverseLoad(); }
 		void FireOnGlobalUniverseSave (void) { m_Design.FireOnGlobalUniverseSave(); }
 		void FlushStarSystem (CTopologyNode *pTopology);
-		void GenerateGameStats (CGameStats &Stats);
+		void GenerateGameStats (const CString &sEndGameReason, CGameStats &Stats);
 		const CAccessibilitySettings &GetAccessibilitySettings (void) const { return m_AccessabilitySettings; }
 		CAccessibilitySettings &GetAccessibilitySettings (void) { return m_AccessabilitySettings; }
 		void GetAllAdventures (TArray<CExtension *> *retList) { CString sError; m_Extensions.ComputeAvailableAdventures((m_bDebugMode ? CExtensionCollection::FLAG_DEBUG_MODE : 0), retList, &sError); }

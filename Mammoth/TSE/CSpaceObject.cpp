@@ -95,11 +95,7 @@ const Metric g_rMaxCommsRange2 =				(g_rMaxCommsRange * g_rMaxCommsRange);
 #define FIELD_SHIELD_LEVEL						CONSTLIT("shieldLevel")
 #define FIELD_STATUS							CONSTLIT("status")
 
-#define LANGID_DOCKING_REQUEST_DENIED			CONSTLIT("core.dockingRequestDenied")
-
 #define ORDER_DOCKED							CONSTLIT("docked")
-
-#define PROPERTY_CORE_MINING_DIFFICULTY			CONSTLIT("core.miningDifficulty")
 
 #define SPECIAL_CHARACTER						CONSTLIT("character:")
 #define SPECIAL_DATA							CONSTLIT("data:")
@@ -6245,7 +6241,7 @@ bool CSpaceObject::MissileCanHitObj (CSpaceObject *pObj, const CDamageSource &So
 				&& pDesc->CanHit(pObj)
 
 				//	We cannot hit our friends (if our source can't)
-				&& ((CanHitFriends() && Source.CanHitFriends() && pObj->CanBeHitByFriends()) || Source.IsAngryAt(*pObj))
+				&& ((CanHitFriends() && Source.CanHitFriends() && pObj->CanBeHitByFriends()) || Source.IsAngryAt(*pObj, GetSovereign()))
 
 				//	If our source is the player, then we cannot hit player wingmen
 

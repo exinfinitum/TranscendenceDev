@@ -1,6 +1,7 @@
 //	CDesignCollection.cpp
 //
 //	CDesignCollection class
+//	Copyright (c) 2020 Kronosaur Productions, LLC. All Rights Reserved.
 
 #include "PreComp.h"
 
@@ -15,8 +16,6 @@
 #define VERSION_ATTRIB							CONSTLIT("version")
 
 #define GET_TYPE_SOURCE_EVENT					CONSTLIT("GetTypeSource")
-
-#define PROPERTY_CORE_GAME_STATS				CONSTLIT("core.gameStats")
 
 static const char *CACHED_EVENTS[CDesignCollection::evtCount] =
 	{
@@ -689,7 +688,7 @@ CXMLElement *CDesignCollection::FindSystemFragment (const CString &sName, CSyste
 	return NULL;
 	}
 
-void CDesignCollection::FireGetGlobalAchievements (CGameStats &Stats)
+void CDesignCollection::FireGetGlobalAchievements (const CString &sEndGameReason, CGameStats &Stats)
 
 //	FireGetGlobalAchievements
 //
@@ -719,11 +718,17 @@ void CDesignCollection::FireGetGlobalAchievements (CGameStats &Stats)
 
 	//	Add achievements from <GetGlobalAchievements>
 
+	CCodeChainCtx CCX(GetUniverse());
+	if (!sEndGameReason.IsBlank())
+		CCX.DefineString(CONSTLIT("aEndGameReason"), sEndGameReason);
+	else
+		CCX.DefineNil(CONSTLIT("aEndGameReason"));
+
 	for (int i = 0; i < m_EventsCache[evtGetGlobalAchievements]->GetCount(); i++)
 		{
 		CDesignType *pType = m_EventsCache[evtGetGlobalAchievements]->GetEntry(i);
 
-		pType->FireGetGlobalAchievements(Stats);
+		pType->FireGetGlobalAchievements(CCX, Stats);
 		}
 	}
 

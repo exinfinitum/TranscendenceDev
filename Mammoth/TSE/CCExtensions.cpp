@@ -245,6 +245,7 @@ ICCItem *fnObjActivateItem(CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 #define FN_OBJ_CAN_ENHANCE_ITEM		138
 #define FN_OBJ_ENHANCE_ITEM			139
 #define FN_OBJ_CAN_DESTROY_TARGET	140
+#define FN_OBJ_CAN_HIT_TARGET		141
 
 #define NAMED_ITEM_SELECTED_WEAPON		CONSTLIT("selectedWeapon")
 #define NAMED_ITEM_SELECTED_LAUNCHER	CONSTLIT("selectedLauncher")
@@ -1520,6 +1521,10 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'repaired: Device was repaired.\n",
 
 			"ivv",	0,	},
+
+		{	"objCanHitTarget",					fnObjGet,			FN_OBJ_CAN_HIT_TARGET,
+			"(objCanHitTarget obj target) -> True/Nil",
+			"ii",	0,	},
 
 		{	"objCanInstallItem",				fnObjGet,			FN_OBJ_CAN_INSTALL_ITEM,
 			"(objCanInstallItem obj item [armorSeg|deviceSlot]) -> (True/Nil resultCode resultString [itemToReplace])\n\n"
@@ -6613,6 +6618,15 @@ ICCItem *fnObjGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			return CSpaceObject::AsCCItem(*pCtx, Result)->Reference();
 			}
 
+		case FN_OBJ_CAN_HIT_TARGET:
+			{
+			CSpaceObject *pTarget = CreateObjFromItem(pArgs->GetElement(1));
+			if (pTarget == NULL)
+				return pCC->CreateNil();
+
+			return pCC->CreateBool(pObj->CanHit(pTarget));
+			}
+
 		case FN_OBJ_CAN_INSTALL_ITEM:
 			{
 			CItem Item(pCtx->AsItem(pArgs->GetElement(1)));
@@ -10150,7 +10164,7 @@ ICCItem *fnShipGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 				return pCC->CreateBool(ArmorItem.IsImmune(specialRadiation));
 				}
 			else
-				return pCC->CreateBool(pShip->IsImmuneTo(ECondition::radioactive));
+				return pCC->CreateBool(pShip->IsImmuneTo(specialRadiation));
 			break;
 			}
 
