@@ -560,7 +560,7 @@ vec3 getExplosionColor(float fRadius, float fMaxRadius, float fIntensity, vec3 v
 // ORB FUNCTIONS BEGIN HERE!
 
 vec4 calcSmoothColorBase(float fRadius, float fIntensity, vec3 vPrimaryColor, vec3 vSecondaryColor, float fOpacity, vec3 blownColor) {
-    float fFringeMaxRadius = fRadius * (fIntensity / 120.0);
+    float fFringeMaxRadius = min(fRadius, fRadius * (fIntensity / 120.0));
     float fFringeWidth = fFringeMaxRadius / 8.0;
     float fBlownRadius = fFringeMaxRadius - fFringeWidth;
     float fFadeWidth = fRadius - fFringeMaxRadius;
