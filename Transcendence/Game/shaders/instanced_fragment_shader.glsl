@@ -210,7 +210,6 @@ void main(void)
         (realColorPolar * float(render_category == renderCategoryObjectPolar))
 	);
 
-	bool alphaIsZero = realColor[3] < epsilon;
 	float alphaNoiseTimeAxis = (float(current_tick) / max(alphaNoisePeriodTime, epsilon));
 	float perlinNoise = (sampleNoiseFBM(vec3(fragment_pos[0] * alphaNoisePeriodXY, fragment_pos[1] * alphaNoisePeriodXY, alphaNoiseTimeAxis)) + 0.0f);
 	float alphaNoise = 1.0;
@@ -228,7 +227,6 @@ void main(void)
 	// Also add noise to the glow as appropriate
 	// Glow size is controlled via the quad size; we use separate quads for glow and standard ship texture
 	bool useGlow = (glow_color[3] > epsilon);
-	gl_FragDepth = depth + float(alphaIsZero && (glowColor[3] < epsilon));
 	
 	
 	vec4 textureColor = vec4(realColor[0], realColor[1], realColor[2], realColor[3] * alphaNoise * alpha_strength);
@@ -246,6 +244,9 @@ void main(void)
         (objectColor * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar)) +
         (textColor * float(render_category == renderCategoryText))
 	);
+
+	bool alphaIsZero = finalColor[3] < epsilon;
+	gl_FragDepth = depth + float(alphaIsZero && (glowColor[3] < epsilon));
 
 	vec3 finalColorRGB = (vec3(finalColor[0], finalColor[1], finalColor[2]) * float(!usePreMultipliedAlpha)) + (vec3(finalColor[0], finalColor[1], finalColor[2]) * float(usePreMultipliedAlpha) * finalColor[3]);
 
