@@ -363,7 +363,8 @@ class CParticleArray
 								int iCore,
 								int iFlame,
 								int iSmoke,
-								int iSmokeBrightness);
+								int iSmokeBrightness,
+								ParticlePaintStyles fireSmokeStyle);
 		void PaintGaseous (CG32bitImage &Dest,
 						   int xPos,
 						   int yPos,

@@ -1016,7 +1016,8 @@ void CParticleArray::Paint (CG32bitImage &Dest,
 					iCore, 
 					iFlame, 
 					iSmoke, 
-					iSmokeBrightness);
+					iSmokeBrightness,
+					Desc.iStyle);
 			break;
 			}
 
@@ -1050,7 +1051,8 @@ void CParticleArray::Paint (CG32bitImage &Dest,
 					iCore, 
 					iFlame, 
 					iSmoke, 
-					iSmokeBrightness);
+					iSmokeBrightness,
+					Desc.iStyle);
 			break;
 			}
 
@@ -1138,7 +1140,8 @@ void CParticleArray::PaintFireAndSmoke (CG32bitImage &Dest,
 										int iCore,
 										int iFlame,
 										int iSmoke,
-										int iSmokeBrightness)
+										int iSmokeBrightness,
+										ParticlePaintStyles fireSmokeStyle)
 
 //	PaintFireAndSmoke
 //
@@ -1166,66 +1169,96 @@ void CParticleArray::PaintFireAndSmoke (CG32bitImage &Dest,
 		{
 		if (pParticle->fAlive)
 			{
-			int iLifeLeft = (pParticle->iLifeLeft == -1 ? iLifetime : Min(pParticle->iLifeLeft, iLifetime));
-			int iAge = iLifetime - iLifeLeft;
-
-			//	Compute properties of the particle based on its life
-
-			CG32bitPixel rgbColor = 0;
-			int iFade = 0;
-			int iFade2 = 0;
-			int iWidth = 0;
-
-			if (iLifetime > 0)
+			auto OpenGLMasterRenderQueue = Dest.GetMasterRenderQueue();
+			if (OpenGLMasterRenderQueue && (&(Dest) == OpenGLMasterRenderQueue->getPointerToCanvas()))
 				{
-				//	Particle fades out over time
+				std::tuple<int, int, int> primaryColor(0, 0, 0);
+				std::tuple<int, int, int> secondaryColor(0, 0, 0);
+				int iCanvasHeight = Dest.GetHeight();
+				int iCanvasWidth = Dest.GetWidth();
+				OpenGLMasterRenderQueue->addParticleToEffectRenderQueue(
+					xPos + pParticle->x / FIXED_POINT,
+					yPos + pParticle->y / FIXED_POINT,
+					iMaxWidth,
+					iMaxWidth,
+					iCanvasWidth,
+					iCanvasHeight,
+					float(-pParticle->iRotation + 180) * (float(PI) / 180.0f),
+					1.0,
+					fireSmokeStyle,
+					iLifetime,
+					iLifetime - pParticle->iLifeLeft,
+					pParticle->iDestiny,
+					float(iMinWidth),
+					float(iMaxWidth),
+					primaryColor,
+					secondaryColor,
+					OpenGLRenderLayer::blendMode::blendNormal);
+				}
+			else
+				{
+				int iLifeLeft = (pParticle->iLifeLeft == -1 ? iLifetime : Min(pParticle->iLifeLeft, iLifetime));
+				int iAge = iLifetime - iLifeLeft;
 
-				iFade = Max(20, Min(255, (255 * iLifeLeft / iLifetime)));
-				iFade2 = iFade / 2;
+				//	Compute properties of the particle based on its life
 
-				//	Particle grows over time
+				CG32bitPixel rgbColor = 0;
+				int iFade = 0;
+				int iFade2 = 0;
+				int iWidth = 0;
 
-				iWidth = iMinWidth + (iWidthRange * iAge / iLifetime);
+				if (iLifetime > 0)
+				{
+					//	Particle fades out over time
 
-				//	Smoke color
+					iFade = Max(20, Min(255, (255 * iLifeLeft / iLifetime)));
+					iFade2 = iFade / 2;
 
-				int iDarkness = Min(255, iSmokeBrightness + (2 * (pParticle->iDestiny % 25)));
-				CG32bitPixel rgbSmokeColor = CG32bitPixel::FromGrayscale(iDarkness);
+					//	Particle grows over time
 
-				//	Some particles are gray
+					iWidth = iMinWidth + (iWidthRange * iAge / iLifetime);
 
-				CG32bitPixel rgbFadeColor;
-				if ((pParticle->iDestiny % 4) != 0)
-					rgbFadeColor = FLAME_OUTER_COLOR;
-				else
-					rgbFadeColor = rgbSmokeColor;
+					//	Smoke color
 
-				//	Particle color changes over time
+					int iDarkness = Min(255, iSmokeBrightness + (2 * (pParticle->iDestiny % 25)));
+					CG32bitPixel rgbSmokeColor = CG32bitPixel::FromGrayscale(iDarkness);
 
-				if (iAge <= iCore)
-					rgbColor = CG32bitPixel::Fade(FLAME_CORE_COLOR,
+					//	Some particles are gray
+
+					CG32bitPixel rgbFadeColor;
+					if ((pParticle->iDestiny % 4) != 0)
+						rgbFadeColor = FLAME_OUTER_COLOR;
+					else
+						rgbFadeColor = rgbSmokeColor;
+
+					//	Particle color changes over time
+
+					if (iAge <= iCore)
+						rgbColor = CG32bitPixel::Fade(FLAME_CORE_COLOR,
 							FLAME_MIDDLE_COLOR,
 							100 * iAge / iCore);
-				else if (iAge <= iFlame)
-					rgbColor = CG32bitPixel::Fade(FLAME_MIDDLE_COLOR,
+					else if (iAge <= iFlame)
+						rgbColor = CG32bitPixel::Fade(FLAME_MIDDLE_COLOR,
 							rgbFadeColor,
 							100 * (iAge - iCore) / (iFlame - iCore));
-				else if (iAge <= iSmoke)
-					rgbColor = CG32bitPixel::Fade(rgbFadeColor,
+					else if (iAge <= iSmoke)
+						rgbColor = CG32bitPixel::Fade(rgbFadeColor,
 							rgbSmokeColor,
 							100 * (iAge - iFlame) / (iSmoke - iFlame));
-				else
-					rgbColor = rgbSmokeColor;
+					else
+						rgbColor = rgbSmokeColor;
 				}
 
-			//	Compute the position of the particle
+				//	Compute the position of the particle
 
-			int x = xPos + pParticle->x / FIXED_POINT;
-			int y = yPos + pParticle->y / FIXED_POINT;
+				int x = xPos + pParticle->x / FIXED_POINT;
+				int y = yPos + pParticle->y / FIXED_POINT;
 
-			//	Paint the particle
+				//	Paint the particle
 
-			PAINT_GASEOUS_PARTICLE(Dest, x, y, iWidth, rgbColor, iFade, iFade2);
+				PAINT_GASEOUS_PARTICLE(Dest, x, y, iWidth, rgbColor, iFade, iFade2);
+				}
+
 			}
 
 		//	Next
