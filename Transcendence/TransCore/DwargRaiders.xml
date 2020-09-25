@@ -662,11 +662,12 @@
 								secondaryColor=	"#f0f0ff"
 								>
 						</Ray>
-						
-						<Starburst
-								style=			"morningStar"
-								spikeCount=		"2d6+2"
-								spikeLength=	"2d10"
+
+						<Orb
+								style=			"lightning"
+								animate=		"flicker"
+								radius=			"10"
+								intensity=		"60"
 								primaryColor=	"#a0f0ff"
 								secondaryColor=	"#f0f0ff"
 								/>
