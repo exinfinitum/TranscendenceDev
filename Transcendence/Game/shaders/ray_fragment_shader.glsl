@@ -519,6 +519,8 @@ const int styleShell =            10;
 const int styleCloudshell =       11;
 const int styleFireCloudshell =   12;
 
+const int styleGlowRing =		  -1;
+
 vec3 getExplosionColor(float fRadius, float fMaxRadius, float fIntensity, vec3 vPrimaryColor, vec3 vSecondaryColor) {
     const float SIGMA_MAX =                    0.01;
     const float SIGMA_DECAY =                  1.07;
@@ -829,6 +831,29 @@ vec4 calcFireblastColor(float fRadius, float fIntensity, vec3 vPrimaryColor, vec
     return mix(fireblastRadialColor, fireblastPixelColor, fNoiseValue) * float(!useBlack);
 }
 
+
+vec4 calcGlowRingColor(float fRadius, float fIntensity, vec3 vPrimaryColor, vec3 vSecondaryColor, float fOpacity) {
+    // For glow rings, fIntensity is equal to 1/2 the glow width as a fraction of fRadius, primaryColor is the solid color, and secondaryColor is the edge color.
+	// secondaryOpacity is the edge opacity, and fOpacity is the solid opacity.
+	// GlowRings should always be rendered as "None" animation type.
+    // Adjust radius between 1.0 times radius and (1.0 + disrupt) times radius
+
+	float ringWidthInPixels = max(1.0, fIntensity * (quadSize[0] / 2)) / 2.0;
+	float ringMiddle = fRadius - ringWidthInPixels;
+
+	bool useOuterRamp = pixelsDistanceFromCenter >= ringMiddle && pixelsDistanceFromCenter <= fRadius;
+	bool useInnerRamp = pixelsDistanceFromCenter < ringMiddle && pixelsDistanceFromCenter >= (ringMiddle - ringWidthInPixels);
+
+	float distanceFromRingMiddle = min(abs(pixelsDistanceFromCenter - ringMiddle) / ringWidthInPixels, 1.0);
+
+	vec4 center = vec4(vPrimaryColor, orbSecondaryOpacity);
+	vec4 edge = vec4(vSecondaryColor, fOpacity);
+	vec4 finalColorRaw = mix(center, edge, distanceFromRingMiddle) * float(useOuterRamp || useInnerRamp);\
+	vec3 finalColorRGB = vec3(finalColorRaw[0], finalColorRaw[1], finalColorRaw[2]);
+	vec4 finalColorPreMult = vec4(finalColorRGB * finalColorRaw[3], finalColorRaw[3]);
+	return finalColorPreMult;
+}
+
 vec4 calcPrimaryColor(int iStyle, float fRadius, float fIntensity, vec3 vPrimaryColor, vec3 vSecondaryColor, float fOpacity, float noise) {
     // Switch for styles.
     // This is analogous to CalcSphericalColorTable in georgecode.
@@ -840,6 +865,7 @@ vec4 calcPrimaryColor(int iStyle, float fRadius, float fIntensity, vec3 vPrimary
     vec4 cloudPixelColor = calcCloudPixelColor(fRadius, fIntensity, noise, vPrimaryColor, vSecondaryColor, fOpacity); // used for cloud, cloudshell, smoke
     vec4 firecloudPixelColor = calcFirecloudPixelColor(fRadius, fIntensity, noise, vPrimaryColor, vSecondaryColor, fOpacity); // used for firecloud
     vec4 fireblastColor = calcFireblastColor(fRadius, fIntensity, vPrimaryColor, vSecondaryColor, fOpacity); // used for firecloud
+    vec4 glowRingColor = calcGlowRingColor(fRadius, fIntensity, vPrimaryColor, vSecondaryColor, fOpacity); // used for firecloud
 
     vec4 cloudColor = calcCloudColor(cloudRadialColor, cloudPixelColor);
     vec4 firecloudColor = calcCloudColor(cloudRadialColor, firecloudPixelColor);
@@ -865,7 +891,9 @@ vec4 calcPrimaryColor(int iStyle, float fRadius, float fIntensity, vec3 vPrimary
         (flareColor * float(orbStyle == styleFlare)) +
         (diffractionColor * float(orbStyle == styleDiffraction)) +
         (cloudShellColor * float(orbStyle == styleCloudshell)) +
-        (flareColor * float(orbStyle == styleLightning))
+        (flareColor * float(orbStyle == styleLightning)) +
+        (glowRingColor * float(orbStyle == styleGlowRing))
+
     );
     return (finalColor);
 }

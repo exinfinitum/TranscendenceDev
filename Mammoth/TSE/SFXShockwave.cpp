@@ -825,7 +825,31 @@ void CShockwavePainter::PaintRing (SViewportPaintCtx &Ctx, CG32bitImage &Dest, i
 			}
 		case styleGlowRing:
 			{
-			CGDraw::RingGlowing(Dest, x, y, iRadius, m_iGradientCount, m_ColorGradient, (BYTE)byOpacity);
+
+			OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+			if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+				{
+				pRenderQueue->addOrbToEffectRenderQueue(
+					x, y, iRadius * 2, iRadius * 2, Dest.GetWidth(), Dest.GetHeight(),
+					0.0,
+					float(m_iGradientCount) / float(iRadius),
+					float(byOpacity / 255.0),
+					0,
+					-1, // TODO(heliogenesis): move to an enum; an orb with a style of -1 is a glow ring
+					0,
+					0,
+					0,
+					1,
+					1,
+					glm::vec3(float(m_rgbPrimaryColor.GetRed()), float(m_rgbPrimaryColor.GetGreen()), float(m_rgbPrimaryColor.GetBlue())) / float(255.0),
+					glm::vec3(float(m_rgbSecondaryColor.GetRed()), float(m_rgbSecondaryColor.GetGreen()), float(m_rgbSecondaryColor.GetBlue())) / float(255.0),
+					float(byOpacity / 255.0),
+					OpenGLRenderLayer::blendMode(m_iBlendMode));
+				}
+			else
+				{
+				CGDraw::RingGlowing(Dest, x, y, iRadius, m_iGradientCount, m_ColorGradient, (BYTE)byOpacity);
+				}
 			break;
 			}
 
