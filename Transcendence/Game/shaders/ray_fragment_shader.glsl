@@ -846,12 +846,12 @@ vec4 calcGlowRingColor(float fRadius, float fIntensity, vec3 vPrimaryColor, vec3
 
 	float distanceFromRingMiddle = min(abs(pixelsDistanceFromCenter - ringMiddle) / ringWidthInPixels, 1.0);
 
-	vec4 center = vec4(vPrimaryColor, orbSecondaryOpacity);
-	vec4 edge = vec4(vSecondaryColor, fOpacity);
+	vec4 center = vec4(vPrimaryColor, fOpacity);
+	vec4 edge = vec4(vSecondaryColor, orbSecondaryOpacity);
 	vec4 finalColorRaw = mix(center, edge, distanceFromRingMiddle) * float(useOuterRamp || useInnerRamp);\
 	vec3 finalColorRGB = vec3(finalColorRaw[0], finalColorRaw[1], finalColorRaw[2]);
 	vec4 finalColorPreMult = vec4(finalColorRGB * finalColorRaw[3], finalColorRaw[3]);
-	return finalColorPreMult;
+	return finalColorRaw;
 }
 
 vec4 calcPrimaryColor(int iStyle, float fRadius, float fIntensity, vec3 vPrimaryColor, vec3 vSecondaryColor, float fOpacity, float noise) {

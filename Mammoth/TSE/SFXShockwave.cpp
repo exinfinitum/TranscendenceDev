@@ -843,7 +843,7 @@ void CShockwavePainter::PaintRing (SViewportPaintCtx &Ctx, CG32bitImage &Dest, i
 					1,
 					glm::vec3(float(m_rgbPrimaryColor.GetRed()), float(m_rgbPrimaryColor.GetGreen()), float(m_rgbPrimaryColor.GetBlue())) / float(255.0),
 					glm::vec3(float(m_rgbSecondaryColor.GetRed()), float(m_rgbSecondaryColor.GetGreen()), float(m_rgbSecondaryColor.GetBlue())) / float(255.0),
-					float(byOpacity / 255.0),
+					0.0f,
 					OpenGLRenderLayer::blendMode(m_iBlendMode));
 				}
 			else
