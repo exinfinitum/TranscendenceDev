@@ -160,7 +160,7 @@ public:
 	void addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions,
 		glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength, float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth, textureRenderCategory textureRenderType = normal,
 		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal);
-	void addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
+	void addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode, float secondaryOpacity);
 	void addLightningToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, float rotation, float seed, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
 	void addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition, float rotation, float intensity, float opacity, int animation,
 		int style, int detail, int distortion, int animationSeed, int lifetime, int currFrame, glm::vec3 primaryColor, glm::vec3 secondaryColor, float secondaryOpacity, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
@@ -308,7 +308,7 @@ public:
 		std::tuple<int, int, int> textColor, bool useDepthTesting = true);
 	void addRayToEffectRenderQueue (int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
 		int iColorTypes, int iOpacityTypes, int iWidthAdjType, int iReshape, int iTexture, std::tuple<int, int, int> primaryColor,
-		std::tuple<int, int, int> secondaryColor, int iIntensity, float waveCyclePos, int opacityAdj, OpenGLRenderLayer::blendMode blendMode);
+		std::tuple<int, int, int> secondaryColor, int iIntensity, float waveCyclePos, int opacityAdj, OpenGLRenderLayer::blendMode blendMode, float secondaryOpacity = 0.0f);
 	void addLightningToEffectRenderQueue (int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
 		int iWidthAdjType, int iReshape, std::tuple<int, int, int> primaryColor, std::tuple<int, int, int> secondaryColor, float seed, OpenGLRenderLayer::blendMode blendMode);
 	void addOrbToEffectRenderQueue(

@@ -392,6 +392,7 @@ class CGDraw
 		static void LineBresenhamGradient (CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iWidth, CG32bitPixel rgbColor1, CG32bitPixel rgbColor2);
 		static void LineBresenhamGradientTrans (CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iWidth, CG32bitPixel rgbColor1, CG32bitPixel rgbColor2);
 		static void LineBresenhamTrans (CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iWidth, CG32bitPixel rgbColor);
+		static void LineOpenGL(CG32bitImage& Dest, int x1, int y1, int x2, int y2, int iWidth, CG32bitPixel rgbColor1, CG32bitPixel rgbColor2);
 
 		static void QuadCurve (CG32bitImage &Dest, const CVector &vP1, const CVector &vP2, const CVector &vC1, int iLineWidth, CG32bitPixel rgbColor);
 	};
