@@ -141,8 +141,8 @@ void main(void)
     depth = aDepth;
     rotation = aRotation;
     intensity = aFloatParams[0];
-    waveCyclePos = aFloatParams[1];
     opacityAdj = aFloatParams[2];
+    waveCyclePos = aFloatParams[3];
     primaryColor = aPrimaryColor;
     secondaryColor = aSecondaryColor;
     quadSize = aSize;

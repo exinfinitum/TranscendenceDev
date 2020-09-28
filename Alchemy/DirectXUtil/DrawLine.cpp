@@ -200,6 +200,11 @@ void CGDraw::LineBresenham (CG32bitImage &Dest, int x1, int y1, int x2, int y2, 
 //	Draws an anti-aliased line
 
 	{
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if ((pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))) {
+		LineOpenGL(Dest, x1, y1, x2, y2, iWidth, rgbColor, rgbColor);
+		return;
+	}
 	//	Calculate the slope
 
 	int dx = x2 - x1;
@@ -375,6 +380,11 @@ void CGDraw::LineBresenhamGradient (CG32bitImage &Dest, int x1, int y1, int x2, 
 //	Paints a gradient line.
 
 	{
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if ((pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))) {
+		LineOpenGL(Dest, x1, y1, x2, y2, iWidth, rgbColor1, rgbColor2);
+		return;
+	}
 	//	Calculate the slope
 
 	int dx = x2 - x1;
@@ -569,6 +579,11 @@ void CGDraw::LineBresenhamGradientTrans (CG32bitImage &Dest, int x1, int y1, int
 //	Paints a gradient line in which rgbColor1 or rgbColor2 are transparent.
 
 	{
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if ((pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))) {
+		LineOpenGL(Dest, x1, y1, x2, y2, iWidth, rgbColor1, rgbColor2);
+		return;
+	}
 	//	Calculate the slope
 
 	int dx = x2 - x1;
@@ -783,6 +798,11 @@ void CGDraw::LineBresenhamTrans (CG32bitImage &Dest, int x1, int y1, int x2, int
 //	Paints a line using rgbColor's alpha transparency
 
 	{
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if ((pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))) {
+		LineOpenGL(Dest, x1, y1, x2, y2, iWidth, rgbColor, rgbColor);
+		return;
+	}
 	BYTE byOpacity = rgbColor.GetAlpha();
 	double rOpacity = byOpacity;
 
@@ -952,6 +972,35 @@ void CGDraw::LineBresenhamTrans (CG32bitImage &Dest, int x1, int y1, int x2, int
 			rDistRight += rDistRightInc;
 			}
 		}
+	}
+
+void CGDraw::LineOpenGL(CG32bitImage& Dest, int x1, int y1, int x2, int y2, int iWidth, CG32bitPixel rgbColor1, CG32bitPixel rgbColor2)
+
+		//	LineOpenGL
+		//
+		//	Paints a gradient line in which rgbColor1 and/or rgbColor2 are transparent using the GPU.
+
+	{
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if (!(pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())))
+	{
+		return;
+	}
+
+	int iDistX = x1 - x2;
+	int iDistY = y1 - y2;
+	int iCanvasHeight = Dest.GetHeight();
+	int iCanvasWidth = Dest.GetWidth();
+
+	float iDist = sqrt(float(iDistX * iDistX) + float(iDistY * iDistY));
+	int iPosX = x1 - ((iDistX) / 2);
+	int iPosY = y1 - ((iDistY) / 2);
+	std::tuple<int, int, int> primaryColor(int(rgbColor1.GetRed()), int(rgbColor1.GetGreen()), int(rgbColor1.GetBlue()));
+	std::tuple<int, int, int> secondaryColor(int(rgbColor2.GetRed()), int(rgbColor2.GetGreen()), int(rgbColor2.GetBlue()));
+	float fRotRadians = -float(atan2(iDistY, iDistX));
+
+	pRenderQueue->addRayToEffectRenderQueue(iPosX, iPosY, int(iDist) * 2, iWidth * 2, iCanvasWidth, iCanvasHeight, fRotRadians, -1, -2, 0, 0, 0,
+		primaryColor, secondaryColor, 100, 0.0f, int(rgbColor1.GetAlpha()), OpenGLRenderLayer::blendMode::blendNormal, float(rgbColor2.GetAlpha()) / 255.0f);
 	}
 
 void CGDraw::LineBroken (CG32bitImage &Dest, int xSrc, int ySrc, int xDest, int yDest, int xyBreak, CG32bitPixel rgbColor)

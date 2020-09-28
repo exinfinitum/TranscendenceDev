@@ -48,9 +48,9 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	texRenderBatchToUse[image]->addObjToRender(renderRequest);
 }
 
-void OpenGLRenderLayer::addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode)
+void OpenGLRenderLayer::addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode, float secondaryOpacity)
 {
-	glm::vec4 intensityAndCyclesV4(intensitiesAndCycles[0], intensitiesAndCycles[1], intensitiesAndCycles[2], 0.0);
+	glm::vec4 intensityAndCyclesV4(intensitiesAndCycles[0], secondaryOpacity, intensitiesAndCycles[2], intensitiesAndCycles[1]);
 	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, intensityAndCyclesV4, vPrimaryColor, vSecondaryColor, 0, OpenGLRenderLayer::effectType::effectTypeRay, blendMode);
 	renderRequest.set_depth(startingDepth);
 	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);

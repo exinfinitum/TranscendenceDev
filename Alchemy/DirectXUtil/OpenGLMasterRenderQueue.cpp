@@ -142,13 +142,13 @@ void OpenGLMasterRenderQueue::addTextToRenderQueue(int startPixelX, int startPix
 
 void OpenGLMasterRenderQueue::addRayToEffectRenderQueue(int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
 	int iColorTypes, int iOpacityTypes, int iWidthAdjType, int iReshape, int iTexture, std::tuple<int, int, int> primaryColor,
-	std::tuple<int, int, int> secondaryColor, int iIntensity, float waveCyclePos, int opacityAdj, OpenGLRenderLayer::blendMode blendMode)
+	std::tuple<int, int, int> secondaryColor, int iIntensity, float waveCyclePos, int opacityAdj, OpenGLRenderLayer::blendMode blendMode, float secondaryOpacity)
 {
 	glm::vec3 vPrimaryColor = glm::vec3(std::get<0>(primaryColor), std::get<1>(primaryColor), std::get<2>(primaryColor)) / float(255.0);
 	glm::vec3 vSecondaryColor = glm::vec3(std::get<0>(secondaryColor), std::get<1>(secondaryColor), std::get<2>(secondaryColor)) / float(255.0);
 
-	glm::vec4 sizeAndPosition((float)sizePixelX, (float)sizePixelY,
-		(float)posPixelX / (float)canvasSizeX, (float)posPixelY / (float)canvasSizeY);
+	glm::vec4 sizeAndPosition(float(sizePixelX), float(sizePixelY) + 0.5,
+		float(posPixelX) / float(canvasSizeX), float(posPixelY) / float(canvasSizeY));
 	glm::ivec4 shapes(iWidthAdjType, iReshape, 0, 0);
 	glm::vec3 intensitiesAndCycles(float(iIntensity), waveCyclePos, float(opacityAdj) / 255.0f);
 	glm::ivec4 styles(iColorTypes, iOpacityTypes, iTexture, 0);
@@ -156,7 +156,7 @@ void OpenGLMasterRenderQueue::addRayToEffectRenderQueue(int posPixelX, int posPi
 		m_fDepthLevel -= m_fDepthDelta;
 		m_bPrevObjAddedIsParticle = false;
 	}
-	m_pActiveRenderLayer->addRayToEffectRenderQueue(vPrimaryColor, vSecondaryColor, sizeAndPosition, shapes, intensitiesAndCycles, styles, rotation, m_fDepthLevel, blendMode);
+	m_pActiveRenderLayer->addRayToEffectRenderQueue(vPrimaryColor, vSecondaryColor, sizeAndPosition, shapes, intensitiesAndCycles, styles, rotation, m_fDepthLevel, blendMode, secondaryOpacity);
 	m_fDepthLevel -= m_fDepthDelta;
 }
 
