@@ -210,24 +210,6 @@ void OpenGLMasterRenderQueue::addParticleToEffectRenderQueue(int posPixelX, int 
 	m_bPrevObjAddedIsParticle = true;
 	}
 
-void OpenGLMasterRenderQueue::addLightningToEffectRenderQueue(int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
-	int iWidthAdjType, int iReshape, std::tuple<int, int, int> primaryColor,
-	std::tuple<int, int, int> secondaryColor, float seed, OpenGLRenderLayer::blendMode blendMode)
-{
-	glm::vec3 vPrimaryColor = glm::vec3(std::get<0>(primaryColor), std::get<1>(primaryColor), std::get<2>(primaryColor)) / float(255.0);
-	glm::vec3 vSecondaryColor = glm::vec3(std::get<0>(secondaryColor), std::get<1>(secondaryColor), std::get<2>(secondaryColor)) / float(255.0);
-	glm::vec4 sizeAndPosition((float)sizePixelX, (float)sizePixelY,
-		(float)posPixelX / (float)canvasSizeX, (float)posPixelY / (float)canvasSizeY);
-	glm::ivec4 shapes(iWidthAdjType, iReshape, 0, 0);
-	if (m_bPrevObjAddedIsParticle) {
-		m_fDepthLevel -= m_fDepthDelta;
-		m_bPrevObjAddedIsParticle = false;
-	}
-
-	m_pActiveRenderLayer->addLightningToEffectRenderQueue(vPrimaryColor, vSecondaryColor, sizeAndPosition, shapes, rotation, seed, m_fDepthLevel, blendMode);
-	m_fDepthLevel -= m_fDepthDelta;
-}
-
 void OpenGLMasterRenderQueue::renderAllQueues(void)
 {
 	for (OpenGLRenderLayer &renderLayer : m_renderLayers) {

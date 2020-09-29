@@ -204,34 +204,6 @@ void DrawLightning (CG32bitImage &Dest,
 //	Draw a lightning line, fading color from the start to the end.
 
 	{
-
-	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
-	if ((pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())))
-	{
-		int x2 = xTo;
-		int y2 = yTo;
-		int x1 = xFrom;
-		int y1 = yFrom;
-		int iDistX = x1 - x2;
-		int iDistY = y1 - y2;
-		float fRotRadians = -float(atan2(iDistY, iDistX));
-		int iCanvasHeight = Dest.GetHeight();
-		int iCanvasWidth = Dest.GetWidth();
-		int iShape = rand() % 6;
-
-		float iDist = sqrt(float(iDistX * iDistX) + float(iDistY * iDistY));
-		int iPosX = x1 - ((iDistX) / 2);
-		int iPosY = y1 - ((iDistY) / 2);
-		std::tuple<int, int, int> primaryColor(int(rgbFrom.GetRed()), int(rgbFrom.GetGreen()), int(rgbFrom.GetBlue()));
-		std::tuple<int, int, int> secondaryColor(int(rgbTo.GetRed()), int(rgbTo.GetGreen()), int(rgbTo.GetBlue()));
-		float rSeed = mathRandom(20, 80) / 20.0f;
-		float fWidth = (mathRandom(-100, 100) / 100.0f) * float(rChaos) * 4.0f;
-
-		pRenderQueue->addLightningToEffectRenderQueue(iPosX, iPosY, int(iDist) * 2, int(iDist * fWidth), iCanvasWidth, iCanvasHeight, fRotRadians, iShape, iShape,
-			primaryColor, secondaryColor, rSeed, OpenGLRenderLayer::blendMode::blendNormal);
-		return;
-	}
-
 	const int MAX_LINE_SEGMENT = 3;
 	const int MAX_POINTS = 100;
 
@@ -274,34 +246,6 @@ void DrawLightning (CG32bitImage &Dest,
 //	Draw a lightning line
 
 	{
-
-	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
-	if ((pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())))
-		{
-		int x2 = xTo;
-		int y2 = yTo;
-		int x1 = xFrom;
-		int y1 = yFrom;
-		int iDistX = x1 - x2;
-		int iDistY = y1 - y2;
-		float fRotRadians = -float(atan2(iDistY, iDistX));
-		int iCanvasHeight = Dest.GetHeight();
-		int iCanvasWidth = Dest.GetWidth();
-		int iShape = rand() % 6;
-
-		float iDist = sqrt(float(iDistX * iDistX) + float(iDistY * iDistY));
-		int iPosX = x1 - ((iDistX) / 2);
-		int iPosY = y1 - ((iDistY) / 2);
-		std::tuple<int, int, int> primaryColor(int(rgbColor.GetRed()), int(rgbColor.GetGreen()), int(rgbColor.GetBlue()));
-		std::tuple<int, int, int> secondaryColor(int(rgbColor.GetRed()), int(rgbColor.GetGreen()), int(rgbColor.GetBlue()));
-		float rSeed = mathRandom(20, 80) / 20.0f;
-		float fWidth = (mathRandom(-100, 100) / 100.0f) * float(rChaos) * 16.0f;
-
-		pRenderQueue->addLightningToEffectRenderQueue(iPosX, iPosY, int(iDist) * 2, int(iDist * fWidth), iCanvasWidth, iCanvasHeight, fRotRadians, iShape, iShape,
-			primaryColor, secondaryColor, rSeed, OpenGLRenderLayer::blendMode::blendScreen);
-		return;
-		}
-
 	ASSERT(iPoints >= 0);
 
 	Metric *pxPos = new Metric [iPoints];
