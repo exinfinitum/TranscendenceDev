@@ -400,6 +400,7 @@ vec4 calcRayColor(float taperAdjTop, float taperAdjBottom, float widthAdjTop, fl
 
 vec4 calcLightningColor(float taperAdj, float widthAdj, vec2 real_texcoord)
 {
+    return vec4(0.0); // We use Line for the lightning effect now even in OpenGL
 	float wavefront_amplitude = 6.0f;
 	float uv_x_lightning_mult = 10;
     float uv_y_mult = 4.0;
