@@ -5329,16 +5329,29 @@ void CShip::OnPaintMap (CMapViewportCtx &Ctx, CG32bitImage &Dest, int x, int y)
 		{
 		if (m_fHasShipCompartments)
 			PaintMapShipCompartments(Dest, x, y, Ctx);
-
-		m_pClass->PaintMap(Ctx,
-				Dest, 
-				x, 
-				y, 
-				m_Rotation.GetFrameIndex(), 
+		OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+			{
+			GetImage().PaintImageSizedWithOpenGL(Dest,
+				x,
+				y,
+				24,
+				24,
+				GetSystem()->GetTick(),
+				m_Rotation.GetFrameIndex());
+			}
+		else
+			{
+			m_pClass->PaintMap(Ctx,
+				Dest,
+				x,
+				y,
+				m_Rotation.GetFrameIndex(),
 				GetSystem()->GetTick(),
 				m_pController->GetThrust() && !IsParalyzed(),
 				IsRadioactive()
-				);
+			);
+			}
 		}
 
 	//	Or if it has docking services and the player knows about it
@@ -6389,6 +6402,19 @@ void CShip::PaintMapShipCompartments (CG32bitImage &Dest, int x, int y, CMapView
 
 		int xPos, yPos;
 		Trans.Transform(pShip->GetPos(), &xPos, &yPos);
+
+		OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+			{
+			pShip->GetImage().PaintImageScaledWithOpenGL(Dest,
+				xPos,
+				yPos,
+				float(rScale),
+				float(rScale),
+				GetSystem()->GetTick(),
+				pShip->m_Rotation.GetFrameIndex());
+			continue;
+			}
 
 		int cxSize = (int)mathRound(rScale * pShip->GetImage().GetImageWidth());
 

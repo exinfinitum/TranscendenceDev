@@ -1438,12 +1438,19 @@ void CObjectImageArray::PaintImageScaledWithOpenGL(CG32bitImage& Dest, int xDest
 		int iTexQuadWidth = RectWidth(m_rcImage);
 		int iTexQuadHeight = RectHeight(m_rcImage);
 		auto [iNumRows, iNumCols] = GetNumColsAndRows();
-		//pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight, iCanvasWidth,
-		//	pSource->GetPixelArray(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
 			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), iCanvasHeight, iCanvasWidth,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top);
 		}
+	}
+
+void CObjectImageArray::PaintImageSizedWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, int xSize, int ySize, int iTick, int iRotation) const
+	{
+	int iTexQuadWidth = RectWidth(m_rcImage);
+	int iTexQuadHeight = RectHeight(m_rcImage);
+	float xScaleDest = float(xSize) / float(iTexQuadWidth);
+	float yScaleDest = float(ySize) / float(iTexQuadHeight);
+	PaintImageScaledWithOpenGL(Dest, xDest, yDest, xScaleDest, yScaleDest, iTick, iRotation);
 	}
 
 void CObjectImageArray::PaintGrayedImageScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const
