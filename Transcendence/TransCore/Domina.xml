@@ -707,26 +707,25 @@
 			weaponSuppress=	"*"
 			>
 		<Effect>
-			<Image imageID="&rsDominaEffects1;" 
-					imageX="0" 
-					imageY="0" 
-					imageWidth="96" 
-					imageHeight="96"
-					imageFrameCount="3"
-					imageTicksPerFrame="3"/>
+			<Orb	style=			"cloudshell"
+					intensity=		"30"
+					blendMode=		"screen"
+					radius=			"96"
+					primaryColor=	"0x5a, 0x5f, 0xaa"
+					secondaryColor=	"0x11, 0x11, 0x51"/>
 		</Effect>
 
 		<HitEffect
 				altEffect="true"
 				sound="&snShieldHit1;"
 				>
-			<Image imageID="&rsDominaEffects1;" 
-					imageX="288" 
-					imageY="0" 
-					imageWidth="96" 
-					imageHeight="96"
-					imageFrameCount="3"
-					imageTicksPerFrame="3"/>
+			<Orb	style=			"cloudshell"
+					intensity=		"30"
+					lifetime=		"3"
+					blendMode=		"screen"
+					radius=			"96"
+					primaryColor=	"0xaa, 0xaf, 0xfa"
+					secondaryColor=	"0x11, 0x11, 0x51"/>
 		</HitEffect>
 	</OverlayType>
 
@@ -736,9 +735,10 @@
 			weaponBonusAdj=	"100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100"
 			>
 		<Effect>
-			<Starburst
-					spikeCount=		"20"
-					spikeLength=	"4d8"
+			<Orb	style=			"flare"
+					intensity=		"70"
+					blendMode=		"screen"
+					radius=			"16"
 					primaryColor=	"0x80, 0xff, 0xff"
 					secondaryColor=	"0x00, 0xff, 0xff"
 					/>
@@ -751,26 +751,25 @@
 			absorbAdj=		"100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100"
 			>
 		<Effect>
-			<Image imageID="&rsDominaEffects1;" 
-					imageX="0" 
-					imageY="96" 
-					imageWidth="96" 
-					imageHeight="96"
-					imageFrameCount="3"
-					imageTicksPerFrame="3"/>
+			<Orb	style=			"cloudshell"
+					intensity=		"30"
+					blendMode=		"screen"
+					radius=			"96"
+					primaryColor=	"0x5a, 0xaa, 0x5f"
+					secondaryColor=	"0x11, 0x51, 0x11"/>
 		</Effect>
 
 		<HitEffect
 				altEffect="true"
 				sound="&snShieldHit1;"
 				>
-			<Image imageID="&rsDominaEffects1;" 
-					imageX="288" 
-					imageY="96" 
-					imageWidth="96" 
-					imageHeight="96"
-					imageFrameCount="3"
-					imageTicksPerFrame="3"/>
+			<Orb	style=			"cloudshell"
+					intensity=		"30"
+					lifetime=		"3"
+					blendMode=		"screen"
+					radius=			"96"
+					primaryColor=	"0xaa, 0xfa, 0xaf"
+					secondaryColor=	"0x11, 0x51, 0x11"/>
 		</HitEffect>
 	</OverlayType>
 
