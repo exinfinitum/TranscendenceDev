@@ -145,7 +145,8 @@ public:
 	enum textureRenderCategory {
 		normal = 0,
 		text = 1,
-		polarUV = 2
+		polarUV = 2,
+		grayscale = 3
 	};
 	enum renderOrder {
 		renderOrderProper = 0,

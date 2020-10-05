@@ -24,6 +24,7 @@ uniform sampler3D perlin_noise;
 const int renderCategoryObjectCartesian = 0;
 const int renderCategoryText = 1;
 const int renderCategoryObjectPolar = 2;
+const int renderCategoryObjectCartesianGrayscale = 3;
 const float PI = 3.14159;
 
 // This should match enum blendMode in opengl.h.
@@ -206,7 +207,7 @@ void main(void)
 	vec4 realColorCartesian = texture(obj_texture, vec2(texture_uv[0], texture_uv[1]));
 	vec4 realColorPolar = sampleCircular(obj_texture);
 	vec4 realColor = (
-		(realColorCartesian * float(render_category == renderCategoryObjectCartesian)) +
+		(realColorCartesian * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectCartesianGrayscale)) +
         (realColorPolar * float(render_category == renderCategoryObjectPolar))
 	);
 
@@ -235,6 +236,8 @@ void main(void)
 	//perlin_noise_color[3] = 1.0;
 	//out_color = perlin_noise_color;
 	vec4 objectColor = (float(!useGlow) * textureColor) + (float(useGlow) * glowColor);
+	float grayscaleIntensity = length(vec3(objectColor[0], objectColor[1], objectColor[2]));
+	vec4 grayscaleColor = vec4(grayscaleIntensity, grayscaleIntensity, grayscaleIntensity, objectColor[3]);
 
 	bool usePreMultipliedAlpha = (
 		(blendMode == blendScreen)
@@ -242,7 +245,8 @@ void main(void)
 
     vec4 finalColor = (
         (objectColor * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar)) +
-        (textColor * float(render_category == renderCategoryText))
+        (textColor * float(render_category == renderCategoryText)) +
+		(grayscaleColor * float(render_category == renderCategoryObjectCartesianGrayscale))
 	);
 
 	bool alphaIsZero = finalColor[3] < epsilon;

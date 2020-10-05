@@ -1415,6 +1415,104 @@ ALERROR CObjectImageArray::OnDesignLoadComplete (SDesignLoadCtx &Ctx)
 	DEBUG_CATCH
 	}
 
+void CObjectImageArray::PaintImageScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const
+	{
+	if (!m_pImage) {
+		return;
+	}
+
+	CG32bitImage* pSource = m_pImage->GetRawImage(NULL_STR);
+	// TODO: Only render using OpenGL if the destination image is a render canvas, else proceed as if OpenGL is not enabled
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if (pSource == NULL) {
+		return;
+	}
+	if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+		{
+
+		int xSrc;
+		int ySrc;
+		ComputeSourceXY(iTick, iRotation, &xSrc, &ySrc);
+		int iCanvasHeight = Dest.GetHeight();
+		int iCanvasWidth = Dest.GetWidth();
+		int iTexQuadWidth = RectWidth(m_rcImage);
+		int iTexQuadHeight = RectHeight(m_rcImage);
+		auto [iNumRows, iNumCols] = GetNumColsAndRows();
+		//pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight, iCanvasWidth,
+		//	pSource->GetPixelArray(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
+			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), iCanvasHeight, iCanvasWidth,
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top);
+		}
+	}
+
+void CObjectImageArray::PaintGrayedImageScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const
+	{
+	if (!m_pImage) {
+		return;
+	}
+
+	CG32bitImage* pSource = m_pImage->GetRawImage(NULL_STR);
+	// TODO: Only render using OpenGL if the destination image is a render canvas, else proceed as if OpenGL is not enabled
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if (pSource == NULL) {
+		return;
+	}
+	if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+		{
+
+		int xSrc;
+		int ySrc;
+		ComputeSourceXY(iTick, iRotation, &xSrc, &ySrc);
+		int iCanvasHeight = Dest.GetHeight();
+		int iCanvasWidth = Dest.GetWidth();
+		int iTexQuadWidth = RectWidth(m_rcImage);
+		int iTexQuadHeight = RectHeight(m_rcImage);
+		auto [iNumRows, iNumCols] = GetNumColsAndRows();
+		//pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight, iCanvasWidth,
+		//	pSource->GetPixelArray(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
+			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), iCanvasHeight, iCanvasWidth,
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top,
+			1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, OpenGLRenderLayer::grayscale, OpenGLRenderLayer::blendNormal);
+		}
+	}
+
+void CObjectImageArray::PaintImageGlowScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, float glowR, float glowG, float glowB, float glowA, int iTick, int iRotation) const
+	{
+	if (!m_pImage) {
+		return;
+	}
+
+	CG32bitImage* pSource = m_pImage->GetRawImage(NULL_STR);
+	// TODO: Only render using OpenGL if the destination image is a render canvas, else proceed as if OpenGL is not enabled
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if (pSource == NULL) {
+		return;
+	}
+	if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+		{
+
+		int xSrc;
+		int ySrc;
+		ComputeSourceXY(iTick, iRotation, &xSrc, &ySrc);
+		int iCanvasHeight = Dest.GetHeight();
+		int iCanvasWidth = Dest.GetWidth();
+		int iTexQuadWidth = RectWidth(m_rcImage);
+		int iTexQuadHeight = RectHeight(m_rcImage);
+		auto [iNumRows, iNumCols] = GetNumColsAndRows();
+		//pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight, iCanvasWidth,
+		//	pSource->GetPixelArray(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
+			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), iCanvasHeight, iCanvasWidth,
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top);
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
+			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), iCanvasHeight, iCanvasWidth,
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f,
+			glowR, glowG, glowB, glowA);
+		}
+	}
+
 void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite) const
 
 //	PaintImage
