@@ -938,9 +938,11 @@
 						>
 
 					<Effect>
-						<Starburst
-								spikeCount=		"1d6+2"
-								spikeLength=	"30-50"
+						<Orb
+								style=			"flare"
+								animate=		"flicker"
+								radius=			"30"
+								intensity=		"100"
 								primaryColor=	"#65ff2c"
 								secondaryColor=	"#808417"
 								/>
