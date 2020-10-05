@@ -4595,12 +4595,12 @@
 					</GetParameters>
 				</Events>
 			</ParticlePattern>
-			
-			<Starburst
-					style=			"plain"
-					spikeCount=		"1d6+3"
-					spikeLength=	"15-30"
-					
+
+			<Orb
+					style=			"flare"
+					animate=		"flicker"
+					radius=			"15"
+					intensity=		"60"
 					primaryColor=	"#d8ecff"
 					secondaryColor=	"#0080ff"
 					/>
