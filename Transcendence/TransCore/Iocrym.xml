@@ -308,20 +308,42 @@
 				powerUse=			"3000"
 
 				sound=				"&snRecoillessCannon;"
-				vaporTrailLength=	"50"
-				vaporTrailWidth=	"110"
-				vaporTrailWidthInc=	"1"
-				vaporTrailColor=	"0xff, 0x65, 0x21"
 				>
 
 			<Effect>
-				<MoltenBolt
-						width=				"3"
-						length=				"16"
-						growth=				"3"
-						primaryColor=		"0xff, 0xfd, 0xad"
-						secondaryColor=		"0xff, 0x65, 0x21"
-						/>
+				<ParticleSystem
+					style=				"jet"
+					fixedPos=			"true"
+					emitRate=			"4-8"
+					tangentSpeed=		"-2-2"
+					particleLifetime=	"30"
+					XformTime=			"30"
+				    >
+					<ParticleEffect>
+						<Orb
+							instance=			"owner"
+
+							style=				"smooth"
+							animate=			"fade"
+							radius=				"3"
+							lifetime=			"30"
+							intensity=			"20"
+
+							blendMode=			"screen"
+							primaryColor=		"#feff00"
+							secondaryColor=		"#ff7f00"
+							/>
+					</ParticleEffect>
+				</ParticleSystem>
+				<Ray
+					style=			"smooth"
+					shape=			"tapered"
+					width=			"3"
+					length=			"16"
+					intensity=		"50"
+					primaryColor=	"#FFFDAD"
+					secondaryColor=	"#FF6521"
+					/>
 			</Effect>
 		</Weapon>
 	</ItemType>
