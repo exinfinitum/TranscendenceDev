@@ -285,6 +285,35 @@ void DrawParticle (CG32bitImage &Dest,
 //	Draws a single particle
 
 	{
+	//  Use OpenGL if it is enabled
+	auto OpenGLMasterRenderQueue = Dest.GetMasterRenderQueue();
+	if (OpenGLMasterRenderQueue && (&(Dest) == OpenGLMasterRenderQueue->getPointerToCanvas()))
+		{
+		std::tuple<int, int, int> primaryColor(int(rgbColor.GetRed()), int(rgbColor.GetGreen()), int(rgbColor.GetBlue()));
+		std::tuple<int, int, int> secondaryColor(int(rgbColor.GetRed()), int(rgbColor.GetGreen()), int(rgbColor.GetBlue()));
+		int iCanvasHeight = Dest.GetHeight();
+		int iCanvasWidth = Dest.GetWidth();
+		OpenGLMasterRenderQueue->addParticleToEffectRenderQueue(
+			x,
+			y,
+			iSize,
+			iSize,
+			iCanvasWidth,
+			iCanvasHeight,
+			0.0,
+			float(byOpacity) / 255.0f,
+			ParticlePaintStyles::paintPlain,
+			1337,
+			256,
+			0,
+			float(iSize),
+			float(iSize),
+			primaryColor,
+			secondaryColor,
+			OpenGLRenderLayer::blendMode::blendNormal);
+		return;
+		}
+
 	DWORD byOpacity2 = byOpacity / 2;
 
 	switch (iSize)
