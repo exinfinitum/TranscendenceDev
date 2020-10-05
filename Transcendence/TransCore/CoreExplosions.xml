@@ -526,10 +526,12 @@
 					>
 
 				<Effect>
-					<MoltenBolt
+					<Ray
+							style=			"smooth"
+							shape=			"tapered"
 							width=				"4"
 							length=				"15"
-							growth=				"2"
+							intensity=			"50"
 							primaryColor=		"#c0ffc0"
 							secondaryColor=		"#008000"
 						/>
@@ -619,10 +621,12 @@
 					>
 
 				<Effect>
-					<MoltenBolt
+					<Ray
+							style=			"smooth"
+							shape=			"tapered"
 							width=				"4"
 							length=				"15"
-							growth=				"2"
+							intensity=			"50"
 							primaryColor=		"#c0ffc0"
 							secondaryColor=		"#008000"
 						/>
