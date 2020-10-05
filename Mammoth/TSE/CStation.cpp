@@ -108,6 +108,8 @@ static char g_TableAttrib[] = "table";
 #define MIN_DOCK_APPROACH_SPEED			(g_KlicksPerPixel * 25.0 / g_TimeScale);
 #define MAX_DOCK_APPROACH_SPEED			(g_KlicksPerPixel * 50.0 / g_TimeScale);
 #define MAX_DOCK_TANGENT_SPEED			(g_KlicksPerPixel / g_TimeScale);
+#define MAP_OBJECT_SCALE				(g_KlicksPerPixel / (0.3 * LIGHT_SECOND))
+
 const Metric g_DockBeamStrength =		1000.0;
 const Metric g_DockBeamTangentStrength = 250.0;
 
@@ -1467,7 +1469,7 @@ ALERROR CStation::CreateMapImage (void) const
 	//	Scale is 0.5 light-second per pixel (we compute the fraction of a full-sized image,
 	//	while is at 12500 klicks per pixel.)
 
-	Metric rScale = g_KlicksPerPixel / (0.3 * LIGHT_SECOND);
+	Metric rScale = MAP_OBJECT_SCALE;
 
 	//	Get it from the image
 
@@ -3535,13 +3537,25 @@ void CStation::OnPaintMap (CMapViewportCtx &Ctx, CG32bitImage &Dest, int x, int 
 
 	if (m_Scale == scaleWorld)
 		{
-		if (m_MapImage.IsEmpty())
-			CreateMapImage();
+		OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+			{
+			int iTick, iVariant;
+			const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant);
+			float fMapScale = float(MAP_OBJECT_SCALE);
+			Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant);
+			}
+		else
+			{
+			if (m_MapImage.IsEmpty())
+				CreateMapImage();
 
-		Dest.Blt(0, 0, m_MapImage.GetWidth(), m_MapImage.GetHeight(), 255,
+			Dest.Blt(0, 0, m_MapImage.GetWidth(), m_MapImage.GetHeight(), 255,
 				m_MapImage,
 				x - (m_MapImage.GetWidth() / 2),
 				y - (m_MapImage.GetHeight() / 2));
+			}
+
 
 		m_Overlays.PaintMapAnnotations(Ctx, Dest, x, y);
 
@@ -3558,14 +3572,25 @@ void CStation::OnPaintMap (CMapViewportCtx &Ctx, CG32bitImage &Dest, int x, int 
 		}
 	else if (m_Scale == scaleStar)
 		{
-		if (m_MapImage.IsEmpty())
-			CreateMapImage();
+		OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+			{
+			int iTick, iVariant;
+			const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant);
+			float fMapScale = float(MAP_OBJECT_SCALE);
+			Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant);
+			}
+		else
+			{
+			if (m_MapImage.IsEmpty())
+				CreateMapImage();
 
-		CGDraw::BltLighten(Dest,
+			CGDraw::BltLighten(Dest,
 				x - (m_MapImage.GetWidth() / 2),
 				y - (m_MapImage.GetHeight() / 2),
 				m_MapImage,
 				0, 0, m_MapImage.GetWidth(), m_MapImage.GetHeight());
+			}
 		}
 	else if (m_pType->ShowsMapIcon() && m_fKnown)
 		{
@@ -3575,23 +3600,41 @@ void CStation::OnPaintMap (CMapViewportCtx &Ctx, CG32bitImage &Dest, int x, int 
 			{
 			if (Ctx.IsPaintStationImagesEnabled())
 				{
-				if (m_MapImage.IsEmpty())
-					CreateMapImage();
-
-				if (!IsAbandoned() || IsImmutable())
+				OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+				if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
 					{
-					Dest.Blt(0, 0, m_MapImage.GetWidth(), m_MapImage.GetHeight(), 255,
-							m_MapImage,
-							x - (m_MapImage.GetWidth() / 2),
-							y - (m_MapImage.GetHeight() / 2));
+					int iTick, iVariant;
+					const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant);
+					float fMapScale = float(MAP_OBJECT_SCALE);
+					if (!IsAbandoned() || IsImmutable())
+						{
+						Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant);
+						}
+					else
+						{
+						Image.PaintGrayedImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant);
+						}
 					}
 				else
 					{
-					CGDraw::BltGray(Dest,
+					if (m_MapImage.IsEmpty())
+						CreateMapImage();
+
+					if (!IsAbandoned() || IsImmutable())
+						{
+						Dest.Blt(0, 0, m_MapImage.GetWidth(), m_MapImage.GetHeight(), 255,
+							m_MapImage,
+							x - (m_MapImage.GetWidth() / 2),
+							y - (m_MapImage.GetHeight() / 2));
+						}
+					else
+						{
+						CGDraw::BltGray(Dest,
 							x - (m_MapImage.GetWidth() / 2),
 							y - (m_MapImage.GetHeight() / 2),
 							m_MapImage,
 							0, 0, m_MapImage.GetWidth(), m_MapImage.GetHeight(), 0x80);
+						}
 					}
 				}
 			else
