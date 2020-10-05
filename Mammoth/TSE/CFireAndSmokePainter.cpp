@@ -100,6 +100,7 @@ void CFireAndSmokePainter::Paint (CG32bitImage &Dest, int x, int y, int iAge, in
 //	Paints a single particle of the given age.
 
 	{
+	//  TODO(heliogenesis): Add OpenGL support for this function
 	//	Compute properties of the particle based on its life
 
 	CG32bitPixel rgbColor = 0;
@@ -188,6 +189,36 @@ void CGaseousPainter::Paint (CG32bitImage &Dest, int x, int y, int iAge) const
 
 	if (m_iLifetime > 0)
 		{
+		//  Use OpenGL if it is enabled
+
+		auto OpenGLMasterRenderQueue = Dest.GetMasterRenderQueue();
+		if (OpenGLMasterRenderQueue && (&(Dest) == OpenGLMasterRenderQueue->getPointerToCanvas()))
+			{
+			std::tuple<int, int, int> primaryColor(int(m_rgbPrimary.GetRed()), int(m_rgbPrimary.GetGreen()), int(m_rgbPrimary.GetBlue()));
+			std::tuple<int, int, int> secondaryColor(int(m_rgbSecondary.GetRed()), int(m_rgbSecondary.GetGreen()), int(m_rgbSecondary.GetBlue()));
+			int iCanvasHeight = Dest.GetHeight();
+			int iCanvasWidth = Dest.GetWidth();
+			OpenGLMasterRenderQueue->addParticleToEffectRenderQueue(
+				x,
+				y,
+				m_iMinWidth + m_iWidthRange,
+				m_iMinWidth + m_iWidthRange,
+				iCanvasWidth,
+				iCanvasHeight,
+				0.0,
+				1.0,
+				ParticlePaintStyles::paintPlain,
+				m_iLifetime,
+				min(m_iLifetime, iAge),
+				0,
+				float(m_iMinWidth),
+				float(m_iMinWidth + m_iWidthRange),
+				primaryColor,
+				secondaryColor,
+				OpenGLRenderLayer::blendMode::blendNormal);
+			return;
+			}
+
 		//	Particle fades out over time
 
 		int iLifeLeft = Max(0, m_iLifetime - iAge);
@@ -227,6 +258,36 @@ void CGlitterPainter::Paint (CG32bitImage &Dest, int x, int y, int iRotation) co
 //	Paint a glittering particle
 
 	{
+	//  Use OpenGL if it is enabled
+
+	auto OpenGLMasterRenderQueue = Dest.GetMasterRenderQueue();
+	if (OpenGLMasterRenderQueue && (&(Dest) == OpenGLMasterRenderQueue->getPointerToCanvas()))
+		{
+		std::tuple<int, int, int> primaryColor(int(m_rgbPrimary.GetRed()), int(m_rgbPrimary.GetGreen()), int(m_rgbPrimary.GetBlue()));
+		std::tuple<int, int, int> secondaryColor(int(m_rgbSecondary.GetRed()), int(m_rgbSecondary.GetGreen()), int(m_rgbSecondary.GetBlue()));
+		int iCanvasHeight = Dest.GetHeight();
+		int iCanvasWidth = Dest.GetWidth();
+		OpenGLMasterRenderQueue->addParticleToEffectRenderQueue(
+			x,
+			y,
+			m_iWidth,
+			m_iWidth,
+			iCanvasWidth,
+			iCanvasHeight,
+			float(-iRotation + 180) * (float(PI) / 180.0f),
+			1.0,
+			ParticlePaintStyles::paintGlitter,
+			1337,
+			1337,
+			0,
+			float(m_iWidth),
+			float(m_iWidth),
+			primaryColor,
+			secondaryColor,
+			OpenGLRenderLayer::blendMode::blendNormal);
+		return;
+		}
+
 	const int HIGHLIGHT_ANGLE = 135;
 	const int HIGHLIGHT_RANGE = 30;
 
