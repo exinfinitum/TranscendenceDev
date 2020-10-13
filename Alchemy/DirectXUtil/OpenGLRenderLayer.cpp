@@ -38,7 +38,7 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
 	// Only do this if we need to render a glowy thing.
 	if (glowColor[3] > 0.0) {
-		image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1]);
+		image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1], numFramesPerRow, numFramesPerCol);
 		m_texturesNeedingGlowmaps.push_back(image);
 	}
 
@@ -318,8 +318,9 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		pTextureToUse->initTextureFromOpenGLThread();
 		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 4> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise" };
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse, currentTick, perlinNoise);
+		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
+		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
+		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
 		pInstancedRenderQueue->setBlendMode(blendMode::blendNormal);
 		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
 	}
@@ -331,8 +332,9 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		pTextureToUse->initTextureFromOpenGLThread();
 		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 4> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise" };
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse, currentTick, perlinNoise);
+		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
+		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
+		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
 		pInstancedRenderQueue->setBlendMode(blendMode::blendScreen);
 		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
 	}
@@ -343,8 +345,9 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		pTextureToUse->initTextureFromOpenGLThread();
 		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 4> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise" };
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse, currentTick, perlinNoise);
+		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
+		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
+		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
 		pInstancedRenderQueue->setBlendMode(blendMode::blendNormal);
 		nonDepthTestBatchesToRender.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
 	}
@@ -355,8 +358,9 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		pTextureToUse->initTextureFromOpenGLThread();
 		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 4> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise" };
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse, currentTick, perlinNoise);
+		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
+		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
+		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
 		pInstancedRenderQueue->setBlendMode(blendMode::blendScreen);
 		nonDepthTestBatchesToRender.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
 	}

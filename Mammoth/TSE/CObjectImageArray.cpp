@@ -1738,7 +1738,8 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 											int y,
 											int iTick,
 											int iRotation,
-											CG32bitPixel rgbGlowColor) const
+											CG32bitPixel rgbGlowColor,
+											bool drawImageOnly) const
 
 //	PaintImageWithGlow
 //
@@ -1752,7 +1753,7 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 	OpenGLMasterRenderQueue *pRenderQueue = Dest.GetMasterRenderQueue();
 	if (pRenderQueue && m_pImage && (&(Dest) == pRenderQueue->getPointerToCanvas()))
 	{
-		CG32bitImage *pSource = m_pImage->GetRawImage(NULL_STR);
+		CG32bitImage* pSource = m_pImage->GetRawImage(NULL_STR);
 		if (pSource == NULL)
 			return;
 
@@ -1772,31 +1773,41 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 			iStrength = 255;
 		float fStrength = iStrength / 255.0f;
 
+		auto* glowMap = pSource->GetOpenGLTexture()->getGlowMap();
+		int padSize = glowMap != nullptr ? glowMap->getPadSize() : 0;
 		int iCanvasHeight = Dest.GetHeight();
 		int iCanvasWidth = Dest.GetWidth();
 		int iQuadWidth = RectWidth(m_rcImage);
 		int iQuadHeight = RectHeight(m_rcImage);
 		int iTexQuadWidth = RectWidth(m_rcImage);
 		int iTexQuadHeight = RectHeight(m_rcImage);
-		int iGQuadWidth = int(RectWidth(m_rcImage) * 1.00);
-		int iGQuadHeight = int(RectHeight(m_rcImage) * 1.00);
-		auto[iNumRows, iNumCols] = GetNumColsAndRows();
-		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iGQuadWidth, iGQuadHeight, x - (iGQuadWidth / 2), y - (iGQuadHeight / 2), iCanvasHeight,
- iCanvasWidth,
-			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, 0.0f, 1.0f, 0.0f, fStrength, 0.0f, false);
-		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
- iCanvasWidth,
-			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top);
-		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iGQuadWidth, iGQuadHeight, x - (iGQuadWidth / 2), y - (iGQuadHeight / 2), iCanvasHeight,
- iCanvasWidth,
-			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, 0.0f, 1.0f, 0.0f, fStrength / 4.5f, 0.0f, false);
+		int iGlowQuadWidth = int(RectWidth(m_rcImage)) + (2 * padSize);
+		int iGlowQuadHeight = int(RectHeight(m_rcImage)) + (2 * padSize);
+		int iGlowTexQuadWidth = int(RectWidth(m_rcImage));
+		int iGlowTexQuadHeight = int(RectHeight(m_rcImage));
+		auto [iNumRows, iNumCols] = GetNumColsAndRows();
+		float fRed = float(rgbGlowColor.GetRed()) / 255.0f;
+		float fBlue = float(rgbGlowColor.GetBlue()) / 255.0f;
+		float fGreen = float(rgbGlowColor.GetGreen()) / 255.0f;
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iGlowQuadWidth, iGlowQuadHeight, x - (iGlowQuadWidth / 2), y - (iGlowQuadHeight / 2), iCanvasHeight,
+			iCanvasWidth,
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength, 0.0f, false);
+		if (!drawImageOnly) {
+			pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
+				iCanvasWidth,
+				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top);
+			pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iGlowQuadWidth, iGlowQuadHeight, x - (iGlowQuadWidth / 2), y - (iGlowQuadHeight / 2), iCanvasHeight,
+				iCanvasWidth,
+				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength / 4.5f, 0.0f, false);
+		}
 		return;
 	}
 
 
 	//	Paint the image
-
-	PaintImage(Dest, x, y, iTick, iRotation);
+	if (!drawImageOnly) {
+		PaintImage(Dest, x, y, iTick, iRotation);
+	}
 
 	if (m_pRotationOffset)
 		{

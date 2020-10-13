@@ -119,7 +119,7 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
 	if (!textureRenderType == OpenGLRenderLayer::textureRenderCategory::text) {
-		image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1]);
+		image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1], numFramesPerRow, numFramesPerCol);
 	}
 	if (m_bPrevObjAddedIsParticle) {
 		m_fDepthLevel -= m_fDepthDelta;
