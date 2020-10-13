@@ -19,6 +19,7 @@ out vec4 out_color;
 uniform sampler2D obj_texture;
 uniform sampler2D glow_map;
 uniform int current_tick;
+uniform int glowmap_pad_size;
 uniform sampler3D perlin_noise;
 
 const int renderCategoryObjectCartesian = 0;
@@ -112,7 +113,24 @@ float cnoise(vec3 P){
   return 2.2 * n_xyz;
 }
 
-vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, vec2 fragment_pos, float alphaNoiseTimeAxis, float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, float perlinNoiseGlow)
+ivec2 getPixelGridSquareUnpadded(vec2 coords, vec2 texture_size) {
+    int x_coord = int(coords[0] / texture_size[0]);
+	int y_coord = int(coords[1] / texture_size[1]);
+	return ivec2(x_coord, y_coord);
+}
+
+vec4 sampleFromGlowMap(vec2 texture_uv, vec2 texture_size)
+{
+	// Convert the raw (unpadded) fragment pos to properly deal with glowmap padding
+	ivec2 quad_index = getPixelGridSquareUnpadded(texture_uv, texture_size);
+	vec2 glowmap_fragment_pos = texture_uv;
+	glowmap_fragment_pos = glowmap_fragment_pos * textureSize(obj_texture, 0);
+	glowmap_fragment_pos = glowmap_fragment_pos + (((2 * quad_index) + vec2(1.0, 1.0)) * glowmap_pad_size);
+	glowmap_fragment_pos = glowmap_fragment_pos / textureSize(glow_map, 0);
+	return texture(glow_map, glowmap_fragment_pos);
+}
+
+vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, float alphaNoiseTimeAxis, float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, float perlinNoiseGlow)
 {
 	float glowBoundaries = texture(glow_map, vec2(texture_uv[0], texture_uv[1]))[3];
 	
@@ -218,7 +236,7 @@ void main(void)
 	//alphaNoise = (alpha_strength + (alphaNoise * alpha_strength));
 	//alphaNoise = (float(alphaNoise > 0.5) * 2) - 1;
 	
-	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, fragment_pos, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, perlinNoise);
+	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, perlinNoise);
 	vec4 glowColorStatic = getGlowColor_Static(epsilon, realColor, texture_size, texture_uv, obj_texture);
 	vec4 textColor = getTextColor(glow_color, texture_uv);
 	bool useStaticNoise = (glow_noise < epsilon);

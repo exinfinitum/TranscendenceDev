@@ -268,7 +268,8 @@ class CObjectImageArray
 								 int y,
 								 int iTick,
 								 int iRotation,
-								 CG32bitPixel rgbGlowColor) const;
+								 CG32bitPixel rgbGlowColor,
+								 bool drawGlowOnly = false) const;
 		void PaintRotatedImage (CG32bitImage &Dest,
 								int x,
 								int y,
