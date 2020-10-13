@@ -111,7 +111,7 @@ void OpenGLRenderLayer::addParticleToEffectRenderQueue(glm::vec4 sizeAndPosition
 	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
 }
 
-void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, const int maxDrawCallsWithProperOrder) {
+void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPairList &batchesToRender, const int maxDrawCallsWithProperOrder) {
 	int iDeepestBatchIndex = -1;
 	int iSecondDeepestBatchIndex = -1;
 	float fDeepestBatchLastElementDepth = 0.0;
@@ -183,7 +183,7 @@ void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(std::vector<std::pai
 	}
 }
 
-void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& textureBatchesToRender, std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& nonTextureBatchesToRender) {
+void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchShaderPairList& textureBatchesToRender, OpenGLBatchShaderPairList& nonTextureBatchesToRender) {
 	// This render mode uses depth testing for textured objects only.
 	glEnable(GL_DEPTH_TEST);
 
@@ -298,72 +298,66 @@ void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(std::vector<s
 
 }
 
+void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
+	OpenGLInstancedTextureBatchMapping& batchesToRender,
+	OpenGLBatchShaderPairList& texRenderBatchesForDepthTesting,
+	OpenGLBatchShaderPairList& texRenderBatchesForNoDepthTesting,
+	OpenGLShader* objectTextureShader,
+	blendMode blendMode, int currentTick, const OpenGLAnimatedNoise* perlinNoise, bool noDepthTesting)
+{
+	for (const auto& p : batchesToRender)
+	{
+		OpenGLBatchShaderPairList& renderBatchToUse = (m_renderOrder == renderOrder::renderOrderTextureFirst && !noDepthTesting) ? texRenderBatchesForDepthTesting : texRenderBatchesForNoDepthTesting;
+		OpenGLTexture* pTextureToUse = p.first;
+		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
+		pTextureToUse->initTextureFromOpenGLThread();
+		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
+		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
+		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
+		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
+		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
+		pInstancedRenderQueue->setBlendMode(blendMode);
+		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
+	}
+}
+
 void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
 {
 	// For each render queue in the ships render queue, render that render queue. We need to set the texture and do a glBindTexture before doing so.
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> depthTestBatchesToRender;
-	std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> nonDepthTestBatchesToRender;
+	OpenGLBatchShaderPairList depthTestBatchesToRender;
+	OpenGLBatchShaderPairList nonDepthTestBatchesToRender;
 
 	// Set uniforms for all render batches and append them to our list of batches to render
 	// Note, setUniforms is persistent across calls to any Render() function since it sets things in the batch object, not in OpenGL
 	// Non-texture render batches should always be last in batchesToRender
-	for (const auto& p : m_texRenderBatchesBlendNormal)
-	{
-		std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &renderBatchToUse = (m_renderOrder == renderOrder::renderOrderTextureFirst) ? depthTestBatchesToRender : nonDepthTestBatchesToRender;
-		OpenGLTexture* pTextureToUse = p.first;
-		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
-		pTextureToUse->initTextureFromOpenGLThread();
-		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
-		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
-		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
-		pInstancedRenderQueue->setBlendMode(blendMode::blendNormal);
-		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
-	}
-	for (const auto& p : m_texRenderBatchesBlendScreen)
-	{
-		std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &renderBatchToUse = (m_renderOrder == renderOrder::renderOrderTextureFirst) ? depthTestBatchesToRender : nonDepthTestBatchesToRender;
-		OpenGLTexture* pTextureToUse = p.first;
-		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
-		pTextureToUse->initTextureFromOpenGLThread();
-		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
-		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
-		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
-		pInstancedRenderQueue->setBlendMode(blendMode::blendScreen);
-		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
-	}
-	for (const auto& p : m_texRenderBatchesNoDepthTestingBlendNormal)
-	{
-		OpenGLTexture* pTextureToUse = p.first;
-		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
-		pTextureToUse->initTextureFromOpenGLThread();
-		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
-		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
-		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
-		pInstancedRenderQueue->setBlendMode(blendMode::blendNormal);
-		nonDepthTestBatchesToRender.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
-	}
-	for (const auto& p : m_texRenderBatchesNoDepthTestingBlendScreen)
-	{
-		OpenGLTexture* pTextureToUse = p.first;
-		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
-		pTextureToUse->initTextureFromOpenGLThread();
-		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
-		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
-		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
-		pInstancedRenderQueue->setBlendMode(blendMode::blendScreen);
-		nonDepthTestBatchesToRender.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
-	}
+	PrepareTextureRenderBatchesForRendering(
+		m_texRenderBatchesBlendNormal,
+		depthTestBatchesToRender,
+		nonDepthTestBatchesToRender,
+		objectTextureShader, 
+		blendMode::blendNormal, currentTick, perlinNoise, false);
+	PrepareTextureRenderBatchesForRendering(
+		m_texRenderBatchesBlendScreen,
+		depthTestBatchesToRender,
+		nonDepthTestBatchesToRender,
+		objectTextureShader, 
+		blendMode::blendScreen, currentTick, perlinNoise, false);
+	PrepareTextureRenderBatchesForRendering(
+		m_texRenderBatchesNoDepthTestingBlendNormal,
+		depthTestBatchesToRender,
+		nonDepthTestBatchesToRender,
+		objectTextureShader, 
+		blendMode::blendNormal, currentTick, perlinNoise, true);
+	PrepareTextureRenderBatchesForRendering(
+		m_texRenderBatchesNoDepthTestingBlendScreen,
+		depthTestBatchesToRender,
+		nonDepthTestBatchesToRender,
+		objectTextureShader, 
+		blendMode::blendScreen, currentTick, perlinNoise, true);
+
 	std::array<std::string, 3> rayAndLightningUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise" };
 	std::array<std::string, 1> particleUniformNames = { "aCanvasAdjustedDimensions" };
 	m_rayRenderBatchBlendNormal.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
