@@ -147,7 +147,11 @@ OpenGLTexture* OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO*
 	// Generate a glow map. Kernel is a multivariate gaussian.
 
 	// TODO: Wrap this function in a for loop and make it private; the for loop should iterate through m_GlowmapTilesToRender and move completed ones to the completed queue
-	int iPadPixels = 0;
+	int iPadPixels = 50;
+	int iMaxPadPixelsX = OpenGLContext::getMaxOpenGLTextureSize() - m_iWidth;
+	int iMaxPadPixelsY = OpenGLContext::getMaxOpenGLTextureSize() - m_iHeight;
+	int iMaxPadPixels = std::min(iMaxPadPixelsX, iMaxPadPixelsY);
+	iPadPixels = std::min(iPadPixels, iMaxPadPixels);
 	int iOutputWidth = m_iWidth + (numFramesPerRow * iPadPixels * 2);
 	int iOutputHeight = m_iHeight + (numFramesPerCol * iPadPixels * 2);
 	if (!m_pGlowMap) {

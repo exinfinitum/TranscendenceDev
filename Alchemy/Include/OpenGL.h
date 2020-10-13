@@ -96,6 +96,9 @@ public:
 	void getWGLError ();
 	void getWGLSwapError ();
 	void setBlendMode ();
+	static int getMaxOpenGLTextureSize() {
+		return m_iMaxTextureSize;
+	}
 
 private:
 	int m_iWindowWidth;
@@ -116,12 +119,16 @@ private:
 	unsigned int vaoID[1];
 	unsigned int vboID[1];
 	unsigned int eboID[1];
+	inline static int m_iMaxTextureSize;
 
 protected:
 	HGLRC m_renderContext;
 	HDC m_deviceContext;
 	HWND m_windowID;
 };
+
+typedef std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> OpenGLInstancedTextureBatchMapping;
+typedef std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> OpenGLBatchShaderPairList;
 
 class OpenGLRenderLayer {
 public:
@@ -202,14 +209,20 @@ public:
 		return numObjs;
 	}
 private:
-	void renderAllQueuesWithProperRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
+	void renderAllQueuesWithProperRenderOrder(OpenGLBatchShaderPairList &batchesToRender) {
 		renderAllQueuesWithBasicRenderOrder(batchesToRender, 1000);
 	};
-	void renderAllQueuesWithSimplifiedRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender) {
+	void renderAllQueuesWithSimplifiedRenderOrder(OpenGLBatchShaderPairList &batchesToRender) {
 		renderAllQueuesWithBasicRenderOrder(batchesToRender, m_iMaxProperRenderOrderDrawCalls);
 	};
-	void renderAllQueuesWithBasicRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> &batchesToRender, const int maxDrawCallsWithProperOrder);
-	void renderAllQueuesWithTextureFirstRenderOrder(std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& textureBatchesToRender, std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>>& nonTextureBatchesToRender);
+	void renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPairList &batchesToRender, const int maxDrawCallsWithProperOrder);
+	void renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchShaderPairList& textureBatchesToRender, OpenGLBatchShaderPairList& nonTextureBatchesToRender);
+	void PrepareTextureRenderBatchesForRendering(
+		OpenGLInstancedTextureBatchMapping& batchesToRender,
+		OpenGLBatchShaderPairList& texRenderBatchesForDepthTesting,
+		OpenGLBatchShaderPairList& texRenderBatchesForNoDepthTesting,
+		OpenGLShader* objectTextureShader,
+		OpenGLRenderLayer::blendMode blendMode, int currentTick, const OpenGLAnimatedNoise* perlinNoise, bool noDepthTesting);
 	void addProceduralEffectToProperRenderQueue(OpenGLInstancedBatchRenderRequestRay renderRequest, OpenGLRenderLayer::blendMode blendMode) {
 		OpenGLInstancedBatchRay& rayRenderBatch = m_rayRenderBatchBlendNormal;
 		switch (blendMode) {
@@ -224,7 +237,7 @@ private:
 			break;
 		}
 	}
-	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*>& getTextureRenderBatch(OpenGLRenderLayer::blendMode blendMode) {
+	OpenGLInstancedTextureBatchMapping& getTextureRenderBatch(OpenGLRenderLayer::blendMode blendMode) {
 		switch (blendMode) {
 		case OpenGLRenderLayer::blendMode::blendNormal:
 			return m_texRenderBatchesBlendNormal;
@@ -234,7 +247,7 @@ private:
 			return m_texRenderBatchesBlendNormal;
 		}
 	}
-	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*>& getTextureRenderBatchNoDepthTesting(OpenGLRenderLayer::blendMode blendMode) {
+	OpenGLInstancedTextureBatchMapping& getTextureRenderBatchNoDepthTesting(OpenGLRenderLayer::blendMode blendMode) {
 		switch (blendMode) {
 		case OpenGLRenderLayer::blendMode::blendNormal:
 			return m_texRenderBatchesNoDepthTestingBlendNormal;
@@ -257,10 +270,10 @@ private:
 
 		effectTypeCount = 5
 	};
-	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatchesBlendNormal;
-	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatchesBlendScreen;
-	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatchesNoDepthTestingBlendNormal;
-	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> m_texRenderBatchesNoDepthTestingBlendScreen;
+	OpenGLInstancedTextureBatchMapping m_texRenderBatchesBlendNormal;
+	OpenGLInstancedTextureBatchMapping m_texRenderBatchesBlendScreen;
+	OpenGLInstancedTextureBatchMapping m_texRenderBatchesNoDepthTestingBlendNormal;
+	OpenGLInstancedTextureBatchMapping m_texRenderBatchesNoDepthTestingBlendScreen;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendNormal;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendScreen;
 	OpenGLInstancedBatchParticle m_particleRenderBatchBlendNormal;

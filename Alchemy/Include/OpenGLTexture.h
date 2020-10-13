@@ -2,6 +2,7 @@
 #include "OpenGLIncludes.h"
 #include "OpenGLVAO.h"
 #include <unordered_set>
+#include <map>
 
 // Helper class to define bounds
 class GlowmapTile {
@@ -130,6 +131,9 @@ public:
 		// We should not add a request if it is already in the completed queue
 		auto glowmapTile = GlowmapTile(upleft_X, upleft_Y, size_X, size_Y, gridsize_X, gridsize_Y, numFramesPerRow, numFramesPerCol);
 		bool tileAlreadyRendered = m_CompletedGlowmapTiles.find(glowmapTile) != m_CompletedGlowmapTiles.end();
+		// TODO(heliogenesis): Maintain one glowmap per glowmap tile. The glowmap should be of the minimum size needed
+		// to hold the glowmap for that glowmap tile. This is because we can't just draw glowmaps on a texture the same
+		// size as the input texture due to padding.
 		if (!tileAlreadyRendered) {
 			m_GlowmapTilesToRender.insert(glowmapTile);
 		}
@@ -151,6 +155,7 @@ private:
 	std::unordered_set <GlowmapTile, QBHash, QBEquals> m_CompletedGlowmapTiles;
 	std::unordered_set <GlowmapTile, QBHash, QBEquals> m_GlowmapTilesToRender;
 	std::unique_ptr<OpenGLTextureGlowmapRGBA32> m_pGlowMap = nullptr;
+	std::map<GlowmapTile, std::unique_ptr<OpenGLTextureGlowmapRGBA32>> m_pGlowMaps;
 };
 
 // Grayscale version for fonts. Note that RED is the channel used as the font alpha, all other channels can be ignored.
