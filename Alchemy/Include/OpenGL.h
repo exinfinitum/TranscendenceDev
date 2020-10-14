@@ -127,7 +127,7 @@ protected:
 	HWND m_windowID;
 };
 
-typedef std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> OpenGLInstancedTextureBatchMapping;
+typedef std::map<std::pair<OpenGLTexture*, OpenGLTexture*>, OpenGLInstancedBatchTexture*> OpenGLInstancedTextureBatchMapping;
 typedef std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> OpenGLBatchShaderPairList;
 
 class OpenGLRenderLayer {

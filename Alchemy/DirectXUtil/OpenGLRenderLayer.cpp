@@ -23,16 +23,17 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	// different threads, but it's a very bad idea to run OpenGL on multiple threads at the same time - so texture initialization (which involves
 	// OpenGL function calls) must all be done on the OpenGL thread
 	const std::unique_lock<std::mutex> lock(m_texRenderQueueAddMutex);
-	std::map<OpenGLTexture*, OpenGLInstancedBatchTexture*> &texRenderBatchToUse =
+	OpenGLInstancedTextureBatchMapping &texRenderBatchToUse =
 		(!useDepthTesting) && (m_renderOrder == renderOrder::renderOrderTextureFirst) ?
 		getTextureRenderBatchNoDepthTesting(blendMode) : getTextureRenderBatch(blendMode);
 	// Check to see if we have a render queue with that texture already loaded.
 	ASSERT(image);
-	if (!texRenderBatchToUse.count(image))
+	auto imageAndGlowMap = std::pair(image, image->getGlowMap());
+	if (!texRenderBatchToUse.count(imageAndGlowMap))
 	{
 		// If we don't have a render queue with that texture loaded, then add one.
 		// Note, we clear after every render, in order to prevent seg fault issues; also creating an instanced batch is not very expensive anymore.
-		texRenderBatchToUse[image] = new OpenGLInstancedBatchTexture();
+		texRenderBatchToUse[imageAndGlowMap] = new OpenGLInstancedBatchTexture();
 	}
 
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
@@ -45,7 +46,7 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	// Add this quad to the render queue.
 	auto renderRequest = OpenGLInstancedBatchRenderRequestTexture(vTexPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, alphaStrength, glowColor, glowNoise, textureRenderType, blendMode);
 	renderRequest.set_depth(startingDepth);
-	texRenderBatchToUse[image]->addObjToRender(renderRequest);
+	texRenderBatchToUse[imageAndGlowMap]->addObjToRender(renderRequest);
 }
 
 void OpenGLRenderLayer::addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode, float secondaryOpacity)
@@ -308,13 +309,15 @@ void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
 	for (const auto& p : batchesToRender)
 	{
 		OpenGLBatchShaderPairList& renderBatchToUse = (m_renderOrder == renderOrder::renderOrderTextureFirst && !noDepthTesting) ? texRenderBatchesForDepthTesting : texRenderBatchesForNoDepthTesting;
-		OpenGLTexture* pTextureToUse = p.first;
+		auto textureAndGlowMap = p.first;
+		OpenGLTexture* pTextureToUse = textureAndGlowMap.first;
+		OpenGLTexture* glowMap = textureAndGlowMap.second;
 		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
 		pTextureToUse->initTextureFromOpenGLThread();
 		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
 		std::array<std::string, 5> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size" };
-		auto glowMap = pTextureToUse->getGlowMap() ? pTextureToUse->getGlowMap() : pTextureToUse;
+		glowMap = glowMap ? glowMap : pTextureToUse;
 		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize());
 		pInstancedRenderQueue->setBlendMode(blendMode);
 		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
