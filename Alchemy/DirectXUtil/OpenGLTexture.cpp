@@ -150,7 +150,7 @@ OpenGLTexture* OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO*
 	int iPadPixels = 50;
 	int iMaxPadPixelsX = OpenGLContext::getMaxOpenGLTextureSize() - m_iWidth;
 	int iMaxPadPixelsY = OpenGLContext::getMaxOpenGLTextureSize() - m_iHeight;
-	int iMaxPadPixels = std::min(iMaxPadPixelsX, iMaxPadPixelsY);
+	int iMaxPadPixels = std::min(iMaxPadPixelsX / numFramesPerRow, iMaxPadPixelsY / numFramesPerCol) / 2;
 	iPadPixels = std::min(iPadPixels, iMaxPadPixels);
 	int iOutputWidth = m_iWidth + (numFramesPerRow * iPadPixels * 2);
 	int iOutputHeight = m_iHeight + (numFramesPerCol * iPadPixels * 2);
