@@ -18,7 +18,7 @@ void main()
 
     // Write coords span from -1 to 1
 	vec2 positionOffset = vec2(texPositionOffset[0], -texPositionOffset[1]) * 1.0f;
-	vec2 fixedCanvPos = vec2((fixedTexPos[0] * 2.0) - 1.0, -((fixedTexPos[1] * 2.0) - 1.0));
+	vec2 fixedCanvPos = vec2((0.0 * 2.0) - 1.0, -((0.0 * 2.0) - 1.0));
 	fixedCanvPos = fixedCanvPos + positionOffset;
 	vec2 texPos2dWrite = vec2(aPos[0] * fixedTexSize[0] * 1.0, -aPos[1] * fixedTexSize[1] * 1.0) + fixedCanvPos;
 

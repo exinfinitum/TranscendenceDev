@@ -28,7 +28,17 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 		getTextureRenderBatchNoDepthTesting(blendMode) : getTextureRenderBatch(blendMode);
 	// Check to see if we have a render queue with that texture already loaded.
 	ASSERT(image);
-	auto imageAndGlowMap = std::pair(image, image->getGlowMap());
+	auto glowmapTile = GlowmapTile(
+		vSpriteSheetPositions[0],
+		vSpriteSheetPositions[1],
+		float(numFramesPerRow * vTextureQuadSizes[0]),
+		float(numFramesPerCol * vTextureQuadSizes[1]),
+		vTextureQuadSizes[0],
+		vTextureQuadSizes[1],
+		numFramesPerRow,
+		numFramesPerCol
+	);
+	auto imageAndGlowMap = std::pair(image, image->getGlowMap(glowmapTile));
 	if (!texRenderBatchToUse.count(imageAndGlowMap))
 	{
 		// If we don't have a render queue with that texture loaded, then add one.
@@ -38,8 +48,8 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
 	// Only do this if we need to render a glowy thing.
-	if (glowColor[3] > 0.0) {
-		image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1], numFramesPerRow, numFramesPerCol);
+	if (glowColor[3] > 0.0 || true) {
+		image->requestGlowmapTile(glowmapTile);
 		m_texturesNeedingGlowmaps.push_back(image);
 	}
 
@@ -424,6 +434,7 @@ void OpenGLRenderLayer::GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO,
 		// TODO: Move to a block that occurs after all layers are done rendering, or better yet, only generate glowmaps on demand.
 		pTextureToUse->populateGlowmaps(fbo, canvasVAO, glowmapShader);
 	}
+	m_texturesNeedingGlowmaps.clear();
 }
 
 void OpenGLRenderLayer::clear(void)

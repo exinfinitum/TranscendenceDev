@@ -142,24 +142,24 @@ OpenGLTexture::~OpenGLTexture ()
 	m_iWidth = 0;
 	}
 
-OpenGLTexture* OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, OpenGLShader* shader, const glm::vec2 texQuadSize, const glm::vec2 texStartPoint, const glm::vec2 texGridSize, int numFramesPerRow, int numFramesPerCol)
+std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, OpenGLShader* shader, const glm::vec2 texQuadSize, const glm::vec2 texStartPoint, const glm::vec2 texGridSize, int numFramesPerRow, int numFramesPerCol)
 {
 	// Generate a glow map. Kernel is a multivariate gaussian.
 
 	// TODO: Wrap this function in a for loop and make it private; the for loop should iterate through m_GlowmapTilesToRender and move completed ones to the completed queue
+	int iGlowmapWidth = int(numFramesPerRow * texGridSize.x * m_iHeight);
+	int iGlowmapHeight = int(numFramesPerCol * texGridSize.y * m_iWidth);
 	int iPadPixels = 50;
-	int iMaxPadPixelsX = OpenGLContext::getMaxOpenGLTextureSize() - m_iWidth;
-	int iMaxPadPixelsY = OpenGLContext::getMaxOpenGLTextureSize() - m_iHeight;
-	int iMaxPadPixels = std::min(iMaxPadPixelsX / numFramesPerRow, iMaxPadPixelsY / numFramesPerCol) / 2;
+	int iMaxPadPixelsX = OpenGLContext::getMaxOpenGLTextureSize() - iGlowmapWidth;
+	int iMaxPadPixelsY = OpenGLContext::getMaxOpenGLTextureSize() - iGlowmapHeight;
+	int iMaxPadPixels = std::min(iMaxPadPixelsX / max(1, numFramesPerRow), iMaxPadPixelsY / max(1, numFramesPerCol)) / 2;
 	iPadPixels = std::min(iPadPixels, iMaxPadPixels);
-	int iOutputWidth = m_iWidth + (numFramesPerRow * iPadPixels * 2);
-	int iOutputHeight = m_iHeight + (numFramesPerCol * iPadPixels * 2);
-	if (!m_pGlowMap) {
-		m_pGlowMap = std::make_unique<OpenGLTextureGlowmapRGBA32>(iOutputWidth, iOutputHeight);
-		m_pGlowMap.get()->initTextureFromOpenGLThread();
-	}
-	if (m_iWidth > 0 && m_iHeight > 0)
+	int iOutputWidth = iGlowmapWidth + (numFramesPerRow * iPadPixels * 2);
+	int iOutputHeight = iGlowmapHeight + (numFramesPerCol * iPadPixels * 2);
+	if (iGlowmapWidth > 0 && iGlowmapHeight > 0)
 	{
+		auto pGlowmap = std::make_unique<OpenGLTextureGlowmapRGBA32>(iOutputWidth, iOutputHeight);
+		pGlowmap.get()->initTextureFromOpenGLThread();
 		// TODO: Instead of what we are doing right now, we should render the entire texture in one go with instanced rendering in two passes;
 		// that will have much better performance. What we can do is make it so that we paint one quad onto the texture, using the current vertex
 		// shader, but we do subdivision (gridding) in the fragment shader stage. We need to supply the quad size there.
@@ -199,7 +199,7 @@ OpenGLTexture* OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO*
 		glUniform2f(glGetUniformLocation(shader->id(), "gridSquareSize"), texGridSize_x, texGridSize_y);
 		glUniform1i(glGetUniformLocation(shader->id(), "pad_pixels_per_grid_square"), iPadPixels);
 		glUniform2i(glGetUniformLocation(shader->id(), "num_grid_squares"), numFramesPerRow, numFramesPerCol);
-		glUniform1i(glGetUniformLocation(shader->id(), "kernelSize"), std::min(25, std::max(3, int(std::min(texQuadSize_x * m_iWidth, texQuadSize_y * m_iHeight) / 10))));
+		glUniform1i(glGetUniformLocation(shader->id(), "kernelSize"), std::min(25, std::max(3, int(std::min(texQuadSize_x * iGlowmapWidth, texQuadSize_y * iGlowmapHeight) / 10))));
 		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_TRUE);
 		glUniform1i(glGetUniformLocation(shader->id(), "second_pass"), GL_FALSE);
 
@@ -207,7 +207,7 @@ OpenGLTexture* OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO*
 		glBindVertexArray((vao->getVAO())[0]);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		// Second pass
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_pGlowMap->getTexture()[0], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pGlowmap->getTexture()[0], 0);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 			::kernelDebugLogPattern("[OpenGL] Framebuffer is not complete p2");
 		// Render to the new texture
@@ -227,9 +227,9 @@ OpenGLTexture* OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO*
 		// Unbind the frame buffer and delete our rbo
 		glDeleteRenderbuffers(1, &rbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		m_pGlowMap->setPadSize(iPadPixels);
+		pGlowmap->setPadSize(iPadPixels);
 
-		return m_pGlowMap.get();
+		return pGlowmap;
 	}
 	else {
 		return nullptr;
