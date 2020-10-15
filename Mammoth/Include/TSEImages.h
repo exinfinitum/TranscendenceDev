@@ -334,6 +334,7 @@ class CObjectImageArray
 		int m_iFramesPerColumn;				//	Rotation frames spread out over multiple columns
 		int m_iFramesPerRow;				//	Animation frames spread out over multiple rows
 		bool m_bDefaultSize;				//	If TRUE, get size from image.
+		bool m_bIsFlatTexture;				//  If TRUE and OpenGL is enabled, only load a single rotation into GPU memory
 
 		//	Cached images
 

@@ -117,10 +117,25 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 	glm::vec2 vTextureQuadSizes((float)texQuadWidth / (float)texWidth, (float)texQuadHeight / (float)texHeight);
 	glm::vec4 glowColor(glowR, glowG, glowB, glowA);
 
-	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
-	if (!textureRenderType == OpenGLRenderLayer::textureRenderCategory::text) {
-		image->requestGlowmapTile(vSpriteSheetPositions[0], vSpriteSheetPositions[1], float(numFramesPerRow * vTextureQuadSizes[0]), float(numFramesPerCol * vTextureQuadSizes[1]), vTextureQuadSizes[0], vTextureQuadSizes[1], numFramesPerRow, numFramesPerCol);
+	// If this is a glow color, and a glowmap is defined, then adjust coordinates
+
+	if (glowColor[3] > 0.0) {
+		auto glowmapTile = GlowmapTile(
+			vSpriteSheetPositions[0],
+			vSpriteSheetPositions[1],
+			float(numFramesPerRow * vTextureQuadSizes[0]),
+			float(numFramesPerCol * vTextureQuadSizes[1]),
+			vTextureQuadSizes[0], vTextureQuadSizes[1],
+			numFramesPerRow, numFramesPerCol
+		);
+		auto* glowMap = image->getGlowMap(glowmapTile);
+		int padSize = glowMap != nullptr ? glowMap->getPadSize() : 0;
+		glm::vec2 vPadSizes(float(2 * padSize) / float(canvasWidth), float(2 * padSize) / float(canvasHeight));
+
+		vCanvasQuadSizes = vCanvasQuadSizes + vPadSizes;
+		vCanvasPositions = vCanvasPositions - (vPadSizes / 2.0f);
 	}
+
 	if (m_bPrevObjAddedIsParticle) {
 		m_fDepthLevel -= m_fDepthDelta;
 		m_bPrevObjAddedIsParticle = false;

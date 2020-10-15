@@ -62,8 +62,16 @@ public:
 	void updateTexture2D(void* texture, int width, int height);
 	void initTextureFromOpenGLThread(void);
 	unsigned int* getTexture(void) { return m_pTextureID; }
-	virtual OpenGLTexture *getGlowMap(void) { return nullptr; }
+	virtual OpenGLTexture *getGlowMap(float upleft_X, float upleft_Y, float size_X, float size_Y, float gridsize_X, float gridsize_Y, int numFramesPerRow, int numFramesPerCol) { return nullptr; }
+	OpenGLTexture *getGlowMap(GlowmapTile glowmapTile) {
+		auto [texStart_x, texStart_y, texQuadSize_x, texQuadSize_y, texGridSize_x, texGridSize_y, numFramesPerRow, numFramesPerCol] = glowmapTile.getValue();
+		return this->getGlowMap(texStart_x, texStart_y, texQuadSize_x, texQuadSize_y, texGridSize_x, texGridSize_y, numFramesPerRow, numFramesPerCol);
+	}
 	virtual void requestGlowmapTile(float upleft_X, float upleft_Y, float size_X, float size_Y, float gridsize_X, float gridsize_Y, int numFramesPerRow, int numFramesPerCol) {};
+	void requestGlowmapTile(GlowmapTile glowmapTile) {
+		auto [texStart_x, texStart_y, texQuadSize_x, texQuadSize_y, texGridSize_x, texGridSize_y, numFramesPerRow, numFramesPerCol] = glowmapTile.getValue();
+		this->requestGlowmapTile(texStart_x, texStart_y, texQuadSize_x, texQuadSize_y, texGridSize_x, texGridSize_y, numFramesPerRow, numFramesPerCol);
+	};
 	virtual void populateGlowmaps(unsigned int fbo, OpenGLVAO* vao, OpenGLShader* shader) {};
 	virtual int getPadSize() { return 0; };
 	virtual GLint getInternalFormat() = 0;
@@ -130,7 +138,7 @@ public:
 		// This function should be called when we request a render with this texture
 		// We should not add a request if it is already in the completed queue
 		auto glowmapTile = GlowmapTile(upleft_X, upleft_Y, size_X, size_Y, gridsize_X, gridsize_Y, numFramesPerRow, numFramesPerCol);
-		bool tileAlreadyRendered = m_CompletedGlowmapTiles.find(glowmapTile) != m_CompletedGlowmapTiles.end();
+		bool tileAlreadyRendered = m_pGlowMaps.count(glowmapTile) > 0;
 		// TODO(heliogenesis): Maintain one glowmap per glowmap tile. The glowmap should be of the minimum size needed
 		// to hold the glowmap for that glowmap tile. This is because we can't just draw glowmaps on a texture the same
 		// size as the input texture due to padding.
@@ -144,18 +152,26 @@ public:
 			glm::vec2 texStart(texStart_x, texStart_y); // Starting point of this texture sprite sheet, 1.0 being bottom/rightmost and 0.0 being top/leftmost
 			glm::vec2 texSize(texQuadSize_x, texQuadSize_y); // Size of the ENTIRE sprite sheet, 1.0 being 100% of the quad in X/Y dir
 			glm::vec2 texGridSize(texGridSize_x, texGridSize_y); // Size of each frame of this sprite sheet, 1.0 being 100% of the quad in X/Y dir
-			GenerateGlowMap(fbo, vao, shader, texSize, texStart, texGridSize, numFramesPerRow, numFramesPerCol);
-			m_CompletedGlowmapTiles.insert(tileToRender);
+			auto glowmap = GenerateGlowMap(fbo, vao, shader, texSize, texStart, texGridSize, numFramesPerRow, numFramesPerCol);
+			m_pGlowMaps[tileToRender] = std::move(glowmap);
 		}
 		m_GlowmapTilesToRender.clear();
 	}
-	OpenGLTexture* getGlowMap(void) override { return m_pGlowMap.get(); }
+	OpenGLTexture* getGlowMap(float upleft_X, float upleft_Y, float size_X, float size_Y, float gridsize_X, float gridsize_Y, int numFramesPerRow, int numFramesPerCol) override {
+		auto glowmapTile = GlowmapTile(upleft_X, upleft_Y, size_X, size_Y, gridsize_X, gridsize_Y, numFramesPerRow, numFramesPerCol);
+		if (m_pGlowMaps.count(glowmapTile) > 0) {
+			return m_pGlowMaps[glowmapTile].get();
+		}
+		else {
+			return nullptr;
+		}
+	}
 private:
-	OpenGLTexture* GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, OpenGLShader* shader, const glm::vec2 texQuadSize, const glm::vec2 texStartPoint, const glm::vec2 texGridSize, int numFramesPerRow, int numFramesPerCol);
+	std::unique_ptr<OpenGLTextureGlowmapRGBA32> GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, OpenGLShader* shader, const glm::vec2 texQuadSize, const glm::vec2 texStartPoint, const glm::vec2 texGridSize, int numFramesPerRow, int numFramesPerCol);
 	std::unordered_set <GlowmapTile, QBHash, QBEquals> m_CompletedGlowmapTiles;
 	std::unordered_set <GlowmapTile, QBHash, QBEquals> m_GlowmapTilesToRender;
 	std::unique_ptr<OpenGLTextureGlowmapRGBA32> m_pGlowMap = nullptr;
-	std::map<GlowmapTile, std::unique_ptr<OpenGLTextureGlowmapRGBA32>> m_pGlowMaps;
+	std::unordered_map<GlowmapTile, std::unique_ptr<OpenGLTextureGlowmapRGBA32>, QBHash, QBEquals> m_pGlowMaps;
 };
 
 // Grayscale version for fonts. Note that RED is the channel used as the font alpha, all other channels can be ignored.

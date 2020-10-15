@@ -16,6 +16,7 @@
 #define VIEWPORT_SIZE_ATTRIB			CONSTLIT("viewportSize")
 #define X_OFFSET_ATTRIB					CONSTLIT("xOffset")
 #define Y_OFFSET_ATTRIB					CONSTLIT("yOffset")
+#define FLAT_TEXTURE_ATTRIB				CONSTLIT("isFlatTexture")
 
 #define LIGHTEN_BLENDING				CONSTLIT("brighten")
 
@@ -538,6 +539,7 @@ void CObjectImageArray::CopyFrom (const CObjectImageArray &Source)
 	m_pScaledImages = NULL;
 	m_cxScaledImage = -1;
 	m_bDefaultSize = Source.m_bDefaultSize;
+	m_bIsFlatTexture = Source.m_bIsFlatTexture;
 
 	m_iRotationOffset = Source.m_iRotationOffset;
 	if (Source.m_pRotationOffset)
@@ -1035,6 +1037,7 @@ ALERROR CObjectImageArray::Init (CUniverse &Universe, DWORD dwBitmapUNID, int iF
 	m_iBlending = blendNormal;
 	m_iViewportSize = RectWidth(m_rcImage);
 	m_bDefaultSize = false;
+	m_bIsFlatTexture = false;
 
 	return NOERROR;
     }
@@ -1067,6 +1070,7 @@ ALERROR CObjectImageArray::Init (CObjectImage *pImage, const RECT &rcImage, int 
 	m_iBlending = blendNormal;
 	m_iViewportSize = RectWidth(rcImage);
 	m_bDefaultSize = false;
+	m_bIsFlatTexture = false;
 
 	return NOERROR;
 	}
@@ -1096,6 +1100,7 @@ ALERROR CObjectImageArray::Init (CUniverse &Universe, DWORD dwBitmapUNID, const 
 	m_iBlending = blendNormal;
 	m_iViewportSize = RectWidth(rcImage);
 	m_bDefaultSize = false;
+	m_bIsFlatTexture = false;
 
 	return NOERROR;
 	}
@@ -1125,6 +1130,7 @@ ALERROR CObjectImageArray::InitFromBitmap (CG32bitImage *pBitmap, const RECT &rc
 	m_iBlending = blendNormal;
 	m_iViewportSize = RectWidth(rcImage);
 	m_bDefaultSize = false;
+	m_bIsFlatTexture = false;
 
     if (xOffset != 0 || yOffset != 0)
         ComputeRotationOffsets(xOffset, -yOffset);
@@ -1164,6 +1170,7 @@ ALERROR CObjectImageArray::InitFromFrame (const CObjectImageArray &Source, int i
 	m_iBlending = blendNormal;
 	m_iViewportSize = Source.m_iViewportSize;
 	m_bDefaultSize = false;
+	m_bIsFlatTexture = false;
 
 	return NOERROR;
 	}
@@ -1217,6 +1224,7 @@ ALERROR CObjectImageArray::InitFromRotated (const CObjectImageArray &Source, con
 	m_iBlending = blendNormal;
 	m_iViewportSize = RectWidth(m_rcImage);
 	m_bDefaultSize = false;
+	m_bIsFlatTexture = false;
 
 	return NOERROR;
 	}
@@ -1273,6 +1281,10 @@ ALERROR CObjectImageArray::InitFromXML (SDesignLoadCtx &Ctx, const CXMLElement &
 		m_rcImage.bottom = m_rcImage.top;
 		m_bDefaultSize = true;
 		}
+
+	// TODO(heliogenesis): All calls of CObjectImageArray should be made in OpenGL, so we can avoid loading unneeded
+	// rotations into CPU memory.
+	m_bIsFlatTexture = Desc.GetAttributeBool(FLAT_TEXTURE_ATTRIB);
 
 	m_iFrameCount = Desc.GetAttributeInteger(CONSTLIT(g_ImageFrameCountAttrib));
 	m_iRotationCount = Desc.GetAttributeIntegerBounded(ROTATION_COUNT_ATTRIB, 1, -1, iDefaultRotationCount);
@@ -1773,33 +1785,29 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 			iStrength = 255;
 		float fStrength = iStrength / 255.0f;
 
-		auto* glowMap = pSource->GetOpenGLTexture()->getGlowMap();
-		int padSize = glowMap != nullptr ? glowMap->getPadSize() : 0;
 		int iCanvasHeight = Dest.GetHeight();
 		int iCanvasWidth = Dest.GetWidth();
 		int iQuadWidth = RectWidth(m_rcImage);
 		int iQuadHeight = RectHeight(m_rcImage);
 		int iTexQuadWidth = RectWidth(m_rcImage);
 		int iTexQuadHeight = RectHeight(m_rcImage);
-		int iGlowQuadWidth = int(RectWidth(m_rcImage)) + (2 * padSize);
-		int iGlowQuadHeight = int(RectHeight(m_rcImage)) + (2 * padSize);
 		int iGlowTexQuadWidth = int(RectWidth(m_rcImage));
 		int iGlowTexQuadHeight = int(RectHeight(m_rcImage));
 		auto [iNumRows, iNumCols] = GetNumColsAndRows();
 		float fRed = float(rgbGlowColor.GetRed()) / 255.0f;
 		float fBlue = float(rgbGlowColor.GetBlue()) / 255.0f;
 		float fGreen = float(rgbGlowColor.GetGreen()) / 255.0f;
-		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iGlowQuadWidth, iGlowQuadHeight, x - (iGlowQuadWidth / 2), y - (iGlowQuadHeight / 2), iCanvasHeight,
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
 			iCanvasWidth,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength, 0.0f, false);
 		if (!drawImageOnly) {
 			pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
 				iCanvasWidth,
 				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top);
-			pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iGlowQuadWidth, iGlowQuadHeight, x - (iGlowQuadWidth / 2), y - (iGlowQuadHeight / 2), iCanvasHeight,
-				iCanvasWidth,
-				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength / 4.5f, 0.0f, false);
 		}
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
+			iCanvasWidth,
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumRows, iNumCols, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength / 4.5f, 0.0f, false);
 		return;
 	}
 
@@ -2199,6 +2207,7 @@ void CObjectImageArray::ReadFromStream (SLoadCtx &Ctx)
 		}
 
 	m_bDefaultSize = false;
+	m_bIsFlatTexture = false;
 	}
 
 void CObjectImageArray::SetImage (TSharedPtr<CObjectImage> pImage)
@@ -2280,6 +2289,7 @@ void CObjectImageArray::TakeHandoff (CObjectImageArray &Source)
 	m_iViewportSize = Source.m_iViewportSize;
 	m_iRotationOffset = Source.m_iRotationOffset;
 	m_bDefaultSize = Source.m_bDefaultSize;
+	m_bIsFlatTexture = Source.m_bIsFlatTexture;
 	}
 
 bool CObjectImageArray::ValidateImageSize (int cxWidth, int cyHeight) const
