@@ -147,9 +147,9 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 	// Generate a glow map. Kernel is a multivariate gaussian.
 
 	// TODO: Wrap this function in a for loop and make it private; the for loop should iterate through m_GlowmapTilesToRender and move completed ones to the completed queue
-	int iGlowmapWidth = int(numFramesPerRow * texGridSize.x * m_iHeight);
-	int iGlowmapHeight = int(numFramesPerCol * texGridSize.y * m_iWidth);
-	int iPadPixels = 50;
+	int iGlowmapWidth = int(max(1, numFramesPerRow) * texGridSize.x * m_iWidth);
+	int iGlowmapHeight = int(max(1, numFramesPerCol) * texGridSize.y * m_iHeight);
+	int iPadPixels = 15;
 	int iMaxPadPixelsX = OpenGLContext::getMaxOpenGLTextureSize() - iGlowmapWidth;
 	int iMaxPadPixelsY = OpenGLContext::getMaxOpenGLTextureSize() - iGlowmapHeight;
 	int iMaxPadPixels = std::min(iMaxPadPixelsX / max(1, numFramesPerRow), iMaxPadPixelsY / max(1, numFramesPerCol)) / 2;
@@ -213,6 +213,9 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		// Render to the new texture
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUniform2f(glGetUniformLocation(shader->id(), "aTexStartPoint"), 0.0f, 0.0f);
+		glUniform2f(glGetUniformLocation(shader->id(), "aTexQuadSizes"), 1.0f, 1.0f);
+		glUniform2f(glGetUniformLocation(shader->id(), "gridSquareSize"), float(iOutputWidth) / float(numFramesPerRow), float(iOutputHeight) / float(numFramesPerCol));
 		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_FALSE);
 		glUniform1i(glGetUniformLocation(shader->id(), "second_pass"), GL_TRUE);
 		glUniform1i(glGetUniformLocation(shader->id(), "pad_pixels_per_grid_square"), 0);
