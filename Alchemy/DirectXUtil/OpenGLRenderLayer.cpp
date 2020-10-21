@@ -54,7 +54,8 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	}
 
 	// Add this quad to the render queue.
-	auto renderRequest = OpenGLInstancedBatchRenderRequestTexture(vTexPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, alphaStrength, glowColor, glowNoise, textureRenderType, blendMode);
+	auto renderRequest = OpenGLInstancedBatchRenderRequestTexture(vTexPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, vSpriteSheetPositions,
+		glm::ivec2(numFramesPerRow, numFramesPerCol), alphaStrength, glowColor, glowNoise, textureRenderType, blendMode);
 	renderRequest.set_depth(startingDepth);
 	texRenderBatchToUse[imageAndGlowMap]->addObjToRender(renderRequest);
 }

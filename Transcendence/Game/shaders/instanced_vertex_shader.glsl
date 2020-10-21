@@ -5,26 +5,30 @@ layout (location = 1) in vec2 aTexPositions;
 layout (location = 2) in vec2 aCanvasQuadSizes;
 layout (location = 3) in vec2 aCanvasPositions;
 layout (location = 4) in vec2 aTexQuadSizes;
-layout (location = 5) in float aAlphaStrength;
-layout (location = 6) in vec4 aGlowColor;
-layout (location = 7) in float aGlowNoise;
-layout (location = 8) in int aRenderCategory;
-layout (location = 9) in int aBlendMode;
-layout (location = 10) in float aDepth;
+layout (location = 5) in vec2 aTexStartPoint;
+layout (location = 6) in ivec2 aNumberOfFrames;
+layout (location = 7) in float aAlphaStrength;
+layout (location = 8) in vec4 aGlowColor;
+layout (location = 9) in float aGlowNoise;
+layout (location = 10) in int aRenderCategory;
+layout (location = 11) in int aBlendMode;
+layout (location = 12) in float aDepth;
 
 layout (location = 0) out vec2 texture_uv;
 layout (location = 1) out vec2 texture_pos;
 layout (location = 2) out vec2 texture_size;
 layout (location = 3) out vec2 fragment_pos;
-layout (location = 4) out float alpha_strength;
-layout (location = 5) out float depth;
-layout (location = 6) out vec4 glow_color;
-layout (location = 7) out float glow_noise;
-layout (location = 8) out vec2 texture_bounds_min;
-layout (location = 9) out vec2 texture_bounds_max;
-layout (location = 10) flat out int render_category;
-layout (location = 11) out vec2 texture_raw_pos;
-layout (location = 12) flat out int blendMode;
+layout (location = 4) out vec2 texture_start_point;
+layout (location = 5) flat out ivec2 num_frames;
+layout (location = 6) out float alpha_strength;
+layout (location = 7) out float depth;
+layout (location = 8) out vec4 glow_color;
+layout (location = 9) out float glow_noise;
+layout (location = 10) out vec2 texture_bounds_min;
+layout (location = 11) out vec2 texture_bounds_max;
+layout (location = 12) flat out int render_category;
+layout (location = 13) out vec2 texture_raw_pos;
+layout (location = 14) flat out int blendMode;
 
 
 const int renderCategoryObject = 0;
@@ -58,5 +62,7 @@ void main(void)
 	texture_bounds_max = fixedTexPos + texPositionOffset*2;
 	render_category = aRenderCategory;
 	texture_raw_pos = vec2(aPos[0], aPos[1]);
+	texture_start_point = aTexStartPoint;
+	num_frames = aNumberOfFrames;
 	blendMode = aBlendMode;
 }
