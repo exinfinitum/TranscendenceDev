@@ -235,6 +235,7 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		glDeleteRenderbuffers(1, &rbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		pGlowmap->setPadSize(iPadPixels);
+		pGlowmap->setGlowSize(iGlowSize);
 
 		return pGlowmap;
 	}

@@ -149,7 +149,7 @@ public:
 		// We should not add a request if it is already in the completed queue
 		auto glowmapTile = GlowmapTile(upleft_X, upleft_Y, size_X, size_Y, gridsize_X, gridsize_Y, numFramesPerRow, numFramesPerCol, iGlowSize);
 		bool tileAlreadyRendered = m_pGlowMaps.count(glowmapTile) > 0;
-		bool requestingLargerGlowmapSize = tileAlreadyRendered ? m_pGlowMaps.at(glowmapTile)->getGlowSize() < iGlowSize : true;
+		bool requestingLargerGlowmapSize = tileAlreadyRendered ? m_pGlowMaps.at(glowmapTile)->getGlowSize() < iGlowSize : iGlowSize > 0;
 		// TODO(heliogenesis): Maintain one glowmap per glowmap tile. The glowmap should be of the minimum size needed
 		// to hold the glowmap for that glowmap tile. This is because we can't just draw glowmaps on a texture the same
 		// size as the input texture due to padding.
