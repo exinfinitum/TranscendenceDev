@@ -1493,11 +1493,11 @@ void CObjectImageArray::PaintGrayedImageScaledWithOpenGL(CG32bitImage& Dest, int
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
 			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), iCanvasHeight, iCanvasWidth,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top,
-			1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, OpenGLRenderLayer::grayscale, OpenGLRenderLayer::blendNormal);
+			1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, true, OpenGLRenderLayer::grayscale, OpenGLRenderLayer::blendNormal);
 		}
 	}
 
-void CObjectImageArray::PaintImageGlowScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, float glowR, float glowG, float glowB, float glowA, int iTick, int iRotation) const
+void CObjectImageArray::PaintImageGlowScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, float glowR, float glowG, float glowB, float glowA, int iTick, int iRotation, int glowRadius) const
 	{
 	if (!m_pImage) {
 		return;
@@ -1528,7 +1528,7 @@ void CObjectImageArray::PaintImageGlowScaledWithOpenGL(CG32bitImage& Dest, int x
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
 			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), iCanvasHeight, iCanvasWidth,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, 1.0f,
-			glowR, glowG, glowB, glowA);
+			glowR, glowG, glowB, glowA, 0.0f, glowRadius);
 		}
 	}
 
@@ -1648,7 +1648,7 @@ void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, 
 			pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
  iCanvasWidth,
 				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, (byOpacity == 0 ? 1.0f : (float)(static_cast<int>(byOpacity) / 255.0f)),
-				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, false); // TODO (heliogenesis): Experiment with depth testing on cloaked ships
+				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, false); // TODO (heliogenesis): Experiment with depth testing on cloaked ships
 			}
 		else
 			{
@@ -1768,7 +1768,7 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 		CG32bitImage* pSource = m_pImage->GetRawImage(NULL_STR);
 		if (pSource == NULL)
 			return;
-
+		int glowRadius = min(25, max(3, min(RectWidth(m_rcImage), RectHeight(m_rcImage) / 10)));
 		int xSrc;
 		int ySrc;
 		ComputeSourceXY(iTick, iRotation, &xSrc, &ySrc);
@@ -1799,7 +1799,7 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 		float fGreen = float(rgbGlowColor.GetGreen()) / 255.0f;
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
 			iCanvasWidth,
-			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength, 0.0f, false);
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength, 0.0f, glowRadius, false);
 		if (!drawImageOnly) {
 			pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
 				iCanvasWidth,
@@ -1807,7 +1807,7 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 		}
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
 			iCanvasWidth,
-			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength / 4.5f, 0.0f, false);
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength / 4.5f, 0.0f, glowRadius, false);
 		return;
 	}
 

@@ -253,8 +253,9 @@ class CObjectImageArray
 		void PaintImageScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const;
 		void PaintImageSizedWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, int xSize, int ySize, int iTick, int iRotation) const;
 		void PaintGrayedImageScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const;
-		void PaintImageGlowScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest,
-			float glowR, float glowG, float glowB, float glowA, int iTick, int iRotation) const;
+		void PaintImageGlowScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest,
+ float yScaleDest,
+			float glowR, float glowG, float glowB, float glowA, int iTick, int iRotation, int glowRadius) const;
 		void PaintImageGrayed (CG32bitImage &Dest, int x, int y, int iTick, int iRotation) const;
 		void PaintImageShimmering (CG32bitImage &Dest,
 								   int x,

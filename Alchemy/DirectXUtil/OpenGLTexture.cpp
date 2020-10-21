@@ -1,6 +1,8 @@
 #include "OpenGL.h"
 #include "PreComp.h"
 
+const int GLOW_SIZE_BUFFER = 5;
+
 OpenGLTexture::OpenGLTexture(int width, int height)
 {
 	m_iHeight = height;
@@ -142,14 +144,23 @@ OpenGLTexture::~OpenGLTexture ()
 	m_iWidth = 0;
 	}
 
-std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, OpenGLShader* shader, const glm::vec2 texQuadSize, const glm::vec2 texStartPoint, const glm::vec2 texGridSize, int numFramesPerRow, int numFramesPerCol)
+std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, OpenGLShader* shader, const glm::vec2 texQuadSize, const glm::vec2 texStartPoint, const glm::vec2 texGridSize, int numFramesPerRow, int numFramesPerCol, int iGlowSize)
 {
 	// Generate a glow map. Kernel is a multivariate gaussian.
 
 	// TODO: Wrap this function in a for loop and make it private; the for loop should iterate through m_GlowmapTilesToRender and move completed ones to the completed queue
+	float texStartPoint_x = texStartPoint[0];
+	float texStartPoint_y = texStartPoint[1];
+	float texQuadSize_x = texQuadSize[0];
+	float texQuadSize_y = texQuadSize[1];
+	float texGridSize_x = texGridSize[0];
+	float texGridSize_y = texGridSize[1];
+
 	int iGlowmapWidth = int(max(1, numFramesPerRow) * texGridSize.x * m_iWidth);
 	int iGlowmapHeight = int(max(1, numFramesPerCol) * texGridSize.y * m_iHeight);
-	int iPadPixels = 15;
+	int maxNoPadGlowSize = std::min(25, std::max(3, int(std::min(texQuadSize_x * iGlowmapWidth, texQuadSize_y * iGlowmapHeight) / 10)));
+
+	int iPadPixels = iGlowSize > maxNoPadGlowSize ? iGlowSize + GLOW_SIZE_BUFFER : 0;
 	int iMaxPadPixelsX = OpenGLContext::getMaxOpenGLTextureSize() - iGlowmapWidth;
 	int iMaxPadPixelsY = OpenGLContext::getMaxOpenGLTextureSize() - iGlowmapHeight;
 	int iMaxPadPixels = std::min(iMaxPadPixelsX / max(1, numFramesPerRow), iMaxPadPixelsY / max(1, numFramesPerCol)) / 2;
@@ -185,13 +196,6 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		glm::mat4 rotationMatrix = glm::mat4(glm::vec4(1.0, 0.0, 0.0, 0.0), glm::vec4(0.0, 1.0, 0.0, 0.0), glm::vec4(0.0, 0.0, 1.0, 0.0), glm::vec4(0.0, 0.0, 0.0, 1.0));
 		int rotationMatrixLocation = glGetUniformLocation(shader->id(), "rotationMatrix");
 
-		float texStartPoint_x = texStartPoint[0];
-		float texStartPoint_y = texStartPoint[1];
-		float texQuadSize_x = texQuadSize[0];
-		float texQuadSize_y = texQuadSize[1];
-		float texGridSize_x = texGridSize[0];
-		float texGridSize_y = texGridSize[1];
-
 		glUniformMatrix4fv(rotationMatrixLocation, 1, GL_FALSE, &rotationMatrix[0][0]);
 		glUniform1i(glGetUniformLocation(shader->id(), "ourTexture"), 0);
 		glUniform2f(glGetUniformLocation(shader->id(), "aTexStartPoint"), texStartPoint_x, texStartPoint_y);
@@ -199,7 +203,7 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		glUniform2f(glGetUniformLocation(shader->id(), "gridSquareSize"), texGridSize_x, texGridSize_y);
 		glUniform1i(glGetUniformLocation(shader->id(), "pad_pixels_per_grid_square"), iPadPixels);
 		glUniform2i(glGetUniformLocation(shader->id(), "num_grid_squares"), numFramesPerRow, numFramesPerCol);
-		glUniform1i(glGetUniformLocation(shader->id(), "kernelSize"), std::min(25, std::max(3, int(std::min(texQuadSize_x * iGlowmapWidth, texQuadSize_y * iGlowmapHeight) / 10))));
+		glUniform1i(glGetUniformLocation(shader->id(), "kernelSize"), iGlowSize);
 		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_TRUE);
 		glUniform1i(glGetUniformLocation(shader->id(), "second_pass"), GL_FALSE);
 
