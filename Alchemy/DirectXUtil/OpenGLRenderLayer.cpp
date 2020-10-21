@@ -49,7 +49,7 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
 	// Only do this if we need to render a glowy thing.
-	if (glowColor[3] > 0.0 || true) {
+	if (glowColor[3] > 0.0) {
 		image->requestGlowmapTile(glowmapTile);
 		m_texturesNeedingGlowmaps.push_back(image);
 	}
