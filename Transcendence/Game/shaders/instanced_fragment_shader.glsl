@@ -3,15 +3,17 @@ layout (location = 0) in vec2 texture_uv;
 layout (location = 1) in vec2 texture_pos;
 layout (location = 2) in vec2 texture_size;
 layout (location = 3) in vec2 fragment_pos;
-layout (location = 4) in float alpha_strength;
-layout (location = 5) in float depth;
-layout (location = 6) in vec4 glow_color;
-layout (location = 7) in float glow_noise;
-layout (location = 8) in vec2 texture_bounds_min;
-layout (location = 9) in vec2 texture_bounds_max;
-layout (location = 10) flat in int render_category;
-layout (location = 11) in vec2 texture_raw_pos;
-layout (location = 12) flat in int blendMode;
+layout (location = 4) in vec2 texture_start_point;
+layout (location = 5) flat in ivec2 num_frames;
+layout (location = 6) in float alpha_strength;
+layout (location = 7) in float depth;
+layout (location = 8) in vec4 glow_color;
+layout (location = 9) in float glow_noise;
+layout (location = 10) in vec2 texture_bounds_min;
+layout (location = 11) in vec2 texture_bounds_max;
+layout (location = 12) flat in int render_category;
+layout (location = 13) in vec2 texture_raw_pos;
+layout (location = 14) flat in int blendMode;
 
 
 out vec4 out_color;
@@ -113,35 +115,45 @@ float cnoise(vec3 P){
   return 2.2 * n_xyz;
 }
 
-ivec2 getPixelGridSquareUnpadded(vec2 coords, vec2 texture_size) {
+ivec2 getPixelGridSquareUnpadded(vec2 coords, vec2 texture_size, vec2 texture_start_point) {
+    vec2 adjusted_coords = coords - texture_start_point;
     int x_coord = int(coords[0] / texture_size[0]);
 	int y_coord = int(coords[1] / texture_size[1]);
 	return ivec2(x_coord, y_coord);
 }
 
-vec4 sampleFromGlowMap(vec2 texture_uv, vec2 texture_size)
+vec4 sampleFromGlowMap(vec2 texture_uv, vec2 texture_size, vec2 texture_start_point)
 {
 	// Convert the raw (unpadded) fragment pos to properly deal with glowmap padding
-	ivec2 quad_index = getPixelGridSquareUnpadded(texture_uv, texture_size);
-	vec2 glowmap_fragment_pos = texture_uv;
+	ivec2 quad_index = getPixelGridSquareUnpadded(texture_uv, texture_size, texture_start_point);
+	vec2 glowmap_fragment_pos = texture_uv - texture_start_point;
 	glowmap_fragment_pos = glowmap_fragment_pos * textureSize(obj_texture, 0);
 	glowmap_fragment_pos = glowmap_fragment_pos + (((2 * quad_index) + vec2(1.0, 1.0)) * glowmap_pad_size);
 	glowmap_fragment_pos = glowmap_fragment_pos / textureSize(glow_map, 0);
 	return texture(glow_map, glowmap_fragment_pos);
 }
 
-vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, float alphaNoiseTimeAxis, float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, float perlinNoiseGlow)
+vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, float alphaNoiseTimeAxis, float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, float perlinNoiseGlow, vec2 texture_start_point, ivec2 num_frames)
 {
-	float glowBoundaries = texture(glow_map, vec2(texture_uv[0], texture_uv[1]))[3];
+	// TODO(heliogenesis): Pass in the start point and bounds of the object's sprite sheet so we can convert texture_uv to glowmap coords
+	vec2 totalTextureSize = texture_size * num_frames;
+	vec2 textureUVStartingAtZero = texture_uv - texture_start_point;
+	vec2 textureUVFromZeroToOne = textureUVStartingAtZero / totalTextureSize;
+	float glowBoundaries = texture(glow_map, (vec2(textureUVFromZeroToOne[0], textureUVFromZeroToOne[1])))[3];
+	//float glowBoundaries = sampleFromGlowMap(texture_uv, texture_size, texture_start_point)[3];
 	
 	vec4 glowColor = vec4(glow_color[0], glow_color[1], glow_color[2], glow_color[3] * ((perlinNoiseGlow / 2.0) + 0.5)) * glowBoundaries;
 	
 	return glowColor;
 }
 
-vec4 getGlowColor_Static(float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture)
+vec4 getGlowColor_Static(float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, vec2 texture_start_point, ivec2 num_frames)
 {
-	float glowBoundaries = texture(glow_map, vec2(texture_uv[0], texture_uv[1]))[3];
+	vec2 totalTextureSize = texture_size * num_frames;
+	vec2 textureUVStartingAtZero = texture_uv - texture_start_point;
+	vec2 textureUVFromZeroToOne = textureUVStartingAtZero / totalTextureSize;
+	float glowBoundaries = texture(glow_map, (vec2(textureUVFromZeroToOne[0], textureUVFromZeroToOne[1])))[3];
+	//float glowBoundaries = sampleFromGlowMap(texture_uv, texture_size, texture_start_point)[3];
 	
 	vec4 glowColor = vec4(glow_color[0], glow_color[1], glow_color[2], glow_color[3]) * glowBoundaries;
 	
@@ -236,8 +248,8 @@ void main(void)
 	//alphaNoise = (alpha_strength + (alphaNoise * alpha_strength));
 	//alphaNoise = (float(alphaNoise > 0.5) * 2) - 1;
 	
-	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, perlinNoise);
-	vec4 glowColorStatic = getGlowColor_Static(epsilon, realColor, texture_size, texture_uv, obj_texture);
+	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, perlinNoise, texture_start_point, num_frames);
+	vec4 glowColorStatic = getGlowColor_Static(epsilon, realColor, texture_size, texture_uv, obj_texture, texture_start_point, num_frames);
 	vec4 textColor = getTextColor(glow_color, texture_uv);
 	bool useStaticNoise = (glow_noise < epsilon);
 	vec4 glowColor = (float(useStaticNoise) * glowColorStatic) + (float(!useStaticNoise) * glowColorPerlin);

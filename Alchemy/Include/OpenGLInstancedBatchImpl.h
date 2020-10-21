@@ -3,18 +3,20 @@
 
 // Each instanced batch type for a specific shader is derived from a class generated from the OpenGLInstancedBatchRenderRequest template.
 
-class OpenGLInstancedBatchRenderRequestTexture : public OpenGLInstancedBatchRenderRequest<glm::vec2, glm::vec2, glm::vec2, glm::vec2, float, glm::vec4, float, int, int> {
+class OpenGLInstancedBatchRenderRequestTexture : public OpenGLInstancedBatchRenderRequest<glm::vec2, glm::vec2, glm::vec2, glm::vec2, glm::vec2, glm::ivec2, float, glm::vec4, float, int, int> {
 public:
 	OpenGLInstancedBatchRenderRequestTexture(
 		glm::vec2 texPositions,
 		glm::vec2 canvasQuadSizes,
 		glm::vec2 canvasPositions,
 		glm::vec2 textureQuadSizes,
+		glm::vec2 textureStartPoint,
+		glm::ivec2 numberOfFrames,
 		float alphaStrength,
 		glm::vec4 glowColor,
 		float glowNoise,
 		int renderCategory,
-		int aBlendMode) : OpenGLInstancedBatchRenderRequest{ texPositions, canvasQuadSizes, canvasPositions, textureQuadSizes, alphaStrength, glowColor, glowNoise, renderCategory, aBlendMode } {};
+		int aBlendMode) : OpenGLInstancedBatchRenderRequest{ texPositions, canvasQuadSizes, canvasPositions, textureQuadSizes, textureStartPoint, numberOfFrames, alphaStrength, glowColor, glowNoise, renderCategory, aBlendMode } {};
 	OpenGLVAO& getVAOForInstancedBatchType() override { if (!vao) { vao = std::move(setUpVAO()); } return *(vao.get()); }
 	int getRenderRequestSize() override { return sizeof(*this); }
 private:
