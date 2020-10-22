@@ -152,7 +152,7 @@ void OpenGLMasterRenderQueue::addTextToRenderQueue(int startPixelX, int startPix
 	addTextureToRenderQueue(startPixelX, startPixelY, sizePixelX, sizePixelY, posPixelX, posPixelY, canvasHeight, canvasWidth, image, texWidth, texHeight,
 		texQuadWidth, texQuadHeight, 1, 1, 0, 0, 1.0f,
 		float(std::get<0>(textColor)) / 255.0f, float(std::get<1>(textColor)) / 255.0f, float(std::get<2>(textColor)) / 255.0f,
-		0.0f, 0.0f, useDepthTesting, OpenGLRenderLayer::textureRenderCategory::text);
+		0.0f, 0.0f, 0, useDepthTesting, OpenGLRenderLayer::textureRenderCategory::text);
 }
 
 void OpenGLMasterRenderQueue::addRayToEffectRenderQueue(int posPixelX, int posPixelY, int sizePixelX, int sizePixelY, int canvasSizeX, int canvasSizeY, float rotation,
