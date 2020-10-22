@@ -205,7 +205,7 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		glUniform1i(glGetUniformLocation(shader->id(), "pad_pixels_per_grid_square"), iPadPixels);
 		glUniform2i(glGetUniformLocation(shader->id(), "num_grid_squares"), numFramesPerRow, numFramesPerCol);
 		glUniform1i(glGetUniformLocation(shader->id(), "kernelSize"), iGlowSize);
-		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_TRUE);
+		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_FALSE);
 		glUniform1i(glGetUniformLocation(shader->id(), "second_pass"), GL_FALSE);
 
 		this->bindTexture2D(GL_TEXTURE0);
@@ -220,8 +220,8 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUniform2f(glGetUniformLocation(shader->id(), "aTexStartPoint"), 0.0f, 0.0f);
 		glUniform2f(glGetUniformLocation(shader->id(), "aTexQuadSizes"), 1.0f, 1.0f);
-		glUniform2f(glGetUniformLocation(shader->id(), "gridSquareSize"), float(iOutputWidth) / float(numFramesPerRow), float(iOutputHeight) / float(numFramesPerCol));
-		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_FALSE);
+		glUniform2f(glGetUniformLocation(shader->id(), "gridSquareSize"), 1.0f / float(numFramesPerRow), 1.0f / float(numFramesPerCol));
+		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_TRUE);
 		glUniform1i(glGetUniformLocation(shader->id(), "second_pass"), GL_TRUE);
 		glUniform1i(glGetUniformLocation(shader->id(), "pad_pixels_per_grid_square"), 0);
 
