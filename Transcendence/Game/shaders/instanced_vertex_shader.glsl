@@ -11,8 +11,8 @@ layout (location = 7) in float aAlphaStrength;
 layout (location = 8) in vec4 aGlowColor;
 layout (location = 9) in float aGlowNoise;
 layout (location = 10) in int aRenderCategory;
-layout (location = 11) in int aBlendMode;
-layout (location = 12) in int aGlowRadius;
+layout (location = 11) in int aGlowRadius;
+layout (location = 12) in int aBlendMode;
 layout (location = 13) in float aDepth;
 
 layout (location = 0) out vec2 texture_uv;

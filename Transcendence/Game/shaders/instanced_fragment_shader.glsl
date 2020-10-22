@@ -13,8 +13,8 @@ layout (location = 10) in vec2 texture_bounds_min;
 layout (location = 11) in vec2 texture_bounds_max;
 layout (location = 12) flat in int render_category;
 layout (location = 13) in vec2 texture_raw_pos;
-layout (location = 14) flat in int blendMode;
-layout (location = 15) flat in int glowRadius;
+layout (location = 14) flat in int glowRadius;
+layout (location = 15) flat in int blendMode;
 
 
 out vec4 out_color;
