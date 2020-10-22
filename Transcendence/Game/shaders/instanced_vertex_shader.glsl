@@ -12,7 +12,8 @@ layout (location = 8) in vec4 aGlowColor;
 layout (location = 9) in float aGlowNoise;
 layout (location = 10) in int aRenderCategory;
 layout (location = 11) in int aBlendMode;
-layout (location = 12) in float aDepth;
+layout (location = 12) in int aGlowRadius;
+layout (location = 13) in float aDepth;
 
 layout (location = 0) out vec2 texture_uv;
 layout (location = 1) out vec2 texture_pos;
@@ -28,7 +29,8 @@ layout (location = 10) out vec2 texture_bounds_min;
 layout (location = 11) out vec2 texture_bounds_max;
 layout (location = 12) flat out int render_category;
 layout (location = 13) out vec2 texture_raw_pos;
-layout (location = 14) flat out int blendMode;
+layout (location = 14) flat out int glowRadius;
+layout (location = 15) flat out int blendMode;
 
 
 const int renderCategoryObject = 0;
@@ -65,4 +67,5 @@ void main(void)
 	texture_start_point = aTexStartPoint;
 	num_frames = aNumberOfFrames;
 	blendMode = aBlendMode;
+	glowRadius = aGlowRadius;
 }
