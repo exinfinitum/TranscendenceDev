@@ -1768,7 +1768,7 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 		CG32bitImage* pSource = m_pImage->GetRawImage(NULL_STR);
 		if (pSource == NULL)
 			return;
-		int glowRadius = min(25, max(3, min(RectWidth(m_rcImage), RectHeight(m_rcImage) / 10)));
+		int glowRadius = min(12, max(1, min(RectWidth(m_rcImage), RectHeight(m_rcImage) / 20)));
 		int xSrc;
 		int ySrc;
 		ComputeSourceXY(iTick, iRotation, &xSrc, &ySrc);

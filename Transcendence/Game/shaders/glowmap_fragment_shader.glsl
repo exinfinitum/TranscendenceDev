@@ -9,6 +9,7 @@ uniform vec2 gridSquareSize;
 uniform sampler2D ourTexture;
 uniform int kernelSize;
 uniform int pad_pixels_per_grid_square;
+uniform int pixel_decimal_place_per_channel_for_linear_glowmap;
 uniform ivec2 num_grid_squares;
 uniform int use_x_axis;
 uniform int second_pass;
@@ -52,6 +53,13 @@ ivec2 getPixelGridSquareUnpadded(vec2 coords) {
 	return ivec2(x_coord, y_coord);
 }
 
+int obtainPixelDistanceFromFloatVec(vec3 dist_channels) {
+	float pixelDistanceIColumn = dist_channels[2] * 100.0;
+	float pixelDistanceCColumn = dist_channels[1] * 100.0;
+	float pixelDistance10KColumn = dist_channels[0] * 100.0;
+	return int((pixelDistance10KColumn * 10000.0) + (pixelDistanceCColumn * 100.0) + (pixelDistanceIColumn));
+}
+
 vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_texture, vec2 texture_size_input, int glow_size, float sum_gauss, bool using_x_axis, bool additive, vec2 pad_fraction_of_output_image, vec2 texture_size_output)
 {
 	float percent_std_dev = 0.66;
@@ -60,6 +68,7 @@ vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_te
 	ivec2 quad_index = getPixelGridSquareUnpadded(texture_uv);
     int center = int(glow_size / 2);
 	vec4 glowBoundaries = vec4(0.0, 0.0, 0.0, 0.0);
+	int distanceToNearestNonZeroAlphaPixel = int(max(texture_size_input[0], texture_size_input[1]));
 	for (int i = 0; i < glow_size; i++)
 	{
 		// Given the sum of the pixel values under the kernel, blur this pixel using a gaussian blur technique.
@@ -84,17 +93,42 @@ vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_te
 		texCoords0 = texCoords0 / texture_size_input;
 		texCoords0 = texCoords0 + aTexStartPoint;
 		texCoords0 = texCoords0 + offset0;
-        float texAlpha0 = float(texture(obj_texture, texCoords0)[3]);
 		vec2 texEndPoint = aTexStartPoint + aTexQuadSizes;
         bool texInBounds0 = getPixelGridSquareUnpadded(texCoords0) == quad_index && texCoords0[0] > aTexStartPoint[0] && texCoords0[0] < texEndPoint[0] && texCoords0[1] > aTexStartPoint[1] && texCoords0[1] < texEndPoint[1];
-        float sampleR = min(1.0, float(texture(obj_texture, texCoords0)[0])) * (gauss_val / sum_gauss) * float(texInBounds0);
-		float sampleG = min(1.0, float(texture(obj_texture, texCoords0)[1])) * (gauss_val / sum_gauss) * float(texInBounds0);
-		float sampleB = min(1.0, float(texture(obj_texture, texCoords0)[2])) * (gauss_val / sum_gauss) * float(texInBounds0);
-		float sampleA = min(1.0, float(texture(obj_texture, texCoords0)[3] > epsilon)) * (gauss_val / sum_gauss) * float(texInBounds0);
-		sampleA = (float(!additive) * sampleA) + (float(additive) * (sampleA * texture(obj_texture, texCoords0)[3]));
+		vec4 sample_value = texture(obj_texture, texCoords0);
+
+		// For linear glow map, what we do is the following:
+		// For each pixel, in the first pass, simply obtain the distance to the nearest pixel with non-zero
+		// alpha value in the axis of choice.
+		// For the second pass, do the same, but this time check the distance to the pixel that has a marked
+		// distance to non-zero alpha pixel in the first axis. Use normalized vector to get the total distance.
+		int distanceToNearestNonZeroAlphaPixelPreviousPass = obtainPixelDistanceFromFloatVec(vec3(sample_value[0], sample_value[1], sample_value[2]));
+		int candidateDistanceToNearestNonZeroAlphaPixel = abs(i - center);
+		candidateDistanceToNearestNonZeroAlphaPixel = (
+			(int(!additive) * candidateDistanceToNearestNonZeroAlphaPixel) +
+			(int(additive) * int(round(length(ivec2(candidateDistanceToNearestNonZeroAlphaPixel, distanceToNearestNonZeroAlphaPixelPreviousPass)))))
+		);
+		bool reducedDistanceToNonZeroPixel = sample_value[3] > epsilon;
+		distanceToNearestNonZeroAlphaPixel = (
+			(int(reducedDistanceToNonZeroPixel) * min(distanceToNearestNonZeroAlphaPixel, candidateDistanceToNearestNonZeroAlphaPixel)) +
+			(int(!reducedDistanceToNonZeroPixel) * distanceToNearestNonZeroAlphaPixel)
+			);
+
+        float sampleR = min(1.0, float(sample_value[0])) * (gauss_val / sum_gauss) * float(texInBounds0);
+		float sampleG = min(1.0, float(sample_value[1])) * (gauss_val / sum_gauss) * float(texInBounds0);
+		float sampleB = min(1.0, float(sample_value[2])) * (gauss_val / sum_gauss) * float(texInBounds0);
+        float sampleRF = min(1.0, float(texture(obj_texture, texCoords0 - offset0)[0])) * float(texInBounds0);
+		float sampleGF = min(1.0, float(texture(obj_texture, texCoords0 - offset0)[1])) * float(texInBounds0);
+		float sampleBF = min(1.0, float(texture(obj_texture, texCoords0 - offset0)[2])) * float(texInBounds0);
+		float sampleA = min(1.0, float(sample_value[3] > epsilon)) * (gauss_val / sum_gauss) * float(texInBounds0);
+		sampleA = (float(!additive) * sampleA) + (float(additive) * (sampleA * sample_value[3]));
 		glowBoundaries = (vec4(sampleR, sampleG, sampleB, sampleA) + glowBoundaries);
 	}
-	return vec4(glowBoundaries[0], glowBoundaries[1], glowBoundaries[2], min(1.0, 2.0 * glowBoundaries[3]));
+	float pixelDistanceIColumn = float(mod(distanceToNearestNonZeroAlphaPixel, 100)) / 100.0;
+	float pixelDistanceCColumn = float(mod(distanceToNearestNonZeroAlphaPixel / 100, 100)) / 100.0;
+	float pixelDistance10KColumn = float(mod(distanceToNearestNonZeroAlphaPixel / 10000, 100)) / 100.0;
+	return vec4(pixelDistance10KColumn, pixelDistanceCColumn, pixelDistanceIColumn, float(distanceToNearestNonZeroAlphaPixel < max(texture_size_input[0], texture_size_input[1])));
+	//return vec4(glowBoundaries[0], glowBoundaries[1], glowBoundaries[2], min(1.0, 2.0 * glowBoundaries[3]));
 	
 }
 

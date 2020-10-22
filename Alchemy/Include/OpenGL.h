@@ -167,7 +167,7 @@ public:
 	~OpenGLRenderLayer(void);
 	void addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions,
 		glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength, float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth, textureRenderCategory textureRenderType = normal,
-		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal, int numGlowPixels = 0);
+		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal, int glowRadius = 0);
 	void addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode, float secondaryOpacity);
 	void addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition, float rotation, float intensity, float opacity, int animation,
 		int style, int detail, int distortion, int animationSeed, int lifetime, int currFrame, glm::vec3 primaryColor, glm::vec3 secondaryColor, float secondaryOpacity, float startingDepth, OpenGLRenderLayer::blendMode blendMode);
@@ -314,7 +314,7 @@ public:
 	void addTextureToRenderQueue (int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
  int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture *image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight, 
 		int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength = 1.0, float glowR = 0.0, float glowG = 0.0, 
-		float glowB = 0.0, float glowA = 0.0, float glowNoise = 0.0, int numGlowPixels = 0, bool useDepthTesting = true, OpenGLRenderLayer::textureRenderCategory textureRenderType = OpenGLRenderLayer::textureRenderCategory::normal,
+		float glowB = 0.0, float glowA = 0.0, float glowNoise = 0.0, int glowRadius = 0, bool useDepthTesting = true, OpenGLRenderLayer::textureRenderCategory textureRenderType = OpenGLRenderLayer::textureRenderCategory::normal,
 		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal);
 	void addTextToRenderQueue(int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
 		int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture* image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight,
