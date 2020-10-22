@@ -54,18 +54,36 @@ ivec2 getPixelGridSquareUnpadded(vec2 coords) {
 }
 
 int obtainPixelDistanceFromFloatVec(vec3 dist_channels) {
-	float pixelDistanceIColumn = dist_channels[2] * 100.0;
-	float pixelDistanceCColumn = dist_channels[1] * 100.0;
-	float pixelDistance10KColumn = dist_channels[0] * 100.0;
-	return int((pixelDistance10KColumn * 10000.0) + (pixelDistanceCColumn * 100.0) + (pixelDistanceIColumn));
+	float pixMult = float(pixel_decimal_place_per_channel_for_linear_glowmap);
+	float pixelDistanceIColumn = dist_channels[2] * pixMult;
+	float pixelDistanceCColumn = dist_channels[1] * pixMult;
+	float pixelDistance10KColumn = dist_channels[0] * pixMult;
+	return int((pixelDistance10KColumn * pixMult * pixMult) + (pixelDistanceCColumn * pixMult) + (pixelDistanceIColumn));
 }
 
 vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_texture, vec2 texture_size_input, int glow_size, float sum_gauss, bool using_x_axis, bool additive, vec2 pad_fraction_of_output_image, vec2 texture_size_output)
 {
 	float percent_std_dev = 0.66;
     vec2 onePixel = vec2(1.0, 1.0) / texture_size_input;
-    vec2 quadSize_float = gridSquareSize;//
-	ivec2 quad_index = getPixelGridSquareUnpadded(texture_uv);
+
+	ivec2 pre_transform_quad_index = getPixelGridSquareUnpadded(texture_uv);
+	// To get the texture coordinates: note the scale between the input and the output image.
+	// If the UV coordinates after offset lie in a padded region, then the sample result should be zero.
+	// Otherwise, if the UV coordinates after offset do NOT lie in a padded region, then get the padded pixel
+	// grid square location (xp, yp). Subtract((2 * xp) + 1, (2 * yp) + 1) * padSizeInPixels from the pixel coordinates of the
+	// output; this is the pixel coordinates we need to sample from in the input. Note that if we apply the subtraction
+	// and apply zero minimum bound, then padded pixels in output image will map to row or column zero in the input image
+	// or map to out-of-quad locations, so they will effectively be zero.
+	vec2 texCoords =  vec2(texture_uv[0], texture_uv[1]);
+	texCoords = texCoords - aTexStartPoint;
+	texCoords = texCoords * texture_size_output;
+	texCoords = texCoords - (((2 * pre_transform_quad_index) + vec2(1.0, 1.0)) * pad_pixels_per_grid_square);
+	texCoords = texCoords / texture_size_input;
+	texCoords = texCoords + aTexStartPoint;
+	vec2 texEndPoint = aTexStartPoint + aTexQuadSizes;
+	ivec2 post_transform_quad_index = getPixelGridSquareUnpadded(texCoords);
+	bool sampleNotInPaddedArea = post_transform_quad_index == pre_transform_quad_index && texCoords[0] > aTexStartPoint[0] && texCoords[0] < texEndPoint[0] && texCoords[1] > aTexStartPoint[1] && texCoords[1] < texEndPoint[1];
+
     int center = int(glow_size / 2);
 	vec4 glowBoundaries = vec4(0.0, 0.0, 0.0, 0.0);
 	int distanceToNearestNonZeroAlphaPixel = int(max(texture_size_input[0], texture_size_input[1]));
@@ -79,22 +97,9 @@ vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_te
 		vec2 offsetY = vec2(onePixel[0] * 0.0, onePixel[1] * sample_point);
 		// Offset indicates which pixel under this gaussian kernel we are currently considering
         vec2 offset0 = (float(using_x_axis) * offsetX) + (float(!using_x_axis) * offsetY);
-		// To get the texture coordinates: note the scale between the input and the output image.
-		// If the UV coordinates after offset lie in a padded region, then the sample result should be zero.
-		// Otherwise, if the UV coordinates after offset do NOT lie in a padded region, then get the padded pixel
-		// grid square location (xp, yp). Subtract((2 * xp) + 1, (2 * yp) + 1) * padSizeInPixels from the pixel coordinates of the
-		// output; this is the pixel coordinates we need to sample from in the input. Note that if we apply the subtraction
-		// and apply zero minimum bound, then padded pixels in output image will map to row or column zero in the input image
-		// or map to out-of-quad locations, so they will effectively be zero.
-        vec2 texCoords0 =  vec2(texture_uv[0], texture_uv[1]);
-		texCoords0 = texCoords0 - aTexStartPoint;
-		texCoords0 = texCoords0 * texture_size_output;
-		texCoords0 = texCoords0 - (((2 * quad_index) + vec2(1.0, 1.0)) * pad_pixels_per_grid_square);
-		texCoords0 = texCoords0 / texture_size_input;
-		texCoords0 = texCoords0 + aTexStartPoint;
-		texCoords0 = texCoords0 + offset0;
-		vec2 texEndPoint = aTexStartPoint + aTexQuadSizes;
-        bool texInBounds0 = getPixelGridSquareUnpadded(texCoords0) == quad_index && texCoords0[0] > aTexStartPoint[0] && texCoords0[0] < texEndPoint[0] && texCoords0[1] > aTexStartPoint[1] && texCoords0[1] < texEndPoint[1];
+
+		vec2 texCoords0 = texCoords + offset0;
+        bool texInBounds0 = getPixelGridSquareUnpadded(texCoords0) == post_transform_quad_index && texCoords0[0] > aTexStartPoint[0] && texCoords0[0] < texEndPoint[0] && texCoords0[1] > aTexStartPoint[1] && texCoords0[1] < texEndPoint[1];
 		vec4 sample_value = texture(obj_texture, texCoords0);
 
 		// For linear glow map, what we do is the following:
@@ -108,25 +113,19 @@ vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_te
 			(int(!additive) * candidateDistanceToNearestNonZeroAlphaPixel) +
 			(int(additive) * int(round(length(ivec2(candidateDistanceToNearestNonZeroAlphaPixel, distanceToNearestNonZeroAlphaPixelPreviousPass)))))
 		);
-		bool reducedDistanceToNonZeroPixel = sample_value[3] > epsilon;
+		bool reducedDistanceToNonZeroPixel = (sample_value[3] > epsilon) && texInBounds0 && sampleNotInPaddedArea;
 		distanceToNearestNonZeroAlphaPixel = (
 			(int(reducedDistanceToNonZeroPixel) * min(distanceToNearestNonZeroAlphaPixel, candidateDistanceToNearestNonZeroAlphaPixel)) +
 			(int(!reducedDistanceToNonZeroPixel) * distanceToNearestNonZeroAlphaPixel)
 			);
-
-        float sampleR = min(1.0, float(sample_value[0])) * (gauss_val / sum_gauss) * float(texInBounds0);
-		float sampleG = min(1.0, float(sample_value[1])) * (gauss_val / sum_gauss) * float(texInBounds0);
-		float sampleB = min(1.0, float(sample_value[2])) * (gauss_val / sum_gauss) * float(texInBounds0);
-        float sampleRF = min(1.0, float(texture(obj_texture, texCoords0 - offset0)[0])) * float(texInBounds0);
-		float sampleGF = min(1.0, float(texture(obj_texture, texCoords0 - offset0)[1])) * float(texInBounds0);
-		float sampleBF = min(1.0, float(texture(obj_texture, texCoords0 - offset0)[2])) * float(texInBounds0);
-		float sampleA = min(1.0, float(sample_value[3] > epsilon)) * (gauss_val / sum_gauss) * float(texInBounds0);
-		sampleA = (float(!additive) * sampleA) + (float(additive) * (sampleA * sample_value[3]));
-		glowBoundaries = (vec4(sampleR, sampleG, sampleB, sampleA) + glowBoundaries);
 	}
-	float pixelDistanceIColumn = float(mod(distanceToNearestNonZeroAlphaPixel, 100)) / 100.0;
-	float pixelDistanceCColumn = float(mod(distanceToNearestNonZeroAlphaPixel / 100, 100)) / 100.0;
-	float pixelDistance10KColumn = float(mod(distanceToNearestNonZeroAlphaPixel / 10000, 100)) / 100.0;
+	float pixMult = float(pixel_decimal_place_per_channel_for_linear_glowmap);
+	float pixelDistanceIColumn = float(mod(distanceToNearestNonZeroAlphaPixel, pixel_decimal_place_per_channel_for_linear_glowmap)) / pixMult;
+	float pixelDistanceCColumn = float(mod(distanceToNearestNonZeroAlphaPixel /
+		pixel_decimal_place_per_channel_for_linear_glowmap, pixel_decimal_place_per_channel_for_linear_glowmap)) / pixMult;
+	float pixelDistance10KColumn = float(mod(distanceToNearestNonZeroAlphaPixel /
+		(pixel_decimal_place_per_channel_for_linear_glowmap * pixel_decimal_place_per_channel_for_linear_glowmap),
+		pixel_decimal_place_per_channel_for_linear_glowmap)) / pixMult;
 	return vec4(pixelDistance10KColumn, pixelDistanceCColumn, pixelDistanceIColumn, float(distanceToNearestNonZeroAlphaPixel < max(texture_size_input[0], texture_size_input[1])));
 	//return vec4(glowBoundaries[0], glowBoundaries[1], glowBoundaries[2], min(1.0, 2.0 * glowBoundaries[3]));
 	
