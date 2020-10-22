@@ -14,6 +14,7 @@ layout (location = 11) in vec2 texture_bounds_max;
 layout (location = 12) flat in int render_category;
 layout (location = 13) in vec2 texture_raw_pos;
 layout (location = 14) flat in int blendMode;
+layout (location = 15) flat in int glowRadius;
 
 
 out vec4 out_color;
@@ -23,6 +24,7 @@ uniform sampler2D glow_map;
 uniform int current_tick;
 uniform int glowmap_pad_size;
 uniform sampler3D perlin_noise;
+uniform int pixel_decimal_place_per_channel_for_linear_glowmap;
 
 const int renderCategoryObjectCartesian = 0;
 const int renderCategoryText = 1;
@@ -115,6 +117,14 @@ float cnoise(vec3 P){
   return 2.2 * n_xyz;
 }
 
+int obtainPixelDistanceFromFloatVec(vec3 dist_channels) {
+	float pixMult = float(pixel_decimal_place_per_channel_for_linear_glowmap);
+	float pixelDistanceIColumn = dist_channels[2] * pixMult;
+	float pixelDistanceCColumn = dist_channels[1] * pixMult;
+	float pixelDistance10KColumn = dist_channels[0] * pixMult;
+	return int((pixelDistance10KColumn * pixMult * pixMult) + (pixelDistanceCColumn * pixMult) + (pixelDistanceIColumn));
+}
+
 ivec2 getPixelGridSquareUnpadded(vec2 coords, vec2 texture_size, vec2 texture_start_point) {
     vec2 adjusted_coords = coords - texture_start_point;
     int x_coord = int(coords[0] / texture_size[0]);
@@ -133,12 +143,19 @@ vec4 sampleFromGlowMap(vec2 texture_uv, vec2 texture_size, vec2 texture_start_po
 	return texture(glow_map, glowmap_fragment_pos);
 }
 
-vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, float alphaNoiseTimeAxis, float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, float perlinNoiseGlow, vec2 texture_start_point, ivec2 num_frames)
-{
+float getGlowBoundaries(vec2 texture_size, ivec2 num_frames, vec2 texture_uv, vec2 texture_start_point) {
 	vec2 totalTextureSize = texture_size * num_frames;
 	vec2 textureUVStartingAtZero = texture_uv - texture_start_point;
 	vec2 textureUVFromZeroToOne = textureUVStartingAtZero / totalTextureSize;
-	float glowBoundaries = texture(glow_map, (vec2(textureUVFromZeroToOne[0], textureUVFromZeroToOne[1])))[3];
+	vec4 glowmapSampleValue = texture(glow_map, (vec2(textureUVFromZeroToOne[0], textureUVFromZeroToOne[1])));
+	int distanceFromObject = obtainPixelDistanceFromFloatVec(vec3(glowmapSampleValue[0], glowmapSampleValue[1], glowmapSampleValue[2]));
+	float glowBoundaries = 1.0 - (float(distanceFromObject) / float(max(1, glowRadius)));
+	return glowBoundaries * float(distanceFromObject <= glowRadius) * glowmapSampleValue[3];
+}
+
+vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, float alphaNoiseTimeAxis, float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, float perlinNoiseGlow, vec2 texture_start_point, ivec2 num_frames)
+{
+	float glowBoundaries = getGlowBoundaries(texture_size, num_frames, texture_uv, texture_start_point);
 	
 	vec4 glowColor = vec4(glow_color[0], glow_color[1], glow_color[2], glow_color[3] * ((perlinNoiseGlow / 2.0) + 0.5)) * glowBoundaries;
 	
@@ -147,10 +164,7 @@ vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, float alphaNoiseTimeAxis,
 
 vec4 getGlowColor_Static(float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, vec2 texture_start_point, ivec2 num_frames)
 {
-	vec2 totalTextureSize = texture_size * num_frames;
-	vec2 textureUVStartingAtZero = texture_uv - texture_start_point;
-	vec2 textureUVFromZeroToOne = textureUVStartingAtZero / totalTextureSize;
-	float glowBoundaries = texture(glow_map, (vec2(textureUVFromZeroToOne[0], textureUVFromZeroToOne[1])))[3];
+	float glowBoundaries = getGlowBoundaries(texture_size, num_frames, texture_uv, texture_start_point);
 	
 	vec4 glowColor = vec4(glow_color[0], glow_color[1], glow_color[2], glow_color[3]) * glowBoundaries;
 	

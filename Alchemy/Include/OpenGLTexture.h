@@ -56,7 +56,7 @@ public:
 
 class OpenGLTexture {
 public:
-	int PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP = 100;
+	static const int PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP = 100;
 	OpenGLTexture(void* texture, int width, int height, bool isOpaque);
 	OpenGLTexture(int width, int height);
 	~OpenGLTexture(void);
