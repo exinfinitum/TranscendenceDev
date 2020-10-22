@@ -135,12 +135,10 @@ vec4 sampleFromGlowMap(vec2 texture_uv, vec2 texture_size, vec2 texture_start_po
 
 vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, float alphaNoiseTimeAxis, float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, float perlinNoiseGlow, vec2 texture_start_point, ivec2 num_frames)
 {
-	// TODO(heliogenesis): Pass in the start point and bounds of the object's sprite sheet so we can convert texture_uv to glowmap coords
 	vec2 totalTextureSize = texture_size * num_frames;
 	vec2 textureUVStartingAtZero = texture_uv - texture_start_point;
 	vec2 textureUVFromZeroToOne = textureUVStartingAtZero / totalTextureSize;
 	float glowBoundaries = texture(glow_map, (vec2(textureUVFromZeroToOne[0], textureUVFromZeroToOne[1])))[3];
-	//float glowBoundaries = sampleFromGlowMap(texture_uv, texture_size, texture_start_point)[3];
 	
 	vec4 glowColor = vec4(glow_color[0], glow_color[1], glow_color[2], glow_color[3] * ((perlinNoiseGlow / 2.0) + 0.5)) * glowBoundaries;
 	
@@ -153,7 +151,6 @@ vec4 getGlowColor_Static(float epsilon, vec4 color, vec2 texture_size, vec2 text
 	vec2 textureUVStartingAtZero = texture_uv - texture_start_point;
 	vec2 textureUVFromZeroToOne = textureUVStartingAtZero / totalTextureSize;
 	float glowBoundaries = texture(glow_map, (vec2(textureUVFromZeroToOne[0], textureUVFromZeroToOne[1])))[3];
-	//float glowBoundaries = sampleFromGlowMap(texture_uv, texture_size, texture_start_point)[3];
 	
 	vec4 glowColor = vec4(glow_color[0], glow_color[1], glow_color[2], glow_color[3]) * glowBoundaries;
 	
