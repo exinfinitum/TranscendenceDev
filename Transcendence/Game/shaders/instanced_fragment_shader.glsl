@@ -119,9 +119,10 @@ float cnoise(vec3 P){
 
 int obtainPixelDistanceFromFloatVec(vec3 dist_channels) {
 	float pixMult = float(pixel_decimal_place_per_channel_for_linear_glowmap);
-	float pixelDistanceIColumn = dist_channels[2] * pixMult;
-	float pixelDistanceCColumn = dist_channels[1] * pixMult;
-	float pixelDistance10KColumn = dist_channels[0] * pixMult;
+	vec3 inverted_channels = 1.0 - dist_channels;
+	float pixelDistanceIColumn = inverted_channels[2] * pixMult;
+	float pixelDistanceCColumn = inverted_channels[1] * pixMult;
+	float pixelDistance10KColumn = inverted_channels[0] * pixMult;
 	return int((pixelDistance10KColumn * pixMult * pixMult) + (pixelDistanceCColumn * pixMult) + (pixelDistanceIColumn));
 }
 
