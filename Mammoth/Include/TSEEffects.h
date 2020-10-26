@@ -186,6 +186,7 @@ class CCreatePainterCtx
 		DWORD GetLoadVersion (void) const { return m_dwLoadVersion; }
 		ICCItemPtr GetParams (void) const { return m_pParams; }
 		const CVector &GetPos (void) const { return m_vPos; }
+		const CSpaceObject *GetSource (void) const { return m_pSource; }
 		bool IsRawPainter (void) const { return m_bRaw; }
 		bool IsTracking (void) const { return m_bTracking; }
 		void SetAnchor (CSpaceObject *pAnchor) { m_pAnchor = pAnchor; }

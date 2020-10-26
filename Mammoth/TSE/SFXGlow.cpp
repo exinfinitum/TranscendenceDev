@@ -12,6 +12,7 @@
 #define RADIUS_ATTRIB					CONSTLIT("radius")
 #define SECONDARY_COLOR_ATTRIB			CONSTLIT("secondaryColor")
 #define STYLE_ATTRIB					CONSTLIT("style")
+#define USE_SOURCE_OBJ_ATTRIB			CONSTLIT("useSourceObj")
 
 class CGlowEffectPainter : public IEffectPainter
 	{
@@ -66,7 +67,7 @@ class CGlowEffectPainter : public IEffectPainter
 			};
 		
 		bool CalcIntermediates (void) const;
-		const SCacheEntry &GetGlowImage (CSpaceObject &Source) const;
+		const SCacheEntry &GetGlowImage (const CSpaceObject &Source) const;
 		void Reset (void) const;
 
 		static DWORDLONG MakeCacheKey (DWORD dwSourceID, int iSourceRotation);
@@ -81,6 +82,7 @@ class CGlowEffectPainter : public IEffectPainter
 
 		int m_iLifetime = 0;
 		EAnimationTypes m_iAnimate = animateNone;
+		const CSpaceObject* m_pSource = nullptr;
 
 		//	Temporary variables during painting
 
@@ -149,6 +151,7 @@ IEffectPainter *CGlowEffectCreator::OnCreatePainter (CCreatePainterCtx &Ctx)
 	pPainter->SetParam(Ctx, RADIUS_ATTRIB, m_Radius);
 	pPainter->SetParam(Ctx, SECONDARY_COLOR_ATTRIB, m_SecondaryColor);
 	pPainter->SetParam(Ctx, STYLE_ATTRIB, m_Style);
+	pPainter->SetParam(Ctx, USE_SOURCE_OBJ_ATTRIB, m_UseSourceObj);
 
 	//	Initialize via GetParameters, if necessary
 
@@ -192,6 +195,8 @@ ALERROR CGlowEffectCreator::OnEffectCreateFromXML (SDesignLoadCtx &Ctx, CXMLElem
 
 	if (error = m_SecondaryColor.InitColorFromXML(Ctx, pDesc->GetAttribute(SECONDARY_COLOR_ATTRIB)))
 		return error;
+
+	m_UseSourceObj = pDesc->GetAttributeBool(USE_SOURCE_OBJ_ATTRIB);
 
 	return NOERROR;
 	}
@@ -298,7 +303,7 @@ bool CGlowEffectPainter::CalcIntermediates (void) const
 	return true;
 	}
 
-const CGlowEffectPainter::SCacheEntry &CGlowEffectPainter::GetGlowImage (CSpaceObject &Source) const
+const CGlowEffectPainter::SCacheEntry &CGlowEffectPainter::GetGlowImage (const CSpaceObject &Source) const
 
 //	GetGlowImage
 //
@@ -473,7 +478,7 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 	{
 	//	Figure out which object we're going to make glow.
 
-	CSpaceObject *pSource = Ctx.pObj;
+	const CSpaceObject *pSource = m_pSource ? m_pSource : Ctx.pObj;
 	if (pSource == NULL)
 		return;
 
@@ -542,6 +547,14 @@ bool CGlowEffectPainter::OnSetParam (CCreatePainterCtx &Ctx, const CString &sPar
 
 	else if (strEquals(sParam, ANIMATE_ATTRIB))
 		m_iStyle = (EStyles)Value.EvalIdentifier(STYLE_TABLE, styleMax, styleFull);
+
+	else if (strEquals(sParam, USE_SOURCE_OBJ_ATTRIB)) {
+		if (Value.EvalBool()) {
+			const CSpaceObject* pCtxSource = Ctx.GetSource();
+			const CSpaceObject* pDamageCtxSource = Ctx.GetDamageCtx() ? Ctx.GetDamageCtx()->pObj : nullptr;
+			m_pSource = pDamageCtxSource ? pDamageCtxSource : pCtxSource;
+		}
+	}
 
 	else
 		return false;
