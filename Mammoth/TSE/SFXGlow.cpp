@@ -11,6 +11,7 @@
 #define PRIMARY_COLOR_ATTRIB			CONSTLIT("primaryColor")
 #define RADIUS_ATTRIB					CONSTLIT("radius")
 #define SECONDARY_COLOR_ATTRIB			CONSTLIT("secondaryColor")
+#define NOISE_ATTRIB					CONSTLIT("noise")
 #define STYLE_ATTRIB					CONSTLIT("style")
 #define USE_SOURCE_OBJ_ATTRIB			CONSTLIT("useSourceObj")
 
@@ -83,6 +84,7 @@ class CGlowEffectPainter : public IEffectPainter
 		int m_iLifetime = 0;
 		EAnimationTypes m_iAnimate = animateNone;
 		const CSpaceObject* m_pSource = nullptr;
+		int m_iNoise = 0;
 
 		//	Temporary variables during painting
 
@@ -151,6 +153,7 @@ IEffectPainter *CGlowEffectCreator::OnCreatePainter (CCreatePainterCtx &Ctx)
 	pPainter->SetParam(Ctx, RADIUS_ATTRIB, m_Radius);
 	pPainter->SetParam(Ctx, SECONDARY_COLOR_ATTRIB, m_SecondaryColor);
 	pPainter->SetParam(Ctx, STYLE_ATTRIB, m_Style);
+	pPainter->SetParam(Ctx, NOISE_ATTRIB, m_Noise);
 	pPainter->SetParam(Ctx, USE_SOURCE_OBJ_ATTRIB, m_UseSourceObj);
 
 	//	Initialize via GetParameters, if necessary
@@ -194,6 +197,9 @@ ALERROR CGlowEffectCreator::OnEffectCreateFromXML (SDesignLoadCtx &Ctx, CXMLElem
 		return error;
 
 	if (error = m_SecondaryColor.InitColorFromXML(Ctx, pDesc->GetAttribute(SECONDARY_COLOR_ATTRIB)))
+		return error;
+
+	if (error = m_Noise.InitIntegerFromXML(Ctx, pDesc->GetAttribute(NOISE_ATTRIB)))
 		return error;
 
 	m_UseSourceObj = pDesc->GetAttributeBool(USE_SOURCE_OBJ_ATTRIB);
@@ -420,6 +426,9 @@ bool CGlowEffectPainter::GetParam (const CString &sParam, CEffectParamDesc *retV
 	else if (strEquals(sParam, STYLE_ATTRIB))
 		retValue->InitInteger(m_iStyle);
 
+	else if (strEquals(sParam, NOISE_ATTRIB))
+		retValue->InitInteger(m_iNoise);
+
 	else
 		return false;
 
@@ -440,6 +449,7 @@ bool CGlowEffectPainter::GetParamList (TArray<CString> *retList) const
 	retList->GetAt(2) = PRIMARY_COLOR_ATTRIB;
 	retList->GetAt(3) = RADIUS_ATTRIB;
 	retList->GetAt(4) = SECONDARY_COLOR_ATTRIB;
+	retList->GetAt(5) = NOISE_ATTRIB;
 
 	return true;
 	}
@@ -487,12 +497,6 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 	if (!CalcIntermediates())
 		return;
 
-	//	Get the glow image, creating if necessary.
-
-	const SCacheEntry &Entry = GetGlowImage(*pSource);
-	if (Entry.GlowImage.IsEmpty())
-		return;
-
 	//	Compute some values
 
 	BYTE byOpacity;
@@ -500,6 +504,22 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 		byOpacity = m_OpacityTable[Ctx.iTick % m_OpacityTable.GetCount()];
 	else
 		byOpacity = 0xff;
+
+	//  Use OpenGL if we have it enabled
+
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if (pRenderQueue) {
+		pSource->GetImage().PaintImageGlowUsingOpenGL(Dest, x, y, Ctx.iTick, pSource->GetRotationFrameIndex(), m_rgbPrimaryColor, 1.0, m_iRadius, float(byOpacity) / 255.0f, float(m_iNoise) / 255.0f, m_iBlendMode);
+		return;
+	}
+
+	//	Get the glow image, creating if necessary.
+
+	const SCacheEntry &Entry = GetGlowImage(*pSource);
+	if (Entry.GlowImage.IsEmpty())
+		return;
+
+
 
 	//	Paint the glow
 
@@ -547,6 +567,9 @@ bool CGlowEffectPainter::OnSetParam (CCreatePainterCtx &Ctx, const CString &sPar
 
 	else if (strEquals(sParam, ANIMATE_ATTRIB))
 		m_iStyle = (EStyles)Value.EvalIdentifier(STYLE_TABLE, styleMax, styleFull);
+
+	else if (strEquals(sParam, NOISE_ATTRIB))
+		m_iNoise = Value.EvalIntegerBounded(0, 255, 0);
 
 	else if (strEquals(sParam, USE_SOURCE_OBJ_ATTRIB)) {
 		if (Value.EvalBool()) {

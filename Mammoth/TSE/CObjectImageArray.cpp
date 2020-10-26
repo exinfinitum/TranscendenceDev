@@ -1745,6 +1745,44 @@ void CObjectImageArray::PaintImageUL (CG32bitImage &Dest, int x, int y, int iTic
 		}
 	}
 
+void CObjectImageArray::PaintImageGlowUsingOpenGL(CG32bitImage& Dest, int x, int y, int iTick, int iRotation, CG32bitPixel rgbGlowColor, float glowStrength, int glowRadius, float glowAlpha, float glowNoise, CGDraw::EBlendModes blendMode) const
+{
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	if (pRenderQueue && m_pImage && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+		{
+		CG32bitImage* pSource = m_pImage->GetRawImage(NULL_STR);
+		if (pSource == NULL)
+			return;
+		int xSrc;
+		int ySrc;
+		ComputeSourceXY(iTick, iRotation, &xSrc, &ySrc);
+		if (m_pRotationOffset)
+			{
+			x += m_pRotationOffset[iRotation % m_iRotationCount].x;
+			y -= m_pRotationOffset[iRotation % m_iRotationCount].y;
+			}
+
+		//	Glow strength
+
+		int iCanvasHeight = Dest.GetHeight();
+		int iCanvasWidth = Dest.GetWidth();
+		int iQuadWidth = RectWidth(m_rcImage);
+		int iQuadHeight = RectHeight(m_rcImage);
+		int iTexQuadWidth = RectWidth(m_rcImage);
+		int iTexQuadHeight = RectHeight(m_rcImage);
+		int iGlowTexQuadWidth = int(RectWidth(m_rcImage));
+		int iGlowTexQuadHeight = int(RectHeight(m_rcImage));
+		auto [iNumRows, iNumCols] = GetNumColsAndRows();
+		float fRed = float(rgbGlowColor.GetRed()) / 255.0f;
+		float fBlue = float(rgbGlowColor.GetBlue()) / 255.0f;
+		float fGreen = float(rgbGlowColor.GetGreen()) / 255.0f;
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
+			iCanvasWidth,
+			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, glowAlpha, fRed, fGreen, fBlue, glowStrength, glowNoise, glowRadius, false,
+			OpenGLRenderLayer::normal, OpenGLRenderLayer::blendMode(blendMode));
+		}
+}
+
 void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 											int x,
 											int y,

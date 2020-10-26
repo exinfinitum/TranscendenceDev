@@ -383,6 +383,7 @@ class CGlowEffectCreator : public CEffectCreator
 
 		CEffectParamDesc m_Lifetime;		//	lifetime: Lifetime in ticks (optional)
 		CEffectParamDesc m_Animate;			//	animate: Animation style
+		CEffectParamDesc m_Noise;			//	noise: How much noise to apply to the glow (OpenGL only)
 		bool m_UseSourceObj;				//  useSourceObj: whether to use source obj for generating glow image
 
 		IEffectPainter *m_pSingleton = NULL;
