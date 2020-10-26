@@ -83,6 +83,7 @@ vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_te
 	vec2 texEndPoint = aTexStartPoint + aTexQuadSizes;
 	ivec2 post_transform_quad_index = getPixelGridSquareUnpadded(texCoords);
 	bool sampleNotInPaddedArea = post_transform_quad_index == pre_transform_quad_index && texCoords[0] > aTexStartPoint[0] && texCoords[0] < texEndPoint[0] && texCoords[1] > aTexStartPoint[1] && texCoords[1] < texEndPoint[1];
+	post_transform_quad_index = sampleNotInPaddedArea ? post_transform_quad_index : pre_transform_quad_index;
 
     int center = int(glow_size / 2);
 	vec4 glowBoundaries = vec4(0.0, 0.0, 0.0, 0.0);
@@ -113,7 +114,7 @@ vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_te
 			(int(!additive) * candidateDistanceToNearestNonZeroAlphaPixel) +
 			(int(additive) * int(round(length(ivec2(candidateDistanceToNearestNonZeroAlphaPixel, distanceToNearestNonZeroAlphaPixelPreviousPass)))))
 		);
-		bool reducedDistanceToNonZeroPixel = (sample_value[3] > epsilon) && texInBounds0 && sampleNotInPaddedArea;
+		bool reducedDistanceToNonZeroPixel = (sample_value[3] > epsilon) && texInBounds0;
 		distanceToNearestNonZeroAlphaPixel = (
 			(int(reducedDistanceToNonZeroPixel) * min(distanceToNearestNonZeroAlphaPixel, candidateDistanceToNearestNonZeroAlphaPixel)) +
 			(int(!reducedDistanceToNonZeroPixel) * distanceToNearestNonZeroAlphaPixel)
