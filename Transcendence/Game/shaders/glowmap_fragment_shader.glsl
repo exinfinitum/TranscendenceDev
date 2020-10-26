@@ -55,9 +55,10 @@ ivec2 getPixelGridSquareUnpadded(vec2 coords) {
 
 int obtainPixelDistanceFromFloatVec(vec3 dist_channels) {
 	float pixMult = float(pixel_decimal_place_per_channel_for_linear_glowmap);
-	float pixelDistanceIColumn = dist_channels[2] * pixMult;
-	float pixelDistanceCColumn = dist_channels[1] * pixMult;
-	float pixelDistance10KColumn = dist_channels[0] * pixMult;
+	vec3 inverted_channels = 1.0 - dist_channels;
+	float pixelDistanceIColumn = inverted_channels[2] * pixMult;
+	float pixelDistanceCColumn = inverted_channels[1] * pixMult;
+	float pixelDistance10KColumn = inverted_channels[0] * pixMult;
 	return int((pixelDistance10KColumn * pixMult * pixMult) + (pixelDistanceCColumn * pixMult) + (pixelDistanceIColumn));
 }
 
@@ -127,7 +128,8 @@ vec4 getGlowBoundaries_variable(float epsilon, vec2 texture_uv, sampler2D obj_te
 	float pixelDistance10KColumn = float(mod(distanceToNearestNonZeroAlphaPixel /
 		(pixel_decimal_place_per_channel_for_linear_glowmap * pixel_decimal_place_per_channel_for_linear_glowmap),
 		pixel_decimal_place_per_channel_for_linear_glowmap)) / pixMult;
-	return vec4(pixelDistance10KColumn, pixelDistanceCColumn, pixelDistanceIColumn, float(distanceToNearestNonZeroAlphaPixel < max(texture_size_input[0], texture_size_input[1])));
+
+	return vec4(1.0 - pixelDistance10KColumn, 1.0 - pixelDistanceCColumn, 1.0 - pixelDistanceIColumn, float(distanceToNearestNonZeroAlphaPixel < max(texture_size_input[0], texture_size_input[1])));
 	//return vec4(glowBoundaries[0], glowBoundaries[1], glowBoundaries[2], min(1.0, 2.0 * glowBoundaries[3]));
 	
 }
