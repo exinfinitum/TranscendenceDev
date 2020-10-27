@@ -812,10 +812,9 @@ void CShockwavePainter::PaintRing (SViewportPaintCtx &Ctx, CG32bitImage &Dest, i
 				int iQuadHeight = max(iRadius * 2, 1);
 				int iTexQuadWidth = RectWidth(rcImage);
 				int iTexQuadHeight = RectHeight(rcImage);
-				pRenderQueue->addTextureToRenderQueue(rcImage.left, rcImage.top, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
-					iCanvasWidth,
-					Image.GetOpenGLTexture(), Image.GetWidth(), Image.GetHeight(), iTexQuadWidth, iTexQuadHeight, 1, 1, rcImage.left, rcImage.top, float(byOpacity / 255.0), 0.0f, 0.0f, 0.0f, 0.0f,
-					0.0f, 0, true, OpenGLRenderLayer::textureRenderCategory::polarUV, OpenGLRenderLayer::blendMode::blendScreen);
+				pRenderQueue->addImageToRenderQueue(rcImage.left, rcImage.top, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
+					iCanvasWidth, Image.GetOpenGLTexture(), Image.GetWidth(), Image.GetHeight(), iTexQuadWidth, iTexQuadHeight, 1, 1, rcImage.left, rcImage.top, float(byOpacity / 255.0),
+					true, OpenGLRenderLayer::textureRenderCategory::polarUV, OpenGLRenderLayer::blendMode::blendScreen);
 				}
 			else
 				{
