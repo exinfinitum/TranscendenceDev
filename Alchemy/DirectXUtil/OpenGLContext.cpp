@@ -84,13 +84,18 @@ bool OpenGLContext::initOpenGL (HWND hwnd, HDC hdc)
 	glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
 
 	::kernelDebugLogPattern("[OpenGL] OpenGL successfully initialized, version: %d.%d", glVersion[0], glVersion[1]);
-	int iMaxTexturesPerShader, iMaxTextures;
+	int iMaxTexturesPerShader, iMaxTextures, iMaxVertexAttribs;
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &iMaxTexturesPerShader);
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &m_iMaxTextureSize);
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &iMaxTextures);
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &iMaxVertexAttribs);
 	const GLubyte* renderer = glGetString(GL_RENDERER);
 	::kernelDebugLogPattern("[OpenGL] Using graphics device: %s", CString((LPCSTR)renderer));
 	::kernelDebugLogPattern("[OpenGL] Maximum %d textures at resolution %dx%d, max %d per shader", iMaxTextures, m_iMaxTextureSize, m_iMaxTextureSize, iMaxTexturesPerShader);
+	::kernelDebugLogPattern("[OpenGL] Maximum %d vertex attributes", iMaxVertexAttribs);
+	if (iMaxVertexAttribs < 16) {
+		throw CException(ERR_FAIL, CONSTLIT("[OpenGL] Unable to use OpenGL on this machine, device must support at least 16 vertex attributes."));
+	}
 	prepSquareCanvas();
 	setBlendMode();
 

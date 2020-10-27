@@ -10,9 +10,9 @@ layout (location = 6) in ivec2 aNumberOfFrames;
 layout (location = 7) in float aAlphaStrength;
 layout (location = 8) in vec4 aGlowColor;
 layout (location = 9) in float aGlowNoise;
-layout (location = 10) in int aRenderCategory;
-layout (location = 11) in int aGlowRadius;
-layout (location = 12) in int aBlendMode;
+layout (location = 10) in vec4 aDecayPointInfo;
+layout (location = 11) in ivec2 aRenderModes;
+layout (location = 12) in int aGlowRadius;
 layout (location = 13) in float aDepth;
 
 layout (location = 0) out vec2 texture_uv;
@@ -31,6 +31,10 @@ layout (location = 12) flat out int render_category;
 layout (location = 13) out vec2 texture_raw_pos;
 layout (location = 14) flat out int glowRadius;
 layout (location = 15) flat out int blendMode;
+layout (location = 16) out vec2 decayPoint;
+layout (location = 17) out float decayMaxRadius;
+layout (location = 18) out float decayMinRadius;
+layout (location = 19) out vec2 canvPosition;
 
 
 const int renderCategoryObject = 0;
@@ -62,10 +66,13 @@ void main(void)
 	glow_noise = aGlowNoise;
 	texture_bounds_min = fixedTexPos;
 	texture_bounds_max = fixedTexPos + texPositionOffset*2;
-	render_category = aRenderCategory;
+	render_category = aRenderModes[0];
 	texture_raw_pos = vec2(aPos[0], aPos[1]);
 	texture_start_point = aTexStartPoint;
 	num_frames = aNumberOfFrames;
-	blendMode = aBlendMode;
+	blendMode = aRenderModes[1];
 	glowRadius = aGlowRadius;
+	decayPoint = vec2(aDecayPointInfo[0], aDecayPointInfo[1]);
+	decayMaxRadius = aDecayPointInfo[2];
+	decayMinRadius = aDecayPointInfo[3];
 }

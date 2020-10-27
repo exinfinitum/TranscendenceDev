@@ -26,7 +26,7 @@ void main()
     gl_Position = vec4(texPos2dWrite[0], texPos2dWrite[1], 0.1, 1.0);
 	// Note that this inverts the image; since we do two passes and the second pass is over the entirety
 	// of an image this should be OK as it inverts the image twice to gives us back a right side up image
-	TexCoord = vec2(texPos2dRead[0], 1.0-texPos2dRead[1]);
+	TexCoord = vec2(texPos2dRead[0], texPos2dRead[1]);
 	//TexStartPoint = aTexStartPoint;
     //TexCoord = aTexCoord;
 }

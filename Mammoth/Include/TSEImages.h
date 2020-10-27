@@ -251,7 +251,8 @@ class CObjectImageArray
 		void MarkImage (void) const;
 		void PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite = false) const;
 		void PaintImageScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const;
-		void PaintImageGlowUsingOpenGL (CG32bitImage& Dest, int x, int y, int iTick, int iRotation, CG32bitPixel rgbGlowColor, float glowStrength, int glowRadius, float glowAlpha, float glowNoise, CGDraw::EBlendModes blendMode) const;
+		void PaintImageGlowUsingOpenGL (CG32bitImage& Dest, int x, int y, int iTick, int iRotation, CG32bitPixel rgbGlowColor, float glowStrength, int glowRadius,
+			float glowAlpha, float glowNoise, CGDraw::EBlendModes blendMode, glm::vec4 glowDecay) const;
 		void PaintImageSizedWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, int xSize, int ySize, int iTick, int iRotation) const;
 		void PaintGrayedImageScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const;
 		void PaintImageGlowScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest,

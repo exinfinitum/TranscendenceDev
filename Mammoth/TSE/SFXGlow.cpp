@@ -506,10 +506,12 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 		byOpacity = 0xff;
 
 	//  Use OpenGL if we have it enabled
-
+	//  TODO(heliogenesis): Use values directly and skip opacity tables if using OpenGL
 	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
 	if (pRenderQueue) {
-		pSource->GetImage().PaintImageGlowUsingOpenGL(Dest, x, y, Ctx.iTick, pSource->GetRotationFrameIndex(), m_rgbPrimaryColor, 1.0, m_iRadius, float(byOpacity) / 255.0f, float(m_iNoise) / 255.0f, m_iBlendMode);
+		pSource->GetImage().PaintImageGlowUsingOpenGL(Dest, x, y, Ctx.iTick, pSource->GetRotationFrameIndex(), m_rgbPrimaryColor,
+			float(byOpacity) / 255.0f, m_iRadius, float(byOpacity) / 255.0f, float(m_iNoise) / 255.0f, m_iBlendMode,
+			glm::vec4(0, 0, 0, 0));
 		return;
 	}
 
@@ -565,7 +567,7 @@ bool CGlowEffectPainter::OnSetParam (CCreatePainterCtx &Ctx, const CString &sPar
 	else if (strEquals(sParam, SECONDARY_COLOR_ATTRIB))
 		m_rgbSecondaryColor = Value.EvalColor();
 
-	else if (strEquals(sParam, ANIMATE_ATTRIB))
+	else if (strEquals(sParam, STYLE_ATTRIB))
 		m_iStyle = (EStyles)Value.EvalIdentifier(STYLE_TABLE, styleMax, styleFull);
 
 	else if (strEquals(sParam, NOISE_ATTRIB))
