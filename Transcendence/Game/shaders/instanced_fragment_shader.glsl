@@ -15,7 +15,10 @@ layout (location = 12) flat in int render_category;
 layout (location = 13) in vec2 texture_raw_pos;
 layout (location = 14) flat in int glowRadius;
 layout (location = 15) flat in int blendMode;
-
+layout (location = 16) in vec2 decayPoint;
+layout (location = 17) in float decayMaxRadius;
+layout (location = 18) in float decayMinRadius;
+layout (location = 19) in vec2 canvPosition;
 
 out vec4 out_color;
 
@@ -151,7 +154,14 @@ float getGlowBoundaries(vec2 texture_size, ivec2 num_frames, vec2 texture_uv, ve
 	vec4 glowmapSampleValue = texture(glow_map, (vec2(textureUVFromZeroToOne[0], textureUVFromZeroToOne[1])));
 	int distanceFromObject = obtainPixelDistanceFromFloatVec(vec3(glowmapSampleValue[0], glowmapSampleValue[1], glowmapSampleValue[2]));
 	float glowBoundaries = 1.0 - (float(distanceFromObject) / float(max(1, glowRadius)));
-	return glowBoundaries * float(distanceFromObject <= glowRadius) * glowmapSampleValue[3];
+	glowBoundaries = glowBoundaries * float(distanceFromObject <= glowRadius) * glowmapSampleValue[3];
+	float distanceFromDecayPoint = length(decayPoint - canvPosition);
+	bool useUniformGlowValue = (decayMaxRadius < 0) && (decayMinRadius < 0);
+	float glowStrengthMultiplierRing = max(0.0, 1.0 - (abs(distanceFromDecayPoint - ((decayMaxRadius + decayMinRadius) / 2.0)) / (float(decayMaxRadius == decayMinRadius) + (decayMaxRadius - decayMinRadius) / 2.0)));
+	float glowStrengthMultiplierPeak = max(0.0, 1.0 - (distanceFromDecayPoint / decayMaxRadius));
+	float glowStrengthMultiplierToUse = mix(glowStrengthMultiplierPeak, glowStrengthMultiplierRing, float(decayMinRadius > 0.0));
+	float finalGlowStrengthMultiplier = mix(glowStrengthMultiplierToUse, 1.0, float(useUniformGlowValue));
+	return glowBoundaries * finalGlowStrengthMultiplier;
 }
 
 vec4 getGlowColor_PerlinNoise(float glowNoisePeriodXY, float alphaNoiseTimeAxis, float epsilon, vec4 color, vec2 texture_size, vec2 texture_uv, sampler2D obj_texture, float perlinNoiseGlow, vec2 texture_start_point, ivec2 num_frames)

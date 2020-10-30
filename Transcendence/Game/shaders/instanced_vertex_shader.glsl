@@ -13,7 +13,8 @@ layout (location = 9) in float aGlowNoise;
 layout (location = 10) in vec4 aDecayPointInfo;
 layout (location = 11) in ivec2 aRenderModes;
 layout (location = 12) in int aGlowRadius;
-layout (location = 13) in float aDepth;
+layout (location = 13) in float aCanvasQuadAspectRatio; // ratio of width to height
+layout (location = 14) in float aDepth;
 
 layout (location = 0) out vec2 texture_uv;
 layout (location = 1) out vec2 texture_pos;
@@ -35,7 +36,6 @@ layout (location = 16) out vec2 decayPoint;
 layout (location = 17) out float decayMaxRadius;
 layout (location = 18) out float decayMinRadius;
 layout (location = 19) out vec2 canvPosition;
-
 
 const int renderCategoryObject = 0;
 const int renderCategoryText = 1;
@@ -72,7 +72,8 @@ void main(void)
 	num_frames = aNumberOfFrames;
 	blendMode = aRenderModes[1];
 	glowRadius = aGlowRadius;
-	decayPoint = vec2(aDecayPointInfo[0], aDecayPointInfo[1]);
+	decayPoint = vec2(aDecayPointInfo[0], aDecayPointInfo[1] / aCanvasQuadAspectRatio);
 	decayMaxRadius = aDecayPointInfo[2];
 	decayMinRadius = aDecayPointInfo[3];
+	canvPosition = vec2(aPos[0], -aPos[1] / aCanvasQuadAspectRatio);
 }

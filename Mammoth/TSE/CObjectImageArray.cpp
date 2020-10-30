@@ -1745,7 +1745,7 @@ void CObjectImageArray::PaintImageUL (CG32bitImage &Dest, int x, int y, int iTic
 	}
 
 void CObjectImageArray::PaintImageGlowUsingOpenGL(CG32bitImage& Dest, int x, int y, int iTick, int iRotation, CG32bitPixel rgbGlowColor,
-	float glowStrength, int glowRadius, float glowAlpha, float glowNoise, CGDraw::EBlendModes blendMode, glm::vec4 glowDecay) const
+	float glowStrength, int glowRadius, float glowAlpha, float glowNoise, CGDraw::EBlendModes blendMode, glm::ivec4 integerGlowDecay) const
 {
 	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
 	if (pRenderQueue && m_pImage && (&(Dest) == pRenderQueue->getPointerToCanvas()))
@@ -1763,7 +1763,6 @@ void CObjectImageArray::PaintImageGlowUsingOpenGL(CG32bitImage& Dest, int x, int
 			}
 
 		//	Glow strength
-
 		int iCanvasHeight = Dest.GetHeight();
 		int iCanvasWidth = Dest.GetWidth();
 		int iQuadWidth = RectWidth(m_rcImage);
@@ -1779,7 +1778,7 @@ void CObjectImageArray::PaintImageGlowUsingOpenGL(CG32bitImage& Dest, int x, int
 		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
 			iCanvasWidth, pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows,
 			m_rcImage.left, m_rcImage.top, glowAlpha, fRed, fGreen, fBlue, glowStrength, glowNoise, glowRadius, false,
-			OpenGLRenderLayer::normal, OpenGLRenderLayer::blendMode(blendMode), glowDecay);
+			OpenGLRenderLayer::normal, OpenGLRenderLayer::blendMode(blendMode), integerGlowDecay);
 		}
 }
 

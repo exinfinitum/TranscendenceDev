@@ -14,6 +14,7 @@
 #define NOISE_ATTRIB					CONSTLIT("noise")
 #define STYLE_ATTRIB					CONSTLIT("style")
 #define USE_SOURCE_OBJ_ATTRIB			CONSTLIT("useSourceObj")
+#define RADIUS_AROUND_IMPACT_ATTRIB		CONSTLIT("radiusAroundImpact")
 
 class CGlowEffectPainter : public IEffectPainter
 	{
@@ -84,7 +85,10 @@ class CGlowEffectPainter : public IEffectPainter
 		int m_iLifetime = 0;
 		EAnimationTypes m_iAnimate = animateNone;
 		const CSpaceObject* m_pSource = nullptr;
+		CVector m_vHitVector;
+		bool m_bUseHitLocation = false;
 		int m_iNoise = 0;
+		int m_iRadiusAroundImpact = 0;
 
 		//	Temporary variables during painting
 
@@ -155,6 +159,7 @@ IEffectPainter *CGlowEffectCreator::OnCreatePainter (CCreatePainterCtx &Ctx)
 	pPainter->SetParam(Ctx, STYLE_ATTRIB, m_Style);
 	pPainter->SetParam(Ctx, NOISE_ATTRIB, m_Noise);
 	pPainter->SetParam(Ctx, USE_SOURCE_OBJ_ATTRIB, m_UseSourceObj);
+	pPainter->SetParam(Ctx, RADIUS_AROUND_IMPACT_ATTRIB, m_RadiusAroundImpact);
 
 	//	Initialize via GetParameters, if necessary
 
@@ -200,6 +205,9 @@ ALERROR CGlowEffectCreator::OnEffectCreateFromXML (SDesignLoadCtx &Ctx, CXMLElem
 		return error;
 
 	if (error = m_Noise.InitIntegerFromXML(Ctx, pDesc->GetAttribute(NOISE_ATTRIB)))
+		return error;
+
+	if (error = m_RadiusAroundImpact.InitIntegerFromXML(Ctx, pDesc->GetAttribute(RADIUS_AROUND_IMPACT_ATTRIB)))
 		return error;
 
 	m_UseSourceObj = pDesc->GetAttributeBool(USE_SOURCE_OBJ_ATTRIB);
@@ -429,6 +437,9 @@ bool CGlowEffectPainter::GetParam (const CString &sParam, CEffectParamDesc *retV
 	else if (strEquals(sParam, NOISE_ATTRIB))
 		retValue->InitInteger(m_iNoise);
 
+	else if (strEquals(sParam, RADIUS_AROUND_IMPACT_ATTRIB))
+		retValue->InitInteger(m_iRadiusAroundImpact);
+
 	else
 		return false;
 
@@ -443,13 +454,14 @@ bool CGlowEffectPainter::GetParamList (TArray<CString> *retList) const
 
 	{
 	retList->DeleteAll();
-	retList->InsertEmpty(5);
+	retList->InsertEmpty(7);
 	retList->GetAt(0) = BLEND_MODE_ATTRIB;
 	retList->GetAt(1) = LIFETIME_ATTRIB;
 	retList->GetAt(2) = PRIMARY_COLOR_ATTRIB;
 	retList->GetAt(3) = RADIUS_ATTRIB;
 	retList->GetAt(4) = SECONDARY_COLOR_ATTRIB;
 	retList->GetAt(5) = NOISE_ATTRIB;
+	retList->GetAt(6) = RADIUS_AROUND_IMPACT_ATTRIB;
 
 	return true;
 	}
@@ -509,9 +521,20 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 	//  TODO(heliogenesis): Use values directly and skip opacity tables if using OpenGL
 	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
 	if (pRenderQueue) {
+		//glm::vec4 glowDecay()
+		int hitX, hitY, minRadiusAroundImpact, maxRadiusAroundImpact;
+		if (m_bUseHitLocation) {
+			Ctx.XForm.Transform(m_vHitVector, &hitX, &hitY);
+
+			// ImpactGlow hitEffectStyle.
+			maxRadiusAroundImpact = m_iRadiusAroundImpact;
+			minRadiusAroundImpact = -1;
+		}
+		int relativeHitX = hitX - x;
+		int relativeHitY = hitY - y;
 		pSource->GetImage().PaintImageGlowUsingOpenGL(Dest, x, y, Ctx.iTick, pSource->GetRotationFrameIndex(), m_rgbPrimaryColor,
 			float(byOpacity) / 255.0f, m_iRadius, float(byOpacity) / 255.0f, float(m_iNoise) / 255.0f, m_iBlendMode,
-			glm::vec4(0, 0, 0, 0));
+			glm::ivec4(relativeHitX, relativeHitY, maxRadiusAroundImpact, minRadiusAroundImpact));
 		return;
 	}
 
@@ -573,10 +596,16 @@ bool CGlowEffectPainter::OnSetParam (CCreatePainterCtx &Ctx, const CString &sPar
 	else if (strEquals(sParam, NOISE_ATTRIB))
 		m_iNoise = Value.EvalIntegerBounded(0, 255, 0);
 
+	else if (strEquals(sParam, RADIUS_AROUND_IMPACT_ATTRIB))
+		m_iRadiusAroundImpact = Value.EvalIntegerBounded(1, -1, (int)(STD_SECONDS_PER_UPDATE * LIGHT_SECOND / KLICKS_PER_PIXEL));
+
 	else if (strEquals(sParam, USE_SOURCE_OBJ_ATTRIB)) {
 		if (Value.EvalBool()) {
 			const CSpaceObject* pCtxSource = Ctx.GetSource();
 			const CSpaceObject* pDamageCtxSource = Ctx.GetDamageCtx() ? Ctx.GetDamageCtx()->pObj : nullptr;
+			const CVector vHitVector = Ctx.GetDamageCtx() ? Ctx.GetDamageCtx()->vHitPos : CVector(0, 0);
+			m_vHitVector = vHitVector;
+			m_bUseHitLocation = Ctx.GetDamageCtx() ? true : false;
 			m_pSource = pDamageCtxSource ? pDamageCtxSource : pCtxSource;
 		}
 	}
