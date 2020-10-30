@@ -109,7 +109,7 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
  int sizePixelY, int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture *image, int texWidth, int texHeight, 
 	int texQuadWidth, int texQuadHeight, int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength,
 	float glowR, float glowG, float glowB, float glowA, float glowNoise, int glowRadius, bool useDepthTesting, OpenGLRenderLayer::textureRenderCategory textureRenderType, OpenGLRenderLayer::blendMode blendMode,
-	glm::vec4 glowDecay)
+	glm::ivec4 glowDecay)
 	{
 	glm::vec2 vTexPositions((float)startPixelX / (float)texWidth, (float)startPixelY / (float)texHeight);
 	glm::vec2 vSpriteSheetPositions((float)spriteSheetStartX / (float)texWidth, (float)spriteSheetStartY / (float)texHeight);
@@ -136,13 +136,26 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 		vCanvasQuadSizes = vCanvasQuadSizes + vPadSizes;
 		vCanvasPositions = vCanvasPositions - (vPadSizes / 2.0f);
 	}
+	glm::vec2 afterPadCanvasQuadSizes(vCanvasQuadSizes[0] * canvasWidth, vCanvasQuadSizes[1] * canvasHeight);
+	float aspectRatio = afterPadCanvasQuadSizes[0] / afterPadCanvasQuadSizes[1];
+	glm::vec4 relativeGlowDecay(
+		// Note we divide both components of glow decay point by iQuadWidth - this is because the shader uses the aspect ratio to calculate
+		// the glow decay point location in a unit that is common across both quad dimensions so we can handle nonsquare images
+		// Values 1 and 2 are the (x, y) coordinates of the decay origin point in pixels offset from the quad centre, value 3 is
+		// the minimum radius from decay origin point at which glow occurs, and value 4 is the maximum radius from that point at which
+		// glow occurs - glow is only nonzero between those two radii, and peaks at the average radius
+		float(glowDecay[0]) / afterPadCanvasQuadSizes[0],
+		float(glowDecay[1]) / afterPadCanvasQuadSizes[1],
+		float(glowDecay[2]) / afterPadCanvasQuadSizes[0],
+		float(glowDecay[3]) / afterPadCanvasQuadSizes[0]
+	);
 
 	if (m_bPrevObjAddedIsParticle) {
 		m_fDepthLevel -= m_fDepthDelta;
 		m_bPrevObjAddedIsParticle = false;
 	}
 	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, glowColor, alphaStrength,
-		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel, textureRenderType, blendMode, glowRadius, glowDecay);
+		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel, aspectRatio, textureRenderType, blendMode, glowRadius, relativeGlowDecay);
 	m_fDepthLevel -= m_fDepthDelta;
 	}
 

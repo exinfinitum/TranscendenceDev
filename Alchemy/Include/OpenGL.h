@@ -166,7 +166,7 @@ public:
 	};
 	~OpenGLRenderLayer(void);
 	void addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions,
-		glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength, float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth, textureRenderCategory textureRenderType = normal,
+		glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength, float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth, float canvasQuadAspectRatio, textureRenderCategory textureRenderType = normal,
 		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal, int glowRadius = 0, glm::vec4 glowDecay = glm::vec4(0, 0, 0, 0));
 	void addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::vec3 vSecondaryColor, glm::vec4 sizeAndPosition, glm::ivec4 shapes, glm::vec3 intensitiesAndCycles, glm::ivec4 styles, float rotation, float startingDepth, OpenGLRenderLayer::blendMode blendMode, float secondaryOpacity);
 	void addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition, float rotation, float intensity, float opacity, int animation,
@@ -324,7 +324,7 @@ public:
  int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture *image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight, 
 		int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength = 1.0, float glowR = 0.0, float glowG = 0.0, 
 		float glowB = 0.0, float glowA = 0.0, float glowNoise = 0.0, int glowRadius = 0, bool useDepthTesting = true, OpenGLRenderLayer::textureRenderCategory textureRenderType = OpenGLRenderLayer::textureRenderCategory::normal,
-		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal, glm::vec4 glowDecay = glm::vec4(0, 0, 0, 0));
+		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal, glm::ivec4 glowDecay = glm::vec4(-1, -1, -1, -1));
 	void addTextToRenderQueue(int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
 		int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture* image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight,
 		std::tuple<int, int, int> textColor, bool useDepthTesting = true);

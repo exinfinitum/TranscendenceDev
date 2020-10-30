@@ -3,7 +3,7 @@
 
 // Each instanced batch type for a specific shader is derived from a class generated from the OpenGLInstancedBatchRenderRequest template.
 
-class OpenGLInstancedBatchRenderRequestTexture : public OpenGLInstancedBatchRenderRequest<glm::vec2, glm::vec2, glm::vec2, glm::vec2, glm::vec2, glm::ivec2, float, glm::vec4, float, glm::vec4, glm::ivec2, int> {
+class OpenGLInstancedBatchRenderRequestTexture : public OpenGLInstancedBatchRenderRequest<glm::vec2, glm::vec2, glm::vec2, glm::vec2, glm::vec2, glm::ivec2, float, glm::vec4, float, glm::vec4, glm::ivec2, int, float> {
 public:
 	OpenGLInstancedBatchRenderRequestTexture(
 		glm::vec2 texPositions,
@@ -17,7 +17,9 @@ public:
 		float glowNoise,
 		glm::vec4 decayPointInfo,
 		glm::ivec2 renderModes,
-		int glowRadius) : OpenGLInstancedBatchRenderRequest{ texPositions, canvasQuadSizes, canvasPositions, textureQuadSizes, textureStartPoint, numberOfFrames, alphaStrength, glowColor, glowNoise, decayPointInfo, renderModes, glowRadius } {};
+		int glowRadius,
+		float canvasQuadAspectRatio) : OpenGLInstancedBatchRenderRequest{ texPositions, canvasQuadSizes, canvasPositions, textureQuadSizes,
+		textureStartPoint, numberOfFrames, alphaStrength, glowColor, glowNoise, decayPointInfo, renderModes, glowRadius, canvasQuadAspectRatio } {};
 	OpenGLVAO& getVAOForInstancedBatchType() override { if (!vao) { vao = std::move(setUpVAO()); } return *(vao.get()); }
 	int getRenderRequestSize() override { return sizeof(*this); }
 private:
