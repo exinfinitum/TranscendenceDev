@@ -11,10 +11,11 @@
 #define PRIMARY_COLOR_ATTRIB			CONSTLIT("primaryColor")
 #define RADIUS_ATTRIB					CONSTLIT("radius")
 #define SECONDARY_COLOR_ATTRIB			CONSTLIT("secondaryColor")
-#define NOISE_ATTRIB					CONSTLIT("noise")
+#define OPACITY_ATTRIB					CONSTLIT("opacity")
 #define STYLE_ATTRIB					CONSTLIT("style")
 #define USE_SOURCE_OBJ_ATTRIB			CONSTLIT("useSourceObj")
 #define RADIUS_AROUND_IMPACT_ATTRIB		CONSTLIT("radiusAroundImpact")
+#define WAVE_WIDTH_ATTRIB				CONSTLIT("waveWidth")
 
 class CGlowEffectPainter : public IEffectPainter
 	{
@@ -57,8 +58,11 @@ class CGlowEffectPainter : public IEffectPainter
 
 			styleFull =				1,
 			styleOutline =			2,
+			styleRipple =			3,
+			styleRippleWave =		4,
+			styleRippleNegative =	5,
 
-			styleMax =				2,
+			styleMax =				5,
 			};
 
 		struct SCacheEntry
@@ -86,9 +90,10 @@ class CGlowEffectPainter : public IEffectPainter
 		EAnimationTypes m_iAnimate = animateNone;
 		const CSpaceObject* m_pSource = nullptr;
 		CVector m_vHitVector;
-		bool m_bUseHitLocation = false;
-		int m_iNoise = 0;
-		int m_iRadiusAroundImpact = 0;
+		bool m_bUseDamageCtxSource = false;
+		int m_iOpacity = 0;
+		int m_iRadiusAroundImpact = -1;
+		int m_iWaveWidth = 0;
 
 		//	Temporary variables during painting
 
@@ -117,6 +122,9 @@ static LPCSTR STYLE_TABLE[] =
 
 		"full",
 		"outline",
+		"ripple",
+		"rippleWave",
+		"rippleNegative",
 
 		NULL,
 	};
@@ -157,9 +165,10 @@ IEffectPainter *CGlowEffectCreator::OnCreatePainter (CCreatePainterCtx &Ctx)
 	pPainter->SetParam(Ctx, RADIUS_ATTRIB, m_Radius);
 	pPainter->SetParam(Ctx, SECONDARY_COLOR_ATTRIB, m_SecondaryColor);
 	pPainter->SetParam(Ctx, STYLE_ATTRIB, m_Style);
-	pPainter->SetParam(Ctx, NOISE_ATTRIB, m_Noise);
+	pPainter->SetParam(Ctx, OPACITY_ATTRIB, m_Opacity);
 	pPainter->SetParam(Ctx, USE_SOURCE_OBJ_ATTRIB, m_UseSourceObj);
 	pPainter->SetParam(Ctx, RADIUS_AROUND_IMPACT_ATTRIB, m_RadiusAroundImpact);
+	pPainter->SetParam(Ctx, WAVE_WIDTH_ATTRIB, m_WaveWidth);
 
 	//	Initialize via GetParameters, if necessary
 
@@ -204,10 +213,16 @@ ALERROR CGlowEffectCreator::OnEffectCreateFromXML (SDesignLoadCtx &Ctx, CXMLElem
 	if (error = m_SecondaryColor.InitColorFromXML(Ctx, pDesc->GetAttribute(SECONDARY_COLOR_ATTRIB)))
 		return error;
 
-	if (error = m_Noise.InitIntegerFromXML(Ctx, pDesc->GetAttribute(NOISE_ATTRIB)))
+	if (error = m_Opacity.InitIntegerFromXML(Ctx, pDesc->GetAttribute(OPACITY_ATTRIB)))
 		return error;
 
 	if (error = m_RadiusAroundImpact.InitIntegerFromXML(Ctx, pDesc->GetAttribute(RADIUS_AROUND_IMPACT_ATTRIB)))
+		return error;
+
+	if (error = m_WaveWidth.InitIntegerFromXML(Ctx, pDesc->GetAttribute(WAVE_WIDTH_ATTRIB)))
+		return error;
+
+	if (error = m_Style.InitIdentifierFromXML(Ctx, pDesc->GetAttribute(STYLE_ATTRIB), STYLE_TABLE))
 		return error;
 
 	m_UseSourceObj = pDesc->GetAttributeBool(USE_SOURCE_OBJ_ATTRIB);
@@ -434,11 +449,14 @@ bool CGlowEffectPainter::GetParam (const CString &sParam, CEffectParamDesc *retV
 	else if (strEquals(sParam, STYLE_ATTRIB))
 		retValue->InitInteger(m_iStyle);
 
-	else if (strEquals(sParam, NOISE_ATTRIB))
-		retValue->InitInteger(m_iNoise);
+	else if (strEquals(sParam, OPACITY_ATTRIB))
+		retValue->InitInteger(m_iOpacity);
 
 	else if (strEquals(sParam, RADIUS_AROUND_IMPACT_ATTRIB))
 		retValue->InitInteger(m_iRadiusAroundImpact);
+
+	else if (strEquals(sParam, WAVE_WIDTH_ATTRIB))
+		retValue->InitInteger(m_iWaveWidth);
 
 	else
 		return false;
@@ -460,7 +478,7 @@ bool CGlowEffectPainter::GetParamList (TArray<CString> *retList) const
 	retList->GetAt(2) = PRIMARY_COLOR_ATTRIB;
 	retList->GetAt(3) = RADIUS_ATTRIB;
 	retList->GetAt(4) = SECONDARY_COLOR_ATTRIB;
-	retList->GetAt(5) = NOISE_ATTRIB;
+	retList->GetAt(5) = OPACITY_ATTRIB;
 	retList->GetAt(6) = RADIUS_AROUND_IMPACT_ATTRIB;
 
 	return true;
@@ -523,17 +541,39 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 	if (pRenderQueue) {
 		//glm::vec4 glowDecay()
 		int hitX, hitY, minRadiusAroundImpact, maxRadiusAroundImpact;
-		if (m_bUseHitLocation) {
+		if (m_bUseDamageCtxSource) {
 			Ctx.XForm.Transform(m_vHitVector, &hitX, &hitY);
-
-			// ImpactGlow hitEffectStyle.
-			maxRadiusAroundImpact = m_iRadiusAroundImpact;
+			int waveFrontPos = (m_iRadiusAroundImpact * (Ctx.iTick % m_iLifetime)) / m_iLifetime;
+			switch (m_iStyle) {
+				case styleRipple:
+					maxRadiusAroundImpact =  waveFrontPos;
+					minRadiusAroundImpact = -1;
+					break;
+				case styleRippleNegative:
+					maxRadiusAroundImpact =  (pSource->GetImage().GetImageHeight() + pSource->GetImage().GetImageWidth());
+					minRadiusAroundImpact = waveFrontPos;
+					break;
+				case styleRippleWave:
+					//int imgHeight = pSource->GetImage().GetImageHeight();
+					//int imgWidth = pSource->GetImage().GetImageWidth();
+					//int waveWidth = 
+					maxRadiusAroundImpact = waveFrontPos + (m_iWaveWidth / 2);
+					minRadiusAroundImpact = waveFrontPos - (m_iWaveWidth / 2);
+					break;
+				default:
+					maxRadiusAroundImpact = m_iRadiusAroundImpact;
+					minRadiusAroundImpact = -1;
+			}
+		} else {
+			hitX = 0;
+			hitY = 0;
+			maxRadiusAroundImpact = -1;
 			minRadiusAroundImpact = -1;
 		}
 		int relativeHitX = hitX - x;
 		int relativeHitY = hitY - y;
 		pSource->GetImage().PaintImageGlowUsingOpenGL(Dest, x, y, Ctx.iTick, pSource->GetRotationFrameIndex(), m_rgbPrimaryColor,
-			float(byOpacity) / 255.0f, m_iRadius, float(byOpacity) / 255.0f, float(m_iNoise) / 255.0f, m_iBlendMode,
+			(float(byOpacity) / 255.0f) * (float(m_iOpacity) / 255.0f), m_iRadius, (float(byOpacity) / 255.0f) * (float(m_iOpacity) / 255.0f), 0.0, m_iBlendMode,
 			glm::ivec4(relativeHitX, relativeHitY, maxRadiusAroundImpact, minRadiusAroundImpact));
 		return;
 	}
@@ -593,11 +633,14 @@ bool CGlowEffectPainter::OnSetParam (CCreatePainterCtx &Ctx, const CString &sPar
 	else if (strEquals(sParam, STYLE_ATTRIB))
 		m_iStyle = (EStyles)Value.EvalIdentifier(STYLE_TABLE, styleMax, styleFull);
 
-	else if (strEquals(sParam, NOISE_ATTRIB))
-		m_iNoise = Value.EvalIntegerBounded(0, 255, 0);
+	else if (strEquals(sParam, OPACITY_ATTRIB))
+		m_iOpacity = Value.EvalIntegerBounded(0, 255, 0);
 
 	else if (strEquals(sParam, RADIUS_AROUND_IMPACT_ATTRIB))
-		m_iRadiusAroundImpact = Value.EvalIntegerBounded(1, -1, (int)(STD_SECONDS_PER_UPDATE * LIGHT_SECOND / KLICKS_PER_PIXEL));
+		m_iRadiusAroundImpact = Value.EvalIntegerBounded(1, -1, -1);
+
+	else if (strEquals(sParam, WAVE_WIDTH_ATTRIB))
+		m_iWaveWidth = Value.EvalIntegerBounded(1, -1, 0);
 
 	else if (strEquals(sParam, USE_SOURCE_OBJ_ATTRIB)) {
 		if (Value.EvalBool()) {
@@ -605,7 +648,7 @@ bool CGlowEffectPainter::OnSetParam (CCreatePainterCtx &Ctx, const CString &sPar
 			const CSpaceObject* pDamageCtxSource = Ctx.GetDamageCtx() ? Ctx.GetDamageCtx()->pObj : nullptr;
 			const CVector vHitVector = Ctx.GetDamageCtx() ? Ctx.GetDamageCtx()->vHitPos : CVector(0, 0);
 			m_vHitVector = vHitVector;
-			m_bUseHitLocation = Ctx.GetDamageCtx() ? true : false;
+			m_bUseDamageCtxSource = Ctx.GetDamageCtx() ? true : false;
 			m_pSource = pDamageCtxSource ? pDamageCtxSource : pCtxSource;
 		}
 	}
