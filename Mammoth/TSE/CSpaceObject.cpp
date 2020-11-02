@@ -7351,10 +7351,14 @@ void CSpaceObject::SetOverride (CDesignType *pOverride)
 	m_pOverride = pOverride;
 	SetEventFlags();
 
-	//	Fire OnOverrideInit
-
 	if (m_pOverride)
 		{
+		//	Initialize any custom properties.
+
+		m_pOverride->InitObjectData(*this, GetData());
+
+		//	Fire OnOverrideInit
+
 		SEventHandlerDesc Event;
 		if (FindEventHandler(ON_OVERRIDE_INIT_EVENT, &Event))
 			{
