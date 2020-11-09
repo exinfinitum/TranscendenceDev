@@ -463,7 +463,7 @@ class CSpaceObject
 
 		virtual CSpaceObject *GetTarget (DWORD dwFlags = 0) const { return NULL; }
 		virtual CTargetList GetTargetList (void) const { return CTargetList(); }
-		virtual bool IsTargetableProjectile (void) const { return true; }
+		virtual bool IsTargetableProjectile (void) const { return false; }
 
 		int CalcFireSolution (CSpaceObject *pTarget, Metric rMissileSpeed) const;
 		CSpaceObject *CalcTargetToAttack (CSpaceObject *pAttacker, CSpaceObject *pOrderGiver);
@@ -1227,7 +1227,6 @@ class CSpaceObject
 		virtual const CDamageSource &GetDamageSource (void) const { return CDamageSource::Null(); }
 		virtual CWeaponFireDesc *GetWeaponFireDesc (void) { return NULL; }
 		virtual CSpaceObject *GetSecondarySource (void) const { return NULL; }
-		virtual bool IsTargetableProjectile (void) const { return false; }
 
 		//	...for ships
 
