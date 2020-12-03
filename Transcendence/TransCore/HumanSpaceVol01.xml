@@ -2399,6 +2399,12 @@
 	<!ENTITY scBorerStock				"0x00100708">
 	<!ENTITY scBorerIIStock				"0x00100709">
 	<!ENTITY itRejuvTankPatient			"0x0010070A">
+	<!ENTITY rsCommonwealthHabitat		"0x0010070B">
+	<!ENTITY rsContainerHabitat			"0x0010070C">
+	<!ENTITY msResidentials01			"0x0010070D">
+	<!ENTITY itCarbonScrubbers			"0x0010070E">
+	<!ENTITY msResidentials02			"0x0010070F">
+	<!ENTITY msResidentials03			"0x00100710">
 
 	<!-- 0740-075F RASIERMESSER -->
 
@@ -2416,6 +2422,7 @@
 	<!ENTITY tbRaisuStation02Revenge	"0x00100765">
 	<!ENTITY msRaisuStation03			"0x00100766">
 	<!ENTITY evRaisuStation03Settlement	"0x00100767">
+	<!ENTITY rsRaisuStation				"0x00100768">
 
 	<!-- 0780-079F QUANTUM CPU -->
 
@@ -2520,6 +2527,9 @@
 	<Module filename="CommonwealthRonins.xml"/>
 	<Module filename="CommonwealthShips.xml"/>
 	<Module filename="ContainerHabitat.xml"/>
+	<Module filename="ResidentialsMission01.xml"/>
+	<Module filename="ResidentialsMission02.xml"/>
+	<Module filename="ResidentialsMission03.xml"/>
 
 	<!-- Commonwealth Fleet -->
 
