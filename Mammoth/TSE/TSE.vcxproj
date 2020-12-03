@@ -260,6 +260,7 @@
     <ClInclude Include="..\Include\TSEEngineDefs.h" />
     <ClInclude Include="..\Include\TSEListImpl.h" />
     <ClInclude Include="..\Include\TSEOverlays.h" />
+    <ClInclude Include="..\Include\TSESpaceObjectDefs.h" />
     <ClInclude Include="..\Include\TSESpaceObjectUtil.h" />
     <ClInclude Include="..\Include\TSEAdventureDesc.h" />
     <ClInclude Include="..\Include\TSEArmor.h" />
@@ -466,7 +467,9 @@
     <ClCompile Include="CLocationSelectionTable.cpp" />
     <ClCompile Include="CMapLabelArranger.cpp" />
     <ClCompile Include="CMapLabelPainter.cpp" />
+    <ClCompile Include="CMenuData.cpp" />
     <ClCompile Include="CMissileItem.cpp" />
+    <ClCompile Include="CMissionCriteria.cpp" />
     <ClCompile Include="CNameDesc.cpp" />
     <ClCompile Include="CNamedEffects.cpp" />
     <ClCompile Include="CNetworkTopologyCreator.cpp" />
