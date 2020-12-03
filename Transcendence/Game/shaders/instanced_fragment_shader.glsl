@@ -201,7 +201,6 @@ float rand(vec2 co){
 }
 
 float sampleNoisePerlin(vec3 sampler) {
-    //return texture(perlin_noise, vec3(sampler[0], sampler[1], abs(mod(sampler[2], 2.0) - 1.0)))[1];
     return texture(perlin_noise, vec3(sampler[0], sampler[1], sampler[2]))[1];
 }
 
@@ -241,7 +240,6 @@ vec4 sampleCircular(sampler2D tex_sample) {
 	vec2 fixedTexPos = texture_bounds_min;
 	vec2 texPositionOffset = (texture_bounds_max - fixedTexPos) / 2.0;
 	vec2 polarTexPos2d = vec2(polarTexPos[0] * texture_size[0], polarTexPos[1] * texture_size[1]) + fixedTexPos + texPositionOffset;
-	//return vec4(polarTexPos2d[0], 0.0, polarTexPos2d[1], 1.0);
 	return vec4(texture(tex_sample, polarTexPos2d)) * float(distanceFromCenter < 0.5);
 }
 
@@ -252,8 +250,8 @@ float stackedPerlin(vec3 p) {
 void main(void)
 {		
 	float epsilon = 0.01;
-	float alphaNoisePeriodTime = glow_noise;
-	float alphaNoisePeriodXY = 1000.0f;
+	float alphaNoisePeriodTime = 5;
+	float alphaNoisePeriodXY = 0.2f;
 	float glowNoisePeriodXY = 10.0f;
 
 	vec4 realColorCartesian = texture(obj_texture, vec2(texture_uv[0], texture_uv[1]));
@@ -264,11 +262,9 @@ void main(void)
 	);
 
 	float alphaNoiseTimeAxis = (float(current_tick) / max(alphaNoisePeriodTime, epsilon));
-	float perlinNoise = (sampleNoiseFBM(vec3(fragment_pos[0] * alphaNoisePeriodXY, fragment_pos[1] * alphaNoisePeriodXY, alphaNoiseTimeAxis)) + 0.0f);
-	float alphaNoise = 1.0;
-	//float alphaNoise = perlinNoise + float(alpha_strength > 0.9999);
-	//alphaNoise = (alpha_strength + (alphaNoise * alpha_strength));
-	//alphaNoise = (float(alphaNoise > 0.5) * 2) - 1;
+	float perlinNoise = (sampleNoisePerlin(vec3(fragment_pos[0] * alphaNoisePeriodXY, fragment_pos[1] * alphaNoisePeriodXY, alphaNoiseTimeAxis)) + 0.0f);
+	float alphaNoise = (perlinNoise - 0.5) * ((1.0 - (2.0 * abs(alpha_strength - 0.5))) * glow_noise);
+	alphaNoise = (float(alphaNoise < 0) * -1.0) * (sqrt(abs(alphaNoise)) / (2.0 * sqrt(0.5)));
 	
 	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, perlinNoise, texture_start_point, num_frames);
 	vec4 glowColorStatic = getGlowColor_Static(epsilon, realColor, texture_size, texture_uv, obj_texture, texture_start_point, num_frames);
@@ -282,11 +278,7 @@ void main(void)
 	bool useGlow = (glow_color[3] > epsilon);
 	
 	
-	vec4 textureColor = vec4(realColor[0], realColor[1], realColor[2], realColor[3] * alphaNoise * alpha_strength);
-	//float ftime = float(current_tick) / 60.0;
-	//vec4 perlin_noise_color = vec4(sampleNoiseFBM(vec3(fragment_pos[0], fragment_pos[1], ftime)));
-	//perlin_noise_color[3] = 1.0;
-	//out_color = perlin_noise_color;
+	vec4 textureColor = vec4(realColor[0], realColor[1], realColor[2], (realColor[3] * alpha_strength));
 	vec4 objectColor = (float(!useGlow) * textureColor) + (float(useGlow) * glowColor);
 	float grayscaleIntensity = length(vec3(objectColor[0], objectColor[1], objectColor[2]));
 	vec4 grayscaleColor = vec4(grayscaleIntensity, grayscaleIntensity, grayscaleIntensity, objectColor[3]);
@@ -300,6 +292,7 @@ void main(void)
         (textColor * float(render_category == renderCategoryText)) +
 		(grayscaleColor * float(render_category == renderCategoryObjectCartesianGrayscale))
 	);
+	finalColor[3] += (alphaNoise * realColor[3]) * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar) * float(!useGlow);
 
 	bool alphaIsZero = finalColor[3] < epsilon;
 	gl_FragDepth = depth + float(alphaIsZero && (glowColor[3] < epsilon));

@@ -315,9 +315,9 @@ public:
 		int sizePixelY, int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture* image, int texWidth, int texHeight,
 		int texQuadWidth, int texQuadHeight, int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength = 1.0,
 		bool useDepthTesting = true, OpenGLRenderLayer::textureRenderCategory textureRenderType = OpenGLRenderLayer::textureRenderCategory::normal,
-		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal) {
+		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal, float glowNoise = 0.0) {
 		addTextureToRenderQueue(startPixelX, startPixelY, sizePixelX, sizePixelY, posPixelX, posPixelY, canvasHeight, canvasWidth, image, texWidth, texHeight,
-			texQuadWidth, texQuadHeight, numFramesPerRow, numFramesPerCol, spriteSheetStartX, spriteSheetStartY, alphaStrength, 0.0, 0.0, 0.0, 0.0, 0.0, 0, useDepthTesting,
+			texQuadWidth, texQuadHeight, numFramesPerRow, numFramesPerCol, spriteSheetStartX, spriteSheetStartY, alphaStrength, 0.0, 0.0, 0.0, 0.0, glowNoise, 0, useDepthTesting,
 			textureRenderType, blendMode);
 	}
 	void addTextureToRenderQueue (int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
