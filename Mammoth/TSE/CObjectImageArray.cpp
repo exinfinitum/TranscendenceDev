@@ -1640,14 +1640,15 @@ void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, 
 			{
 			int iCanvasHeight = Dest.GetHeight();
 			int iCanvasWidth = Dest.GetWidth();
-			int iQuadWidth = RectWidth(m_rcImage) * 2;
-			int iQuadHeight = RectHeight(m_rcImage) * 2;
+			int iQuadWidth = RectWidth(m_rcImage);
+			int iQuadHeight = RectHeight(m_rcImage);
 			int iTexQuadWidth = RectWidth(m_rcImage);
 			int iTexQuadHeight = RectHeight(m_rcImage);
 			auto[iNumRows, iNumCols] = GetNumColsAndRows();
 			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
 			iCanvasWidth, pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top,
-			(byOpacity == 0 ? 1.0f : (float)(static_cast<int>(byOpacity) / 255.0f)), false); // TODO (heliogenesis): Experiment with depth testing on cloaked ships
+			(byOpacity == 0 ? 1.0f : (float)(static_cast<int>(byOpacity) / 255.0f)), false, OpenGLRenderLayer::textureRenderCategory::normal, OpenGLRenderLayer::blendNormal,
+			1.0f); // TODO (heliogenesis): Experiment with depth testing on cloaked ships
 			}
 		else
 			{
