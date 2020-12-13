@@ -221,7 +221,6 @@ class CG32bitImage : public TImagePlane<CG32bitImage>
 		//void SetCurrentTickForShaders (int currTick) { if (m_pOGLRenderQueue) m_pOGLRenderQueue->setCurrentTick(currTick); }
 		void SetCurrentTickForShaders(int currTick) { if (m_pOGLRenderQueue) m_pOGLRenderQueue.get()->setCurrentTick(currTick); }
 		void CreateOpenGLTexture (void) { if (m_bOpenGLInitialized) { m_pOpenGLTexture = std::make_shared<OpenGLTextureRGBA32>(GetPixelArray(), GetWidth(), GetHeight(), GetAlphaType() == EAlphaTypes::alpha8); } }
-		void SetOpenGLTexture (std::shared_ptr<OpenGLTextureRGBA32> OpenGLTexturePtr) { if (m_bOpenGLInitialized) { m_pOpenGLTexture = OpenGLTexturePtr; } }
 
 	private:
 		static int CalcBufferSize (int cxWidth, int cyHeight) { return (cxWidth * cyHeight); }
