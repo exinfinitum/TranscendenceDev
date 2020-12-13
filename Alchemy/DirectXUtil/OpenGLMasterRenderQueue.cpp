@@ -50,9 +50,6 @@ OpenGLMasterRenderQueue::~OpenGLMasterRenderQueue(void)
 	// TODO: Delete render queues, delete VAOs properly (specifically the instanced VAO bits)
 	glDeleteFramebuffers(1, &fbo);
 	glDeleteRenderbuffers(1, &rbo);
-	delete m_pGlowmapShader;
-	delete m_pObjectTextureShader;
-	delete m_pRayShader;
 }
 
 void OpenGLMasterRenderQueue::initializeCanvasVAO()
@@ -246,7 +243,7 @@ void OpenGLMasterRenderQueue::renderAllQueues(void)
 		m_pObjectTextureShader, m_pRayShader, m_pGlowmapShader, m_pOrbShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
 		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 	}
-
+	m_texturesForDeletion.clear();
 }
 void OpenGLMasterRenderQueue::renderToGlowmaps(void)
 {

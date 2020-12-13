@@ -59,7 +59,7 @@ public:
 	static const int PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP = 100;
 	OpenGLTexture(void* texture, int width, int height, bool isOpaque);
 	OpenGLTexture(int width, int height);
-	~OpenGLTexture(void);
+	virtual ~OpenGLTexture(void);
 	void initTexture2D(int width, int height);
 	void initTexture2D(void* texture, int width, int height);
 	void bindTexture2D (GLenum glTexture) const { glActiveTexture(glTexture); glBindTexture(GL_TEXTURE_2D, m_pTextureID[0]); }
