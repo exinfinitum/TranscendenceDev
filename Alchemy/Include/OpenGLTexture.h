@@ -89,6 +89,7 @@ public:
 protected:
 	unsigned int m_iWidth;
 	unsigned int m_iHeight;
+	static uint64_t m_iNumPixelsAllocd;
 private:
 	unsigned int m_pTextureID[1];
 	unsigned int pboID[2];
