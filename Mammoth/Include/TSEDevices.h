@@ -202,6 +202,7 @@ class CDeviceClass
 			//	Used internally
 
 			int iRepeatingCount = 0;
+			int iChargeFrame = 0;
 
 			//	Status results
 
