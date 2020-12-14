@@ -461,6 +461,7 @@
     <ClCompile Include="CItemEncounterDefinitions.cpp" />
     <ClCompile Include="CItemLevelCriteria.cpp" />
     <ClCompile Include="CItemTypeProbabilityTable.cpp" />
+    <ClCompile Include="COrbitExactOrder.cpp" />
     <ClCompile Include="CLabelPainter.cpp" />
     <ClCompile Include="CLanguage.cpp" />
     <ClCompile Include="CLightningBundlePainter.cpp" />
@@ -664,6 +665,7 @@
     <ClCompile Include="MissileProperties.cpp" />
     <ClCompile Include="MissionProperties.cpp" />
     <ClCompile Include="ObjectImageProperties.cpp" />
+    <ClCompile Include="PowerProperties.cpp" />
     <ClCompile Include="SDamageCtx.cpp" />
     <ClCompile Include="SFXDisintegrate.cpp" />
     <ClCompile Include="SFXGlow.cpp" />

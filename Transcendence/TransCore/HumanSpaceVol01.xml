@@ -2085,6 +2085,14 @@
 	<!ENTITY rsHammerheadHero			"0x0010033A">
 	<!ENTITY rsHammerhead2Hero			"0x0010033B">
 	<!ENTITY rsBorerHero				"0x0010033C">
+	<!ENTITY tbOutlawMineTreasure		"0x0010033D">
+	<!ENTITY tbOutlawMineDefenders		"0x0010033E">
+	<!ENTITY stOutlawHowitzer			"0x0010033F">
+	<!ENTITY scBorer-III				"0x00100340">
+	<!ENTITY scOromoII					"0x00100341">
+	<!ENTITY scSothoII					"0x00100342">
+	<!ENTITY itBallistaTurret			"0x00100343">
+	<!ENTITY itMarkIHowitzerTurret		"0x00100344">
 
 	<!-- 0370-038F AUTONS -->
 
@@ -2350,6 +2358,7 @@
 	<!ENTITY baHaloGem					"0x00100642">
 	<!ENTITY itGemOfFury				"0x00100643">
 	<!ENTITY ovGemOfFury				"0x00100644">
+	<!ENTITY rsDominaPowers				"0x00100645">
 
 	<!-- 0660-06BF COMMONWEALTH FLEET III -->
 
@@ -2405,6 +2414,7 @@
 	<!ENTITY itCarbonScrubbers			"0x0010070E">
 	<!ENTITY msResidentials02			"0x0010070F">
 	<!ENTITY msResidentials03			"0x00100710">
+	<!ENTITY scBorerIIIStock			"0x00100711">
 
 	<!-- 0740-075F RASIERMESSER -->
 
