@@ -519,6 +519,12 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 	//	Figure out which object we're going to make glow.
 
 	const CSpaceObject *pSource = m_pSource ? m_pSource : Ctx.pObj;
+	if (pSource->IsDestroyed())
+		{
+		//  Mark the glow effect painter's source as destroyed, so we don't try to access a wild pointer and segfault.
+		m_pSource = NULL;
+		return;
+		}
 	if (pSource == NULL)
 		return;
 
@@ -536,7 +542,6 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 		byOpacity = 0xff;
 
 	//  Use OpenGL if we have it enabled
-	//  TODO(heliogenesis): Use values directly and skip opacity tables if using OpenGL
 	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
 	if (pRenderQueue) {
 		//glm::vec4 glowDecay()
