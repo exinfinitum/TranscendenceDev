@@ -247,6 +247,7 @@ class CGameSettings
 			no3DSystemMap,					//	3D system map projection
 			maxResolution,					//	Maximum vertical resolution
 			noGPUAcceleration,				//	Do not use GPU textures for blts
+			noSpaceBackground,				//	Show old starfield background
 
 			//	Sounds options
 			noSound,						//	No sound (either music or sound effects)

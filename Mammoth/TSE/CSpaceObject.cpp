@@ -6158,7 +6158,7 @@ bool CSpaceObject::MatchesCriteriaCategory (CSpaceObjectCriteria::SCtx &Ctx, con
 	return false;
 	}
 
-bool CSpaceObject::MissileCanInteract (const CSpaceObject &Obj, int iInteraction, const CSpaceObject *pTarget)
+bool CSpaceObject::MissileCanInteract (const CSpaceObject &Obj, CInteractionLevel Interaction, const CSpaceObject *pTarget)
 
 //	MissileCanInteract
 //
@@ -6166,27 +6166,7 @@ bool CSpaceObject::MissileCanInteract (const CSpaceObject &Obj, int iInteraction
 //	and the given target.
 
 	{
-	//	Interaction of -1 means that the object is a ship or station, which can
-	//	always be hit.
-
-	int iObjInteraction = Obj.GetInteraction();
-	if (iObjInteraction < 0)
-		return true;
-
-	//	Combine the interaction values.
-
-	int iResultInteraction;
-	if (pTarget && pTarget == Obj)
-		iResultInteraction = Max(iInteraction, iObjInteraction);
-	else
-		iResultInteraction = Min(iInteraction, iObjInteraction);
-
-	if (iResultInteraction >= 100)
-		return true;
-	else if (iResultInteraction <= 0)
-		return false;
-	else
-		return (mathRandom(1, 100) <= iResultInteraction);
+	return Interaction.CalcCanInteractWith(Obj.GetInteraction(), pTarget && pTarget == Obj);
 	}
 
 bool CSpaceObject::MissileCanHitObj (CSpaceObject *pObj, const CDamageSource &Source, CWeaponFireDesc *pDesc) const
@@ -6234,7 +6214,11 @@ bool CSpaceObject::MissileCanHitObj (CSpaceObject *pObj, const CDamageSource &So
 				&& pDesc->CanHit(pObj)
 
 				//	We cannot hit our friends (if our source can't)
-				&& ((CanHitFriends() && Source.CanHitFriends() && pObj->CanBeHitByFriends()) || Source.IsAngryAt(*pObj, GetSovereign()))
+				&& ((CanHitFriends() && Source.CanHitFriends() && pObj->CanBeHitByFriends()) 
+					|| Source.IsAngryAt(*pObj, GetSovereign())
+					//	But we can always hit planets, stargates, etc. (Otherwise
+					//	the player can't hide from Quantumsphere shots.)
+					|| pObj->IsImmutable() || pObj->GetScale() == scaleWorld || pObj->GetScale() == scaleStar)
 
 				//	If our source is the player, then we cannot hit player wingmen
 
@@ -7724,6 +7708,38 @@ void CSpaceObject::UpdateExtended (const CTimeSpan &ExtraTime)
 	//	Let subclasses update
 
 	OnUpdateExtended(ExtraTime);
+	}
+
+bool CSpaceObject::InvokePower (CPower &Power, CSpaceObject *pTarget)
+
+//	InvokePower
+//
+//	Invokes the given power.
+
+	{
+	if (IsPlayer())
+		{
+		CString sError;
+		Power.InvokeByPlayer(this, pTarget, &sError);
+		if (!sError.IsBlank())
+			{
+			SendMessage(NULL, sError);
+			::kernelDebugLogString(sError);
+			return false;
+			}
+		}
+	else
+		{
+		CString sError;
+		Power.InvokeByNonPlayer(this, pTarget, &sError);
+		if (!sError.IsBlank())
+			{
+			::kernelDebugLogString(sError);
+			return false;
+			}
+		}
+
+	return true;
 	}
 
 bool CSpaceObject::UseItem (const CItem &Item, CString *retsError)

@@ -549,6 +549,7 @@ class CSpaceObject
 		//	Dock Screens
 
 		virtual DWORD GetDefaultBkgnd (void) { return 0; }
+		virtual const CSoundResource *GetDockScreenAmbientSound () const { return NULL; }
 		virtual CXMLElement *GetScreen (const CString &sName);
 
 		CDesignType *GetFirstDockScreen (CString *retsScreen = NULL, ICCItemPtr *retpData = NULL);
@@ -1011,12 +1012,39 @@ class CSpaceObject
 		bool IsShowingHighlight (void) const { return m_fShowHighlight; }
 		void SetPlayerDestination (const SPlayerDestinationOptions &Options);
 
+		//	Powers
+
+		bool InvokePower (CPower &Power, CSpaceObject *pTarget);
+
 		//	Properties
 
 		ICCItemPtr GetProperty (CCodeChainCtx &CCX, const CString &sProperty) const;
 		ICCItemPtr GetProperty (const CString &sProperty) const { CCodeChainCtx CCX(GetUniverse()); return GetProperty(CCX, sProperty); }
 		bool IncProperty (const CString &sProperty, ICCItem *pInc, ICCItemPtr &pResult);
 		virtual bool SetProperty (const CString &sName, ICCItem *pValue, CString *retsError);
+
+		//	Ships
+
+		virtual const CShipPerformanceDesc &GetShipPerformance (void) const { return CShipPerformanceDesc::Null(); }
+
+		//	Stargates (object is a stargate)
+
+		virtual CString GetStargateID (void) const { return NULL_STR; }
+		virtual bool IsActiveStargate (void) const { return false; }
+		virtual bool IsStargate (void) const { return false; }
+		virtual bool RequestGate (CSpaceObject *pObj);
+		virtual bool SupportsGating (void) { return false; }
+
+		Metric GetMaxGateDist2 (void) const;
+
+		//	Statics
+
+		static int ConvertToCompatibleIndex (const CItem &Item, InstallItemResults iResult);
+		static CString ConvertToID (InstallItemResults iResult);
+
+		//	Stations
+
+		virtual const CAsteroidDesc &GetAsteroidDesc (void) const { return CAsteroidDesc::Null(); }
 
 		//	Trade
 
@@ -1051,29 +1079,6 @@ class CSpaceObject
 		bool HasTradeUpgradeOnly (ETradeServiceTypes iService) const;
 		void RecordBuyItem (CSpaceObject *pSellerObj, const CItem &Item, const CCurrencyAndValue &Price);
 		void SetTradeDesc (const CEconomyType *pCurrency, int iMaxCurrency, int iReplenishCurrency);
-
-		//	Ships
-
-		virtual const CShipPerformanceDesc &GetShipPerformance (void) const { return CShipPerformanceDesc::Null(); }
-
-		//	Stargates (object is a stargate)
-
-		virtual CString GetStargateID (void) const { return NULL_STR; }
-		virtual bool IsActiveStargate (void) const { return false; }
-		virtual bool IsStargate (void) const { return false; }
-		virtual bool RequestGate (CSpaceObject *pObj);
-		virtual bool SupportsGating (void) { return false; }
-
-		Metric GetMaxGateDist2 (void) const;
-
-		//	Statics
-
-		static int ConvertToCompatibleIndex (const CItem &Item, InstallItemResults iResult);
-		static CString ConvertToID (InstallItemResults iResult);
-
-		//	Stations
-
-		virtual const CAsteroidDesc &GetAsteroidDesc (void) const { return CAsteroidDesc::Null(); }
 
 		//	Wingmen
 
@@ -1112,7 +1117,7 @@ class CSpaceObject
 		virtual Categories GetCategory (void) const { return catOther; }
 		virtual DWORD GetClassUNID (void) { return 0; }
 		virtual Metric GetGravity (Metric *retrRadius) const { return 0.0; }
-		virtual int GetInteraction (void) const { return -1; }
+		virtual CInteractionLevel GetInteraction (void) const { return -1; }
 		virtual Metric GetInvMass (void) const { return 0.0; }
 		virtual const COrbit *GetMapOrbit (void) const { return NULL; }
 		virtual Metric GetMass (void) const { return 0.0; }
@@ -1357,7 +1362,7 @@ class CSpaceObject
 		bool IsObjectDestructionHooked (void) { return (m_fHookObjectDestruction ? true : false); }
 		void ItemEnhancementModified (CItemListManipulator &ItemList) { OnItemEnhanced(ItemList); }
 		bool MissileCanHitObj (CSpaceObject *pObj, const CDamageSource &Source, CWeaponFireDesc *pDesc) const;
-		static bool MissileCanInteract (const CSpaceObject &Obj, int iInteraction, const CSpaceObject *pTarget = NULL);
+		static bool MissileCanInteract (const CSpaceObject &Obj, CInteractionLevel Interaction, const CSpaceObject *pTarget = NULL);
 		void PaintEffects (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx);
 		void PaintHighlight (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx);
 		void PaintTargetHighlight (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx);
@@ -1853,7 +1858,7 @@ bool CreateOrbitFromList (CCodeChain &CC, ICCItem *pList, COrbit *retOrbitDesc);
 ICCItem *CreateResultFromDataField (CCodeChain &CC, const CString &sValue);
 CShip *CreateShipObjFromItem (CCodeChain &CC, ICCItem *pArg);
 CStation *CreateStationObjFromItem (CCodeChain &CC, ICCItem *pArg);
-CVector CreateVectorFromList (CCodeChain &CC, ICCItem *pList);
+CVector CreateVectorFromList (CCodeChain &CC, const ICCItem *pList);
 CCXMLWrapper *CreateXMLElementFromItem (CCodeChain &CC, ICCItem *pItem);
 void DefineGlobalItem (CCodeChain &CC, const CString &sVar, const CItem &Item);
 void DefineGlobalSpaceObject (CCodeChain &CC, const CString &sVar, const CSpaceObject *pObj);

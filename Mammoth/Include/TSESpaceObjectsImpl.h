@@ -77,7 +77,7 @@ class CBeam : public TSpaceObjectImpl<OBJID_CBEAM>
 		virtual Categories GetCategory (void) const override { return catBeam; }
 		virtual CString GetDamageCauseNounPhrase (DWORD dwFlags) override { return m_Source.GetDamageCauseNounPhrase(dwFlags); }
 		virtual const CDamageSource &GetDamageSource (void) const override { return m_Source; }
-		virtual int GetInteraction (void) const override { return 0; }
+		virtual CInteractionLevel GetInteraction (void) const override { return 0; }
 		virtual Metric GetMaxSpeed (void) const override { return m_pDesc->GetRatedSpeed(); }
 		virtual CString GetNamePattern (DWORD dwNounPhraseFlags = 0, DWORD *retdwFlags = NULL) const override;
 		virtual CString GetObjClassName (void) override { return CONSTLIT("CBeam"); }
@@ -167,7 +167,7 @@ class CContinuousBeam : public TSpaceObjectImpl<OBJID_CCONTINUOUSBEAM>
 		virtual CString DebugCrashInfo (void) override;
 		virtual CString GetDamageCauseNounPhrase (DWORD dwFlags) override { return m_Source.GetDamageCauseNounPhrase(dwFlags); }
 		virtual const CDamageSource &GetDamageSource (void) const override { return m_Source; }
-		virtual int GetInteraction (void) const override { return m_pDesc->GetInteraction(); }
+		virtual CInteractionLevel GetInteraction (void) const override { return m_pDesc->GetInteraction(); }
 		virtual Metric GetMaxSpeed (void) const override { return m_pDesc->GetRatedSpeed(); }
 		virtual CString GetNamePattern (DWORD dwNounPhraseFlags = 0, DWORD *retdwFlags = NULL) const override;
 		virtual CString GetObjClassName (void) override { return CONSTLIT("CContinuousBeam"); }
@@ -523,7 +523,7 @@ class CMissile : public TSpaceObjectImpl<OBJID_CMISSILE>
 		virtual Categories GetCategory (void) const override;
 		virtual CString GetDamageCauseNounPhrase (DWORD dwFlags) override { return m_Source.GetDamageCauseNounPhrase(dwFlags); }
 		virtual const CDamageSource &GetDamageSource (void) const override { return m_Source; }
-		virtual int GetInteraction (void) const override { return m_pDesc->GetInteraction(); }
+		virtual CInteractionLevel GetInteraction (void) const override { return m_pDesc->GetInteraction(); }
 		virtual int GetLastFireTime (void) const override;
 		virtual int GetLevel (void) const override { return m_pDesc->GetLevel(); }
 		virtual Metric GetMaxSpeed (void) const override { return m_pDesc->GetRatedSpeed(); }
@@ -1148,6 +1148,7 @@ class CShip : public TSpaceObjectImpl<OBJID_CSHIP>
 		virtual CSpaceObject *GetDockedObj (void) const override { return (m_fShipCompartment ? NULL : m_pDocked); }
 		virtual const CDockingPorts *GetDockingPorts (void) const override { return &m_DockingPorts; }
 		virtual CDockingPorts *GetDockingPorts (void) override { return &m_DockingPorts; }
+		virtual const CSoundResource *GetDockScreenAmbientSound () const override;
 		virtual CInstalledDevice *GetDevice (int iDev) override { return &m_Devices.GetDevice(iDev); }
 		virtual int GetDeviceCount (void) const override { return m_Devices.GetCount(); }
 		virtual CDeviceItem GetDeviceItem (int iDev) const override { return m_Devices.GetDeviceItem(iDev); }

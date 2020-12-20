@@ -1793,7 +1793,7 @@ CG32bitPixel LoadRGBColor (const CString &sString, CG32bitPixel rgbDefault)
 		}
 	}
 
-ALERROR LoadUNID (SDesignLoadCtx &Ctx, const CString &sString, DWORD *retdwUNID)
+ALERROR LoadUNID (SDesignLoadCtx &Ctx, const CString &sString, DWORD *retdwUNID, DWORD dwDefaultUNID)
 
 //	LoadUNID
 //
@@ -1806,7 +1806,7 @@ ALERROR LoadUNID (SDesignLoadCtx &Ctx, const CString &sString, DWORD *retdwUNID)
 
 	if (*pPos == '\0')
 		{
-		*retdwUNID = 0;
+		*retdwUNID = dwDefaultUNID;
 		return NOERROR;
 		}
 
