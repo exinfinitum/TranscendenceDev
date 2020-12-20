@@ -205,13 +205,6 @@ class CG16bitImage : public TImagePlane<CG16bitImage>
 		static DWORD PixelFromRGB (COLORREF rgb) { return (GetBValue(rgb) >> 3) | ((GetGValue(rgb) >> 2) << 5) | ((GetRValue(rgb) >> 3) << 11); }
 		static COLORREF RGBFromPixel (WORD wColor) { return RGB(RedValue(wColor), GreenValue(wColor), BlueValue(wColor)); }
 
-		//  OpenGL functions
-		//OpenGLMasterRenderQueue *GetMasterRenderQueue(void) const { return m_pOGLRenderQueue; }
-		OpenGLTexture* GetOpenGLTexture(void) { if (!m_pOpenGLTexture) { CreateOpenGLTexture(); } return m_pOpenGLTexture.get(); };
-		OpenGLTexture* GetOpenGLTextureForRead(void) const { if (!m_pOpenGLTexture) { return m_pOpenGLTexture.get(); } else { return NULL; } }
-		void CreateOpenGLTexture(void) { if (m_bOpenGLInitialized) { m_pOpenGLTexture = std::make_shared<OpenGLTextureRGB16>(GetPixelArray(), GetWidth(), GetHeight()); } }
-		void SetOpenGLTexture(std::shared_ptr<OpenGLTextureRGB16> OpenGLTexturePtr) { if (m_bOpenGLInitialized) { m_pOpenGLTexture = OpenGLTexturePtr; } }
-		static void SetOpenGLInitialized(void) { m_bOpenGLInitialized = true; }
 	private:
 		struct RealPixel
 			{
@@ -290,7 +283,6 @@ class CG16bitImage : public TImagePlane<CG16bitImage>
 		LPDIRECTDRAWSURFACE7 m_pSurface;
 		BITMAPINFO *m_pBMI;			//	Used for blting to a DC
 
-		std::shared_ptr<OpenGLTextureRGB16> m_pOpenGLTexture = nullptr;
 		static bool m_bOpenGLInitialized;
 	};
 
@@ -464,7 +456,7 @@ class CG16bitFont
 		ALERROR Create (const CString &sTypeface, int iSize, bool bBold = false, bool bItalic = false, bool bUnderline = false);
 		ALERROR CreateFromFont (HFONT hFont);
 		ALERROR CreateFromResource (HINSTANCE hInst, const char *pszRes);
-		void Destroy (void) { m_FontImage.Destroy(); m_Metrics.DeleteAll(); }
+		void Destroy (void) { m_FontImage.Destroy(); m_Metrics.DeleteAll(); if (CG32bitImage::GetMasterRenderQueue()) { CG32bitImage::GetMasterRenderQueue()->handOffTextureForDeletion(std::move(m_OpenGLFontImage.second)); } }
 
 		int BreakText (const CString &sText, int cxWidth, TArray<CString> *retLines = NULL, DWORD dwFlags = 0) const;
 		void DrawText (CG16bitImage &Dest, int x, int y, WORD wColor, const CString &sText, DWORD dwFlags = 0, int *retx = NULL) const
@@ -549,7 +541,7 @@ class CG16bitFont
 		const CharMetrics &GetCharMetrics (char chChar) const;
 
 		CG16bitImage m_FontImage;
-		mutable std::pair<const CG16bitImage*, std::shared_ptr<OpenGLTextureRGBA32GrayscaleSrc>> m_OpenGLFontImage = std::pair<const CG16bitImage*, std::shared_ptr<OpenGLTextureRGBA32GrayscaleSrc>>(nullptr, nullptr);
+		mutable std::pair<const CG16bitImage*, std::unique_ptr<OpenGLTextureRGBA32GrayscaleSrc>> m_OpenGLFontImage = std::pair<const CG16bitImage*, std::unique_ptr<OpenGLTextureRGBA32GrayscaleSrc>>(nullptr, nullptr);
 
 		int m_cyHeight;				//	Height of the font
 		int m_cyAscent;				//	Height above baseline

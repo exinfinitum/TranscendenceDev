@@ -638,7 +638,7 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 			const CG16bitImage* pPrevFontImageAddr = m_OpenGLFontImage.first;
 			if (int(pPrevFontImageAddr) != int(pFontImgAddr))
 				{
-				m_OpenGLFontImage = std::pair<const CG16bitImage*, std::shared_ptr<OpenGLTextureRGBA32GrayscaleSrc>>(pFontImgAddr, std::make_shared<OpenGLTextureRGBA32GrayscaleSrc>(
+				m_OpenGLFontImage = std::pair<const CG16bitImage*, std::unique_ptr<OpenGLTextureRGBA32GrayscaleSrc>>(pFontImgAddr, std::make_unique<OpenGLTextureRGBA32GrayscaleSrc>(
 					m_FontImage.GetAlphaArray(), m_FontImage.GetWidth(), m_FontImage.GetHeight()
 					));
 				}

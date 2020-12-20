@@ -281,7 +281,6 @@ private:
 	OpenGLInstancedBatchRay m_rayRenderBatch;
 	OpenGLInstancedBatchOrb m_orbRenderBatch;
 	std::mutex m_texRenderQueueAddMutex;
-	std::vector<std::shared_ptr<OpenGLTexture>> m_texturesForDeletion;
 	std::vector<OpenGLTexture*> m_texturesNeedingGlowmaps;
 	renderOrder m_renderOrder = renderOrder::renderOrderProper;
 	int m_iMaxProperRenderOrderDrawCalls = 0;
@@ -363,7 +362,7 @@ public:
 	);
 	void setCurrentTick (int currTick) { m_iCurrentTick = currTick; }
 	void setCanvasDimensions(int width, int height) { m_iCanvasHeight = height; m_iCanvasWidth = width; }
-	void handOffTextureForDeletion(std::shared_ptr<OpenGLTexture> texPtr) {
+	void handOffTextureForDeletion(std::unique_ptr<OpenGLTexture> texPtr) {
 		m_texturesForDeletion.push_back(std::move(texPtr));
 	 }
 	void setPointerToCanvas(void* canvas) { m_pCanvas = canvas; }
@@ -403,7 +402,7 @@ private:
 	// the dictionary we have below as CPU memory addresses can change so the dictionary method is not reliable.
 	std::map<GLvoid*, OpenGLTexture*> m_textures;
 	//std::map<OpenGLTexture*, std::vector<GlowmapTile>> m_glowmapTiles;
-	std::vector<std::shared_ptr<OpenGLTexture>> m_texturesForDeletion;
+	std::vector<std::unique_ptr<OpenGLTexture>> m_texturesForDeletion;
 	//std::vector<std::shared_ptr<OpenGLTexture>> m_texturesNeedingInitialization;
 	float m_fDepthLevel;
 	static const float m_fDepthDelta;
