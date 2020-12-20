@@ -186,7 +186,6 @@ private:
 	std::unique_ptr<OpenGLTextureGlowmapRGBA32> GenerateGlowMap(unsigned int fbo, OpenGLVAO* vao, OpenGLShader* shader, const glm::vec2 texQuadSize, const glm::vec2 texStartPoint, const glm::vec2 texGridSize, int numFramesPerRow, int numFramesPerCol, int iGlowSize);
 	std::unordered_set <GlowmapTile, QBHash, QBEquals> m_CompletedGlowmapTiles;
 	std::unordered_set <GlowmapTile, QBHash, QBEquals> m_GlowmapTilesToRender;
-	std::unique_ptr<OpenGLTextureGlowmapRGBA32> m_pGlowMap = nullptr;
 	std::unordered_map<GlowmapTile, std::unique_ptr<OpenGLTextureGlowmapRGBA32>, QBHash, QBEquals> m_pGlowMaps;
 };
 
