@@ -1557,6 +1557,8 @@
     </ClCompile>
     <ClCompile Include="CInteractionLevel.cpp">
       <Filter>Source Files\Utilities</Filter>
+    <ClCompile Include="CWeaponTargetDefinition.cpp">
+      <Filter>Source Files\Items</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

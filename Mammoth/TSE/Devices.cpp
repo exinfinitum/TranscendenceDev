@@ -54,6 +54,7 @@
 #define PROPERTY_POWER_USE						CONSTLIT("powerUse")
 #define PROPERTY_SECONDARY						CONSTLIT("secondary")
 #define PROPERTY_SLOT_ID						CONSTLIT("slotID")
+#define PROPERTY_TARGET_CRITERIA     			CONSTLIT("targetCriteria")
 #define PROPERTY_TEMPERATURE      				CONSTLIT("temperature")
 #define PROPERTY_SHOT_SEPARATION_SCALE			CONSTLIT("shotSeparationScale")
 
@@ -125,6 +126,9 @@ void CDeviceClass::AccumulateAttributes (const CDeviceItem &DeviceItem, const CI
 		DWORD dwOptions = DeviceItem.GetLinkedFireOptions();
 		if ((dwOptions != 0) && (dwOptions != CDeviceClass::lkfNever))
 			retList->Insert(SDisplayAttribute(attribPositive, CONSTLIT("linked-fire")));
+
+		if (IsAutomatedWeapon())
+			retList->Insert(SDisplayAttribute(attribPositive, CONSTLIT("automatic")));
 		}
 
 	//	Let our subclasses add their own attributes
@@ -511,8 +515,8 @@ ICCItem *CDeviceClass::FindItemProperty (CItemCtx &Ctx, const CString &sName)
 	else if (strEquals(sName, PROPERTY_CAN_TARGET_MISSILES))
 		return (pDevice ? CC.CreateBool(pDevice->CanTargetMissiles()) : CC.CreateNil());
 	else if (strEquals(sName, PROPERTY_CAPACITOR))
-		{
-		CSpaceObject *pSource = Ctx.GetSource();
+	{
+		CSpaceObject* pSource = Ctx.GetSource();
 		CounterTypes iType;
 		int iLevel;
 		GetCounter(pDevice, pSource, &iType, &iLevel);
@@ -520,7 +524,7 @@ ICCItem *CDeviceClass::FindItemProperty (CItemCtx &Ctx, const CString &sName)
 			return CC.CreateNil();
 
 		return CC.CreateInteger(iLevel);
-		}
+	}
 
 	else if (strEquals(sName, PROPERTY_CYCLE_FIRE))
 		return (pDevice ? CC.CreateBool(pDevice->GetCycleFireSettings()) : CC.CreateNil());
@@ -535,25 +539,25 @@ ICCItem *CDeviceClass::FindItemProperty (CItemCtx &Ctx, const CString &sName)
 		return CC.CreateBool(pDevice ? pDevice->IsExternal() : IsExternal());
 
 	else if (strEquals(sName, PROPERTY_EXTRA_POWER_USE))
-		{
+	{
 		if (pDevice == NULL)
 			return CC.CreateNil();
 
 		return CC.CreateInteger(pDevice->GetExtraPowerUse());
-		}
+	}
 
 	else if (strEquals(sName, PROPERTY_POS))
-		{
+	{
 		if (pDevice == NULL)
 			return CC.CreateNil();
 
 		//	Create a list
 
-		ICCItem *pResult = CC.CreateLinkedList();
+		ICCItem* pResult = CC.CreateLinkedList();
 		if (pResult->IsError())
 			return pResult;
 
-		CCLinkedList *pList = (CCLinkedList *)pResult;
+		CCLinkedList* pList = (CCLinkedList*)pResult;
 
 		//	List contains angle, radius, and optional z
 
@@ -565,15 +569,15 @@ ICCItem *CDeviceClass::FindItemProperty (CItemCtx &Ctx, const CString &sName)
 		//	Done
 
 		return pResult;
-		}
+	}
 
 	else if (strEquals(sName, PROPERTY_POWER))
-		{
+	{
 		if (GetCategory() == itemcatReactor)
 			return CTLispConvert::CreatePowerResultMW(GetPowerOutput(Ctx))->Reference();
 		else
 			return CTLispConvert::CreatePowerResultMW(GetPowerRating(Ctx))->Reference();
-		}
+	}
 
 	else if (strEquals(sName, PROPERTY_POWER_OUTPUT))
 		return CreatePowerResult(GetPowerOutput(Ctx) * 100.0);
@@ -586,6 +590,9 @@ ICCItem *CDeviceClass::FindItemProperty (CItemCtx &Ctx, const CString &sName)
 
 	else if (strEquals(sName, PROPERTY_SLOT_ID))
 		return (pDevice ? CC.CreateString(pDevice->GetID()) : CC.CreateNil());
+
+	else if (strEquals(sName, PROPERTY_TARGET_CRITERIA))
+		return (pDevice ? (pDevice->GetWeaponTargetDefinition() ? CC.CreateString(pDevice->GetWeaponTargetDefinition()->GetTargetCriteriaString()) : CC.CreateNil()) : CC.CreateNil());
 
 	else if (strEquals(sName, PROPERTY_TEMPERATURE))
 		{

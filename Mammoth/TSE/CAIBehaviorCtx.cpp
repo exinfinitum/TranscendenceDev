@@ -235,7 +235,6 @@ void CAIBehaviorCtx::CalcBestWeapon (CShip *pShip, CSpaceObject *pTarget, Metric
 
 		else if (Weapon.IsLinkedFire())
 			{
-			bool bSkipThisWeapon = false;
 			if (UsesAllPrimaryWeapons())
 				{
 				auto linkedFireOptions = Weapon.GetItem()->AsDeviceItemOrThrow().GetLinkedFireOptions();
@@ -748,6 +747,14 @@ int CAIBehaviorCtx::CalcWeaponScore (CShip *pShip, CSpaceObject *pTarget, CInsta
 
 	if (pWeapon->GetTimeUntilReady() >= (avoidAnyNonReadyWeapons ? 1 : 15))
 		return 1;
+
+	//  If the target criteria for this weapon excludes the target, then
+	//  we score 1.
+	if (pWeapon->GetWeaponTargetDefinition())
+		{
+		if (!pWeapon->GetWeaponTargetDefinition()->MatchesTarget(pShip, pTarget))
+			return 1;
+		}
 
 	//	Get the item for the selected variant (either the weapon
 	//	or the ammo)
