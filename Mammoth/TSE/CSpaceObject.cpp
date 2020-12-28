@@ -3809,17 +3809,6 @@ CConditionSet CSpaceObject::GetConditions (void) const
 	return Conditions;
 	}
 
-int CSpaceObject::GetDataInteger (const CString &sAttrib) const
-
-//	GetDataInteger
-//
-//	Get integer value
-
-	{
-	ICCItemPtr pValue = GetData(sAttrib);
-	return pValue->GetIntegerValue();
-	}
-
 CDesignCollection &CSpaceObject::GetDesign (void) const
 
 //	GetDesign
@@ -6010,6 +5999,11 @@ bool CSpaceObject::MatchesCriteria (CSpaceObjectCriteria::SCtx &Ctx, const CSpac
 	if (Crit.MatchesHomeBaseIsSource() && GetBase() != pSource)
 		return false;
 
+	if (Crit.MatchesTargetableMissilesOnly()
+			&& GetCategory() == CSpaceObject::catMissile
+			&& !(IsTargetableProjectile()))
+		return false;
+
 	if (Crit.MatchesTargetIsSource() && GetTarget() != pSource)
 		return false;
 
@@ -6158,18 +6152,7 @@ bool CSpaceObject::MatchesCriteriaCategory (CSpaceObjectCriteria::SCtx &Ctx, con
 	return false;
 	}
 
-bool CSpaceObject::MissileCanInteract (const CSpaceObject &Obj, CInteractionLevel Interaction, const CSpaceObject *pTarget)
-
-//	MissileCanInteract
-//
-//	Returns TRUE if we can hit the given object with the given interaction value
-//	and the given target.
-
-	{
-	return Interaction.CalcCanInteractWith(Obj.GetInteraction(), pTarget && pTarget == Obj);
-	}
-
-bool CSpaceObject::MissileCanHitObj (CSpaceObject *pObj, const CDamageSource &Source, CWeaponFireDesc *pDesc) const
+bool CSpaceObject::MissileCanHitObj (const CSpaceObject &Obj, const CDamageSource &Source, const CWeaponFireDesc &Desc, CSpaceObject *pTarget) const
 
 //	MissileCanHitObj
 //
@@ -6179,50 +6162,51 @@ bool CSpaceObject::MissileCanHitObj (CSpaceObject *pObj, const CDamageSource &So
 	{
 	DEBUG_TRY
 
-	if (!pObj || !pDesc)
-		{
-		ASSERT(false);
-		return false;
-		}
-
 	//	If we have a source...
 
 	if (Source.HasSource())
 		{
 		//	If we can damage our source, then we don't need to check further
 
-		if (pDesc->CanDamageSource())
-			return (
-				//	We cannot hit another beam/missile from the same source
+		if (Desc.CanDamageSource())
+			{
+			if (//	We cannot hit another beam/missile from the same source
 				//	(otherwise we get fratricide on fragmentation weapons).
-				!Source.IsEqual(pObj->GetDamageSource())
+				Source.IsEqual(Obj.GetDamageSource())
 
-				//	See if the missile has rules about what it cannot hit
-				&& pDesc->CanHit(pObj));
+					//	See if the missile has rules about what it cannot hit
+					|| !Desc.CanHit(Obj))
+
+				return false;
+			}
 
 		//	Otherwise, we can only hit if we're not hitting our source, etc.
 
 		else
-			return (
-				//	We cannot hit the source of the beam...
-				!Source.IsEqual(pObj)
+			{
+			if (//	We cannot hit the source of the beam...
+				Source.IsEqual(Obj)
 
-				//	We cannot hit another beam/missile from the same source...
-				&& !Source.IsEqual(pObj->GetDamageSource())
+					//	We cannot hit another beam/missile from the same source...
+					|| Source.IsEqual(Obj.GetDamageSource())
 
-				//	See if the missile has rules about what it cannot hit
-				&& pDesc->CanHit(pObj)
+					//	See if the missile has rules about what it cannot hit
+					|| !Desc.CanHit(Obj)
 
-				//	We cannot hit our friends (if our source can't)
-				&& ((CanHitFriends() && Source.CanHitFriends() && pObj->CanBeHitByFriends()) 
-					|| Source.IsAngryAt(*pObj, GetSovereign())
-					//	But we can always hit planets, stargates, etc. (Otherwise
-					//	the player can't hide from Quantumsphere shots.)
-					|| pObj->IsImmutable() || pObj->GetScale() == scaleWorld || pObj->GetScale() == scaleStar)
+					//	We cannot hit our friends (if our source can't)
+					|| ((!CanHitFriends() || !Source.CanHitFriends() || !Obj.CanBeHitByFriends()) 
+							&& !Source.IsAngryAt(Obj, GetSovereign())
+							//	But we can always hit planets, stargates, etc. (Otherwise
+							//	the player can't hide from Quantumsphere shots.)
+							&& !Obj.IsImmutable() 
+							&& Obj.GetScale() != scaleWorld 
+							&& Obj.GetScale() != scaleStar)
 
-				//	If our source is the player, then we cannot hit player wingmen
+					//	If our source is the player, then we cannot hit player wingmen
 
-				&& Source.CanHit(pObj));
+					|| !Source.CanHit(Obj))
+				return false;
+			}
 		}
 
 	//	If we don't have a source...
@@ -6233,21 +6217,26 @@ bool CSpaceObject::MissileCanHitObj (CSpaceObject *pObj, const CDamageSource &So
 		//	(For ship explosions, the secondary source is the wreck; the wreck cannot be the
 		//	primary source or else the tombstone message will be wrong)
 
-		if (pObj == GetSecondarySource())
+		if (Obj == GetSecondarySource())
 			return false;
 
 		//	Make sure we can hit
 
-		else if (!pDesc->CanHit(pObj))
+		else if (!Desc.CanHit(Obj))
 			return false;
 
 		//	If we are part of an explosion, then we cannot hit other parts of an explosion
 		//	that also have no source. This is so that fragments from an explosion where the source
 		//	got destroyed (i.e., pSource == NULL) do not hit each other.
 
-		else
-			return !Source.IsEqual(pObj->GetDamageSource());
+		else if (Source.IsEqual(Obj.GetDamageSource()))
+			return false;
 		}
+
+	//	If we get this far then it means that we can hit. Now we need to check 
+	//	the interaction.
+
+	return Desc.GetInteraction().CalcCanInteractWith(Obj.GetInteraction(), pTarget && pTarget == Obj);
 
 	DEBUG_CATCH
 	}
@@ -7303,18 +7292,6 @@ void CSpaceObject::SetCursorAtRandomItem (CItemListManipulator &ItemList, const 
 		}
 
 	//	Done
-	}
-
-void CSpaceObject::SetDataInteger (const CString &sAttrib, int iValue)
-
-//	SetDataInteger
-//
-//	Set integer value
-
-	{
-	CCodeChain &CC = GetUniverse().GetCC();
-	ICCItemPtr pValue(iValue);
-	SetData(sAttrib, pValue);
 	}
 
 void CSpaceObject::SetEventFlags (void)
