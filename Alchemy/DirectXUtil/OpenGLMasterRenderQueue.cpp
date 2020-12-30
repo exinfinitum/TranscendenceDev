@@ -103,15 +103,15 @@ void OpenGLMasterRenderQueue::deinitCanvasVAO(void)
 }
 
 void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int startPixelY, int sizePixelX,
- int sizePixelY, int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture *image, int texWidth, int texHeight, 
+ int sizePixelY, int posPixelX, int posPixelY, float rotationInDegrees, OpenGLTexture *image, int texWidth, int texHeight, 
 	int texQuadWidth, int texQuadHeight, int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength,
 	float glowR, float glowG, float glowB, float glowA, float glowNoise, int glowRadius, bool useDepthTesting, OpenGLRenderLayer::textureRenderCategory textureRenderType, OpenGLRenderLayer::blendMode blendMode,
 	glm::ivec4 glowDecay)
 	{
 	glm::vec2 vTexPositions((float)startPixelX / (float)texWidth, (float)startPixelY / (float)texHeight);
 	glm::vec2 vSpriteSheetPositions((float)spriteSheetStartX / (float)texWidth, (float)spriteSheetStartY / (float)texHeight);
-	glm::vec2 vCanvasQuadSizes((float)sizePixelX / (float)canvasWidth, (float)sizePixelY / (float)canvasHeight);
-	glm::vec2 vCanvasPositions((float)posPixelX / (float)canvasWidth, (float)posPixelY / (float)canvasHeight);
+	glm::vec2 vCanvasQuadSizes((float)sizePixelX, (float)sizePixelY);
+	glm::vec2 vCanvasPositions((float)posPixelX, (float)posPixelY);
 	glm::vec2 vTextureQuadSizes((float)texQuadWidth / (float)texWidth, (float)texQuadHeight / (float)texHeight);
 	glm::vec4 glowColor(glowR, glowG, glowB, glowA);
 
@@ -128,39 +128,39 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 		);
 		auto* glowMap = image->getGlowMap(glowmapTile);
 		int padSize = glowMap != nullptr ? glowMap->getPadSize() : 0;
-		glm::vec2 vPadSizes(float(2 * padSize) / float(canvasWidth), float(2 * padSize) / float(canvasHeight));
+		glm::vec2 vPadSizesInPixels(float(2 * padSize), float(2 * padSize));
+		glm::vec2 vPadSizes(float(2 * padSize), float(2 * padSize));
 
-		vCanvasQuadSizes = vCanvasQuadSizes + vPadSizes;
+		vCanvasQuadSizes = vCanvasQuadSizes + vPadSizesInPixels;
 		vCanvasPositions = vCanvasPositions - (vPadSizes / 2.0f);
 	}
-	glm::vec2 afterPadCanvasQuadSizes(vCanvasQuadSizes[0] * canvasWidth, vCanvasQuadSizes[1] * canvasHeight);
-	float aspectRatio = afterPadCanvasQuadSizes[0] / afterPadCanvasQuadSizes[1];
+	float aspectRatio = vCanvasQuadSizes[0] / vCanvasQuadSizes[1];
 	glm::vec4 relativeGlowDecay(
 		// Note we divide both components of glow decay point by iQuadWidth - this is because the shader uses the aspect ratio to calculate
 		// the glow decay point location in a unit that is common across both quad dimensions so we can handle nonsquare images
 		// Values 1 and 2 are the (x, y) coordinates of the decay origin point in pixels offset from the quad centre, value 3 is
 		// the minimum radius from decay origin point at which glow occurs, and value 4 is the maximum radius from that point at which
 		// glow occurs - glow is only nonzero between those two radii, and peaks at the average radius
-		float(glowDecay[0]) / afterPadCanvasQuadSizes[0],
-		float(glowDecay[1]) / afterPadCanvasQuadSizes[1],
-		float(glowDecay[2]) / afterPadCanvasQuadSizes[0],
-		float(glowDecay[3]) / afterPadCanvasQuadSizes[0]
+		float(glowDecay[0]) / vCanvasQuadSizes[0],
+		float(glowDecay[1]) / vCanvasQuadSizes[1],
+		float(glowDecay[2]) / vCanvasQuadSizes[0],
+		float(glowDecay[3]) / vCanvasQuadSizes[0]
 	);
 
 	if (m_bPrevObjAddedIsParticle) {
 		m_fDepthLevel -= m_fDepthDelta;
 		m_bPrevObjAddedIsParticle = false;
 	}
-	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, glowColor, alphaStrength,
+	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, rotationInDegrees, vTextureQuadSizes, glowColor, alphaStrength,
 		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel, aspectRatio, textureRenderType, blendMode, glowRadius, relativeGlowDecay);
 	m_fDepthLevel -= m_fDepthDelta;
 	}
 
 void OpenGLMasterRenderQueue::addTextToRenderQueue(int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
-	int posPixelX, int posPixelY, int canvasHeight, int canvasWidth, OpenGLTexture* image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight,
+	int posPixelX, int posPixelY, OpenGLTexture* image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight,
 	std::tuple<int, int, int> textColor, bool useDepthTesting)
 {
-	addTextureToRenderQueue(startPixelX, startPixelY, sizePixelX, sizePixelY, posPixelX, posPixelY, canvasHeight, canvasWidth, image, texWidth, texHeight,
+	addTextureToRenderQueue(startPixelX, startPixelY, sizePixelX, sizePixelY, posPixelX, posPixelY, 0, image, texWidth, texHeight,
 		texQuadWidth, texQuadHeight, 1, 1, 0, 0, 1.0f,
 		float(std::get<0>(textColor)) / 255.0f, float(std::get<1>(textColor)) / 255.0f, float(std::get<2>(textColor)) / 255.0f,
 		0.0f, 0.0f, 0, useDepthTesting, OpenGLRenderLayer::textureRenderCategory::text);
