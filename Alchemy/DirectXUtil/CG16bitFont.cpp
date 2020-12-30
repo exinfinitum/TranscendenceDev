@@ -646,8 +646,7 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 			int iCanvasWidth = Dest.GetWidth();
 			int iQuadWidth = Metrics.cxWidth;
 			int iQuadHeight = m_cyHeight;
-			pRenderQueue->addTextToRenderQueue(0, iIndex * m_cyHeight, iQuadWidth, iQuadHeight, xPos, y, iCanvasHeight,
-				iCanvasWidth,
+			pRenderQueue->addTextToRenderQueue(0, iIndex * m_cyHeight, iQuadWidth, iQuadHeight, xPos, y,
 				m_OpenGLFontImage.second.get(), m_FontImage.GetWidth(), m_FontImage.GetHeight(), Metrics.cxWidth, m_cyHeight,
 				std::tuple<int, int, int>(int(rgbColor.GetRed()), int(rgbColor.GetGreen()), int(rgbColor.GetBlue())));
 			//pRenderQueue->addTextureToRenderQueue(0, iIndex * m_cyHeight, iQuadWidth, iQuadHeight, xPos - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,

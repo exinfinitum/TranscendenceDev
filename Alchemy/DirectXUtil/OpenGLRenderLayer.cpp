@@ -13,7 +13,7 @@ OpenGLRenderLayer::~OpenGLRenderLayer(void)
 	clear();
 }
 
-void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions, glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength,
+void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions, float rotationInDegrees, glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength,
 	float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth, float canvasQuadAspectRatio, textureRenderCategory textureRenderType,
 	blendMode blendMode, int glowRadius, glm::vec4 glowDecay)
 {
@@ -55,7 +55,7 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	}
 
 	// Add this quad to the render queue.
-	auto renderRequest = OpenGLInstancedBatchRenderRequestTexture(vTexPositions, vCanvasQuadSizes, vCanvasPositions, vTextureQuadSizes, vSpriteSheetPositions,
+	auto renderRequest = OpenGLInstancedBatchRenderRequestTexture(vTexPositions, vCanvasQuadSizes, vCanvasPositions, rotationInDegrees, vTextureQuadSizes, vSpriteSheetPositions,
 		glm::ivec2(numFramesPerRow, numFramesPerCol), alphaStrength, glowColor, glowNoise, glowDecay, glm::ivec2(textureRenderType, blendMode), glowRadius, canvasQuadAspectRatio);
 	renderRequest.set_depth(startingDepth);
 	texRenderBatchToUse[imageAndGlowMap]->addObjToRender(renderRequest);
@@ -316,7 +316,7 @@ void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
 	OpenGLBatchShaderPairList& texRenderBatchesForDepthTesting,
 	OpenGLBatchShaderPairList& texRenderBatchesForNoDepthTesting,
 	OpenGLShader* objectTextureShader,
-	blendMode blendMode, int currentTick, const OpenGLAnimatedNoise* perlinNoise, bool noDepthTesting)
+	blendMode blendMode, int currentTick, const OpenGLAnimatedNoise* perlinNoise, bool noDepthTesting, glm::ivec2 canvasDimensions)
 {
 	for (const auto& p : batchesToRender)
 	{
@@ -328,9 +328,9 @@ void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
 		pTextureToUse->initTextureFromOpenGLThread();
 		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 6> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size", "pixel_decimal_place_per_channel_for_linear_glowmap" };
+		std::array<std::string, 7> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size", "pixel_decimal_place_per_channel_for_linear_glowmap", "aCanvasAdjustedDimensions" };
 		glowMap = glowMap ? glowMap : pTextureToUse;
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize(), OpenGLTexture::PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP);
+		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize(), OpenGLTexture::PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP, canvasDimensions);
 		pInstancedRenderQueue->setBlendMode(blendMode);
 		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
 	}
@@ -353,25 +353,25 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 		depthTestBatchesToRender,
 		nonDepthTestBatchesToRender,
 		objectTextureShader, 
-		blendMode::blendNormal, currentTick, perlinNoise, false);
+		blendMode::blendNormal, currentTick, perlinNoise, false, canvasDimensions);
 	PrepareTextureRenderBatchesForRendering(
 		m_texRenderBatchesBlendScreen,
 		depthTestBatchesToRender,
 		nonDepthTestBatchesToRender,
 		objectTextureShader, 
-		blendMode::blendScreen, currentTick, perlinNoise, false);
+		blendMode::blendScreen, currentTick, perlinNoise, false, canvasDimensions);
 	PrepareTextureRenderBatchesForRendering(
 		m_texRenderBatchesNoDepthTestingBlendNormal,
 		depthTestBatchesToRender,
 		nonDepthTestBatchesToRender,
 		objectTextureShader, 
-		blendMode::blendNormal, currentTick, perlinNoise, true);
+		blendMode::blendNormal, currentTick, perlinNoise, true, canvasDimensions);
 	PrepareTextureRenderBatchesForRendering(
 		m_texRenderBatchesNoDepthTestingBlendScreen,
 		depthTestBatchesToRender,
 		nonDepthTestBatchesToRender,
 		objectTextureShader, 
-		blendMode::blendScreen, currentTick, perlinNoise, true);
+		blendMode::blendScreen, currentTick, perlinNoise, true, canvasDimensions);
 
 	std::array<std::string, 3> rayAndLightningUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise" };
 	std::array<std::string, 1> particleUniformNames = { "aCanvasAdjustedDimensions" };

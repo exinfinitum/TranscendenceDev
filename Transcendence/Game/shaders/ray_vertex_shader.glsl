@@ -100,6 +100,9 @@ void main(void)
 {
     vec2 aSize = vec2(aSizeAndPosition[0], aSizeAndPosition[1]) * ((2.0*float(aEffectType == effectTypeOrb)) + (float(aEffectType != effectTypeOrb)));
     vec2 aPosOnCanvas = (vec2(aSizeAndPosition[2], aSizeAndPosition[3]) - vec2(0.5, 0.5)) * 2.0;
+
+	// Note that the order is Scale->Rotate->Scale->Translate. The first scaling is to size the quad in absolute terms properly,
+	// the second scaling is to get the proper size relative to the canvas
 	vec4 final_pos = aPos * scalingMatrix2D(aSize[0], aSize[1]) * rotationMatrix2D(aRotation) * scalingMatrix2D(1.0 / aCanvasAdjustedDimensions[0], 1.0 / aCanvasAdjustedDimensions[1]) * translationMatrix2D(aPosOnCanvas[0], -aPosOnCanvas[1]);
 
 	quadPos = vec2(aPos[0], aPos[1]) * 2.0;
