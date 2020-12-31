@@ -1701,7 +1701,7 @@ class CStation : public TSpaceObjectImpl<OBJID_CSTATION>
 		void DeterAttack (CSpaceObject *pTarget);
 		void FinishCreation (SSystemCreateCtx *pSysCreateCtx = NULL);
 		Metric GetAttackDistance (void) const;
-		const CObjectImageArray &GetImage (bool bFade, int *retiTick = NULL, int *retiVariant = NULL) const;
+		const CObjectImageArray &GetImage (bool bFade, int *retiTick = NULL, int *retiVariant = NULL, bool ignoreRotation = false) const;
 		bool IsBlacklisted (const CSpaceObject *pObj = NULL) const;
 		EDamageResults OnDamageAbandoned (SDamageCtx &Ctx);
 		EDamageResults OnDamageImmutable (SDamageCtx &Ctx);
