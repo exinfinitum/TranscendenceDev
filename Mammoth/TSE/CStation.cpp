@@ -1873,7 +1873,7 @@ Metric CStation::GetGravity (Metric *retrRadius) const
 	return r1EAccel;
 	}
 
-const CObjectImageArray &CStation::GetImage (bool bFade, int *retiTick, int *retiVariant) const
+const CObjectImageArray &CStation::GetImage (bool bFade, int *retiTick, int *retiVariant, bool ignoreRotation) const
 
 //	GetImage
 //
@@ -1882,6 +1882,12 @@ const CObjectImageArray &CStation::GetImage (bool bFade, int *retiTick, int *ret
 	{
 	CCompositeImageModifiers Modifiers;
 	CalcImageModifiers(&Modifiers, retiTick);
+
+	if (ignoreRotation)
+		{
+		//	If using OpenGL, we can do image rotation shader-side - this is NOT the same as getting the rotation frame!
+		Modifiers.SetRotateImage(0);
+		}
 
 	//	Image
 
@@ -3302,7 +3308,7 @@ void CStation::OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx
 	//	Get the image
 
 	int iTick, iVariant;
-	const CObjectImageArray &Image = GetImage(true, &iTick, &iVariant);
+	const CObjectImageArray &Image = GetImage(true, &iTick, &iVariant, CG32bitImage::GetMasterRenderQueue());
 
 	//	Set some context
 
@@ -3357,15 +3363,17 @@ void CStation::OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx
 	PaintSatellites(Dest, x, y, CPaintOrder::sendToBack, Ctx);
 
 	//	Paint
+	//	Note that if we have a starlight image we can use OpenGL shader side transforms to rotate
+	float fOpenGLRotation = HasStarlightImage() ? float(Ctx.iRotation) : 0;
 
 	if (byShimmer)
-		Image.PaintImageShimmering(Dest, x, y, iTick, iVariant, byShimmer);
+		Image.PaintImageShimmering(Dest, x, y, iTick, iVariant, byShimmer, fOpenGLRotation);
 
 	else if (m_fRadioactive)
-		Image.PaintImageWithGlow(Dest, x, y, iTick, iVariant, CG32bitPixel(0, 255, 0));
+		Image.PaintImageWithGlow(Dest, x, y, iTick, iVariant, CG32bitPixel(0, 255, 0), false, fOpenGLRotation);
 
 	else
-		Image.PaintImage(Dest, x, y, iTick, iVariant);
+		Image.PaintImage(Dest, x, y, iTick, iVariant, false, fOpenGLRotation);
 
 	//  Paint satellites in front of the station.
 
@@ -3541,9 +3549,10 @@ void CStation::OnPaintMap (CMapViewportCtx &Ctx, CG32bitImage &Dest, int x, int 
 		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
 			{
 			int iTick, iVariant;
-			const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant);
+			const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant, CG32bitImage::GetMasterRenderQueue());
 			float fMapScale = float(MAP_OBJECT_SCALE);
-			Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant);
+			float fOpenGLRotation = HasStarlightImage() ? float(GetRotation()) : 0;
+			Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant, fOpenGLRotation);
 			}
 		else
 			{
@@ -3576,9 +3585,10 @@ void CStation::OnPaintMap (CMapViewportCtx &Ctx, CG32bitImage &Dest, int x, int 
 		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
 			{
 			int iTick, iVariant;
-			const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant);
+			const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant, CG32bitImage::GetMasterRenderQueue());
 			float fMapScale = float(MAP_OBJECT_SCALE);
-			Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant);
+			float fOpenGLRotation = HasStarlightImage() ? float(GetRotation()) : 0;
+			Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant, fOpenGLRotation);
 			}
 		else
 			{
@@ -3604,15 +3614,16 @@ void CStation::OnPaintMap (CMapViewportCtx &Ctx, CG32bitImage &Dest, int x, int 
 				if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
 					{
 					int iTick, iVariant;
-					const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant);
+					const CObjectImageArray& Image = GetImage(false, &iTick, &iVariant, CG32bitImage::GetMasterRenderQueue());
 					float fMapScale = float(MAP_OBJECT_SCALE);
+					float fOpenGLRotation = HasStarlightImage() ? float(GetRotation()) : 0;
 					if (!IsAbandoned() || IsImmutable())
 						{
-						Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant);
+						Image.PaintImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant, fOpenGLRotation);
 						}
 					else
 						{
-						Image.PaintGrayedImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant);
+						Image.PaintGrayedImageScaledWithOpenGL(Dest, x, y, fMapScale, fMapScale, iTick, iVariant, fOpenGLRotation);
 						}
 					}
 				else

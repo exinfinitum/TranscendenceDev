@@ -78,7 +78,7 @@ void main(void)
 	fixedCanvPos = fixedCanvPos + (positionOffset / aCanvasAdjustedDimensions);
 	// Note that the order is Scale->Rotate->Scale->Translate. The first scaling is to size the quad in absolute terms properly,
 	// the second scaling is to get the proper size relative to the canvas
-	vec2 pos2d = (rotateVector2D(vec2(aPos[0], aPos[1]) * fixedSize, (aRotationInDegrees * PI) / 180) / aCanvasAdjustedDimensions) + fixedCanvPos;
+	vec2 pos2d = (rotateVector2D(vec2(aPos[0], aPos[1]) * fixedSize, -(aRotationInDegrees * PI) / 180) / aCanvasAdjustedDimensions) + fixedCanvPos;
 	vec2 texPos2d = vec2(aPos[0] * fixedTexSize[0], -aPos[1] * fixedTexSize[1]) + fixedTexPos + texPositionOffset;
 	
     gl_Position = vec4(pos2d, aDepth, 1.0);

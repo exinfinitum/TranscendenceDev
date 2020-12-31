@@ -1427,7 +1427,7 @@ ALERROR CObjectImageArray::OnDesignLoadComplete (SDesignLoadCtx &Ctx)
 	DEBUG_CATCH
 	}
 
-void CObjectImageArray::PaintImageScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const
+void CObjectImageArray::PaintImageScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotationFacing, float rotationInDegrees) const
 	{
 	if (!m_pImage) {
 		return;
@@ -1444,29 +1444,29 @@ void CObjectImageArray::PaintImageScaledWithOpenGL(CG32bitImage& Dest, int xDest
 
 		int xSrc;
 		int ySrc;
-		ComputeSourceXY(iTick, iRotation, &xSrc, &ySrc);
+		ComputeSourceXY(iTick, iRotationFacing, &xSrc, &ySrc);
 		int iCanvasHeight = Dest.GetHeight();
 		int iCanvasWidth = Dest.GetWidth();
 		int iTexQuadWidth = RectWidth(m_rcImage);
 		int iTexQuadHeight = RectHeight(m_rcImage);
 		auto [iNumRows, iNumCols] = GetNumColsAndRows();
 		pRenderQueue->addImageToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
-			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), 0,
+			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), rotationInDegrees,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top,
 			1.0);
 		}
 	}
 
-void CObjectImageArray::PaintImageSizedWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, int xSize, int ySize, int iTick, int iRotation) const
+void CObjectImageArray::PaintImageSizedWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, int xSize, int ySize, int iTick, int iRotationFacing, float rotationInDegrees) const
 	{
 	int iTexQuadWidth = RectWidth(m_rcImage);
 	int iTexQuadHeight = RectHeight(m_rcImage);
 	float xScaleDest = float(xSize) / float(iTexQuadWidth);
 	float yScaleDest = float(ySize) / float(iTexQuadHeight);
-	PaintImageScaledWithOpenGL(Dest, xDest, yDest, xScaleDest, yScaleDest, iTick, iRotation);
+	PaintImageScaledWithOpenGL(Dest, xDest, yDest, xScaleDest, yScaleDest, iTick, iRotationFacing, rotationInDegrees);
 	}
 
-void CObjectImageArray::PaintGrayedImageScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotation) const
+void CObjectImageArray::PaintGrayedImageScaledWithOpenGL(CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotationFacing, float rotationInDegrees) const
 	{
 	if (!m_pImage) {
 		return;
@@ -1483,7 +1483,7 @@ void CObjectImageArray::PaintGrayedImageScaledWithOpenGL(CG32bitImage& Dest, int
 
 		int xSrc;
 		int ySrc;
-		ComputeSourceXY(iTick, iRotation, &xSrc, &ySrc);
+		ComputeSourceXY(iTick, iRotationFacing, &xSrc, &ySrc);
 		int iCanvasHeight = Dest.GetHeight();
 		int iCanvasWidth = Dest.GetWidth();
 		int iTexQuadWidth = RectWidth(m_rcImage);
@@ -1492,7 +1492,7 @@ void CObjectImageArray::PaintGrayedImageScaledWithOpenGL(CG32bitImage& Dest, int
 		//pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight, iCanvasWidth,
 		//	pSource->GetPixelArray(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
 		pRenderQueue->addImageToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iTexQuadWidth)), int(yScaleDest * float(iTexQuadHeight)),
-			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), 0,
+			xDest - int((xScaleDest * float(iTexQuadWidth)) / 2), yDest - int((yScaleDest * float(iTexQuadHeight)) / 2), rotationInDegrees,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top,
 			1.0f, true, OpenGLRenderLayer::grayscale, OpenGLRenderLayer::blendNormal);
 		}
@@ -1533,7 +1533,7 @@ void CObjectImageArray::PaintImageGlowScaledWithOpenGL(CG32bitImage& Dest, int x
 		}
 	}
 
-void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite) const
+void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite, float OpenGLRotationInDegrees) const
 
 //	PaintImage
 //
@@ -1570,7 +1570,7 @@ void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick,
 			auto[iNumRows, iNumCols] = GetNumColsAndRows();
 			//pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight, iCanvasWidth,
 			//	pSource->GetPixelArray(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
-			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), 0,
+			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), OpenGLRotationInDegrees,
 				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top);
 			}
 		else if (bComposite)
@@ -1609,7 +1609,7 @@ void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick,
 		}
 	}
 
-void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, DWORD byOpacity) const
+void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, DWORD byOpacity, float OpenGLRotationInDegrees) const
 
 //	PaintImageShimmering
 //
@@ -1645,7 +1645,7 @@ void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, 
 			int iTexQuadWidth = RectWidth(m_rcImage);
 			int iTexQuadHeight = RectHeight(m_rcImage);
 			auto[iNumRows, iNumCols] = GetNumColsAndRows();
-			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), 0,
+			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), OpenGLRotationInDegrees,
 				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top,
 			(byOpacity == 0 ? 1.0f : (float)(static_cast<int>(byOpacity) / 255.0f)), false, OpenGLRenderLayer::textureRenderCategory::normal, OpenGLRenderLayer::blendNormal,
 			1.0f); // TODO (heliogenesis): Experiment with depth testing on cloaked ships
@@ -1789,7 +1789,8 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 											int iTick,
 											int iRotation,
 											CG32bitPixel rgbGlowColor,
-											bool drawImageOnly) const
+											bool drawImageOnly,
+											float OpenGLRotationInDegrees) const
 
 //	PaintImageWithGlow
 //
@@ -1835,13 +1836,13 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 		float fRed = float(rgbGlowColor.GetRed()) / 255.0f;
 		float fBlue = float(rgbGlowColor.GetBlue()) / 255.0f;
 		float fGreen = float(rgbGlowColor.GetGreen()) / 255.0f;
-		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), 0,
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), OpenGLRotationInDegrees,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength, 0.0f, glowRadius, false);
 		if (!drawImageOnly) {
-			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), 0,
+			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), OpenGLRotationInDegrees,
 				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top);
 		}
-		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), 0,
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), OpenGLRotationInDegrees,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top, 1.0f, fRed, fGreen, fBlue, fStrength / 4.5f, 0.0f, glowRadius, false);
 		return;
 	}
