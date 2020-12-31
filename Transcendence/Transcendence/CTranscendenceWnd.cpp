@@ -253,11 +253,12 @@ void CTranscendenceWnd::PaintFrameRate (void)
 			rFrameRate = 10000 * FRAME_RATE_COUNT / iTotalFrameTime;
 
 		char szBuffer[256];
-		int iLen = wsprintf(szBuffer, "Frames: %d   Paint: %d  Blt: %d  Update: %d",
+		int iLen = wsprintf(szBuffer, "Frames: %d   Paint: %d  Blt: %d  Update: %d %s",
 				rFrameRate / 10,
 				iTotalPaintTime / FRAME_RATE_COUNT,
 				iTotalBltTime / FRAME_RATE_COUNT,
-				iTotalUpdateTime / FRAME_RATE_COUNT);
+				iTotalUpdateTime / FRAME_RATE_COUNT,
+				CG32bitImage::GetMasterRenderQueue() != nullptr ? "[OpenGL enabled]" : "");
 
 		TheScreen.DrawText(300, 0, m_Fonts.Header, CG32bitPixel(80,80,80), CString(szBuffer, iLen));
 
