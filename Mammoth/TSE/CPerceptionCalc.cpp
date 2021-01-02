@@ -12,7 +12,25 @@ const DWORD LAST_ATTACK_THRESHOLD =					45;
 
 bool CPerceptionCalc::m_bRangeTableInitialized = false;
 
-Metric CPerceptionCalc::m_rRange[RANGE_ARRAY_SIZE];
+Metric CPerceptionCalc::m_rRange[RANGE_ARRAY_SIZE] = 
+	{
+	(250.0 * LIGHT_SECOND),
+	(175.0 * LIGHT_SECOND),
+	(145.0 * LIGHT_SECOND),
+	(120.0 * LIGHT_SECOND),
+	(100.0 * LIGHT_SECOND),
+	(83.0 * LIGHT_SECOND),
+	(69.0 * LIGHT_SECOND),
+	(58.0 * LIGHT_SECOND),
+	(48.0 * LIGHT_SECOND),
+	(40.0 * LIGHT_SECOND),
+	(33.0 * LIGHT_SECOND),
+	(28.0 * LIGHT_SECOND),
+	(23.0 * LIGHT_SECOND),
+	(19.0 * LIGHT_SECOND),
+	(16.0 * LIGHT_SECOND),
+	(13.0 * LIGHT_SECOND),
+	};
 
 Metric CPerceptionCalc::m_rRange2[RANGE_ARRAY_SIZE];
 
@@ -95,7 +113,7 @@ int CPerceptionCalc::GetRangeIndex (int iStealth, int iPerception)
 //	stealth.
 
 	{
-	int iResult = (iStealth - iPerception) + RANGE_ARRAY_BASE_RANGE_INDEX;
+	int iResult = (iStealth - iPerception) + 4;
 
 	//	We are easily visible at any range
 
@@ -116,10 +134,7 @@ void CPerceptionCalc::InitRangeTable (void)
 	{
 	int i;
 	for (i = 0; i < RANGE_ARRAY_SIZE; i++)
-		{
-		m_rRange[i] = CalcPerceptionRange(RANGE_ARRAY_SIZE - RANGE_ARRAY_BASE_RANGE_INDEX, RANGE_ARRAY_SIZE - i) * LIGHT_SECOND;
 		m_rRange2[i] = m_rRange[i] * m_rRange[i];
-		}
 
 	m_bRangeTableInitialized = true;
 	}

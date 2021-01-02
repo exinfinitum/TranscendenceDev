@@ -106,6 +106,26 @@ const Metric g_rMaxCommsRange2 =				(g_rMaxCommsRange * g_rMaxCommsRange);
 
 #define SPECIAL_VALUE_TRUE						CONSTLIT("true")
 
+static Metric g_rMaxPerceptionRange[CSpaceObject::perceptMax+1] =
+	{
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	0.0,
+	};
+
 struct SInstallItemResultsData
 	{
 	const char *pszID;

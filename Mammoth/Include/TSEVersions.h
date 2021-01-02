@@ -132,7 +132,7 @@ constexpr DWORD SYSTEM_SAVE_VERSION =					194;
 //		m_iCountdown in CStandardShipAI
 //
 //	 5: 0.97
-//		m_iStealthFromArmor in CShip
+//		m_iStealth in CShip
 //
 //	 6-14: 0.98
 //		m_Blacklist in CBaseShipAI

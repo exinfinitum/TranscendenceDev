@@ -95,8 +95,6 @@ const DWORD MAX_DISRUPT_TIME_BEFORE_DAMAGE =	(60 * g_TicksPerSecond);
 #define PROPERTY_SELECTED_WEAPON				CONSTLIT("selectedWeapon")
 #define PROPERTY_SHATTER_IMMUNE					CONSTLIT("shatterImmune")
 #define PROPERTY_SHOW_MAP_LABEL					CONSTLIT("showMapLabel")
-#define PROPERTY_STEALTH_ADJ					CONSTLIT("stealthAdj")
-#define PROPERTY_STEALTH_ADJ_AT_MAX_HEAT		CONSTLIT("stealthAdjAtMaxHeat")
 #define PROPERTY_TARGET							CONSTLIT("target")
 #define PROPERTY_THRUST							CONSTLIT("thrust")
 #define PROPERTY_THRUST_TO_WEIGHT				CONSTLIT("thrustToWeight")
@@ -325,7 +323,7 @@ void CShip::CalcArmorBonus (void)
 
 	//	Loop over all armor segments and compute some values.
 
-	m_iStealthFromArmor = stealthMax;
+	m_iStealth = stealthMax;
 
 	for (i = 0; i < SegmentsByType.GetCount(); i++)
 		{
@@ -370,8 +368,8 @@ void CShip::CalcArmorBonus (void)
 
 			//	Compute stealth
 
-			if (pArmor->GetClass()->GetStealth() < m_iStealthFromArmor)
-				m_iStealthFromArmor = pArmor->GetClass()->GetStealth();
+			if (pArmor->GetClass()->GetStealth() < m_iStealth)
+				m_iStealth = pArmor->GetClass()->GetStealth();
 			}
 		}
 
@@ -3292,12 +3290,6 @@ ICCItem *CShip::GetPropertyCompatible (CCodeChainCtx &Ctx, const CString &sName)
 	else if (strEquals(sName, PROPERTY_SHOW_MAP_LABEL))
 		return CC.CreateBool(m_fShowMapLabel);
 
-	else if (strEquals(sName, PROPERTY_STEALTH_ADJ))
-		return CC.CreateInteger(m_pClass->GetHullDesc().GetStealthAdj());
-
-	else if (strEquals(sName, PROPERTY_STEALTH_ADJ_AT_MAX_HEAT))
-		return CC.CreateInteger(m_pClass->GetHullDesc().GetStealthAdjAtMaxHeat());
-
 	//	Drive properties
 
 	else if (strEquals(sName, PROPERTY_DRIVE_POWER))
@@ -3420,26 +3412,12 @@ int CShip::GetStealth (void) const
 //	Returns the stealth of the ship
 
 	{
-	int iStealth = m_iStealthFromArmor;
+	int iStealth = m_iStealth;
 
 	//	+6 stealth if in nebula, which decreases detection range by about 3.
 
 	if (m_fHiddenByNebula)
 		iStealth += 6;
-
-	//  Calculate the intrinsic stealth value of the ship.
-
-	int iStealthAdj = GetStealthAdj();
-
-	//  If the ship has negative counter increment (aka counter is used for heat), interpolate between
-	//  maximum and initial intrinsic stealth values
-	if (GetCounterIsHeat())
-		{
-		float fStealthAdjDelta = (float(GetCounterValue()) / float(GetMaxCounterValue())) * (GetStealthAdjAtMaxHeat() - GetStealthAdj());
-		iStealthAdj += int(round(fStealthAdjDelta));
-		}
-
-	iStealth += iStealthAdj;
 
 	return Min((int)stealthMax, iStealth);
 	}
@@ -5708,7 +5686,7 @@ void CShip::OnReadFromStream (SLoadCtx &Ctx)
 //	CArmorSystem m_Armor
 //
 //	CAbilitySet	m_Ability
-//	DWORD		m_iStealthFromArmor
+//	DWORD		m_iStealth
 //
 //	CPowerConsumption	m_pPowerUse (if tracking fuel)
 //
@@ -5954,9 +5932,9 @@ void CShip::OnReadFromStream (SLoadCtx &Ctx)
 	//	Stealth
 
 	if (Ctx.dwVersion >= 5)
-		Ctx.pStream->Read(m_iStealthFromArmor);
+		Ctx.pStream->Read(m_iStealth);
 	else
-		m_iStealthFromArmor = stealthNormal;
+		m_iStealth = stealthNormal;
 
 	//	Fuel consumption
 
@@ -6325,7 +6303,7 @@ void CShip::OnWriteToStream (IWriteStream *pStream)
 //  CArmorSystem m_Armor
 //
 //	CAbilitySet	m_Ability
-//	DWORD		m_iStealthFromArmor
+//	DWORD		m_iStealth
 //
 //	CPowerConsumption	m_pPowerUse (if tracking fuel)
 //
@@ -6429,7 +6407,7 @@ void CShip::OnWriteToStream (IWriteStream *pStream)
 
 	//	Stealth
 
-	pStream->Write(m_iStealthFromArmor);
+	pStream->Write(m_iStealth);
 
 	//	Fuel consumption
 
