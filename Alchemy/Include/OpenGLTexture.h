@@ -66,6 +66,8 @@ public:
 	void unbindTexture2D (void) const { glBindTexture(GL_TEXTURE_2D, 0); }
 	void updateTexture2D(void* texture, int width, int height);
 	void initTextureFromOpenGLThread(void);
+	int getWidth() const { return m_iWidth; }
+	int getHeight() const { return m_iHeight; }
 	unsigned int* getTexture(void) { return m_pTextureID; }
 	virtual OpenGLTexture *getGlowMap(float upleft_X, float upleft_Y, float size_X, float size_Y, float gridsize_X, float gridsize_Y, int numFramesPerRow, int numFramesPerCol, int iGlowSize) { return nullptr; }
 	OpenGLTexture *getGlowMap(GlowmapTile glowmapTile) {
@@ -86,9 +88,18 @@ public:
 	virtual GLenum getTexSubImageFormat() = 0;
 	virtual GLenum getTexSubImageType() = 0;
 	virtual int getNumberOfChannels() = 0;
+	static void incrementNumPixels(int numPixels) { m_iNumPixelsAllocd = uint32_t(numPixels + m_iNumPixelsAllocd); }
+	static int getNumPixels() { return int(m_iNumPixelsAllocd); }
+	void printDebugInit() {
+		::kernelDebugLogPattern("[OpenGL] Inited texture of size: %d x %d; total %d pixels alloc'd, addr: %x", m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
+	}
+	void printDebugDeInit() {
+		::kernelDebugLogPattern("[OpenGL] DeInited texture of size: %d x %d; total %d pixels alloc'd, addr %x", m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
+	}
 protected:
 	unsigned int m_iWidth;
 	unsigned int m_iHeight;
+	static uint32_t m_iNumPixelsAllocd;
 private:
 	unsigned int m_pTextureID[1];
 	unsigned int pboID[2];
