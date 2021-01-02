@@ -2,7 +2,7 @@
 #include "PreComp.h"
 
 const int GLOW_SIZE_BUFFER = 5;
-
+uint32_t OpenGLTexture::m_iNumPixelsAllocd = 0;
 OpenGLTexture::OpenGLTexture(int width, int height)
 {
 	m_iHeight = height;
@@ -11,11 +11,13 @@ OpenGLTexture::OpenGLTexture(int width, int height)
 	m_pTextureID[0] = 0;
 	pboID[0] = 0;
 	pboID[1] = 0;
+	incrementNumPixels(uint64_t(m_iHeight * m_iWidth));
+	printDebugInit();
 }
 
 void OpenGLTexture::initTexture2D(int width, int height)
 {
-
+	incrementNumPixels(0-int(m_iHeight * m_iWidth));
 	int iNumOfChannels = getNumberOfChannels();
 	int iDataSize = width * height * iNumOfChannels;
 	glGetInternalformativ(GL_TEXTURE_2D, getInternalFormat(), GL_TEXTURE_IMAGE_FORMAT, 1, &m_pixelFormat);
@@ -44,6 +46,8 @@ void OpenGLTexture::initTexture2D(int width, int height)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	m_iHeight = height;
 	m_iWidth = width;
+	incrementNumPixels(uint64_t(m_iHeight * m_iWidth));
+	printDebugInit();
 }
 
 OpenGLTexture::OpenGLTexture (void* texture, int width, int height, bool isOpaque)
@@ -55,10 +59,13 @@ OpenGLTexture::OpenGLTexture (void* texture, int width, int height, bool isOpaqu
 	m_pTextureID[0] = 0;
 	pboID[0] = 0;
 	pboID[1] = 0;
+	incrementNumPixels(uint64_t(m_iHeight * m_iWidth));
+	printDebugInit();
 	}
 
 void OpenGLTexture::initTexture2D (GLvoid* texture, int width, int height)
 	{
+	int iNumPixelsAllocdOld = uint64_t(m_iHeight * m_iWidth);
 	int iNumOfChannels = 4;
 	int iDataSize = width * height * iNumOfChannels;
 	glGetInternalformativ(GL_TEXTURE_2D, getInternalFormat(), GL_TEXTURE_IMAGE_FORMAT, 1, &m_pixelFormat);
@@ -88,6 +95,11 @@ void OpenGLTexture::initTexture2D (GLvoid* texture, int width, int height)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	m_iHeight = height;
 	m_iWidth = width;
+	int iNumPixelsAllocdNew = uint64_t(m_iHeight * m_iWidth);
+	if (iNumPixelsAllocdOld != iNumPixelsAllocdNew) {
+		incrementNumPixels(int(iNumPixelsAllocdNew - iNumPixelsAllocdOld));
+		printDebugInit();
+	}
 	}
 
 void OpenGLTexture::initTextureFromOpenGLThread ()

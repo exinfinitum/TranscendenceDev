@@ -243,6 +243,10 @@ void OpenGLMasterRenderQueue::renderAllQueues(void)
 		m_pObjectTextureShader, m_pRayShader, m_pGlowmapShader, m_pOrbShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
 		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 	}
+	for (const auto& texture : m_texturesForDeletion) {
+		texture->incrementNumPixels(-(texture->getHeight() * texture->getWidth()));
+		texture->printDebugDeInit();
+	}
 	m_texturesForDeletion.clear();
 }
 void OpenGLMasterRenderQueue::renderToGlowmaps(void)
