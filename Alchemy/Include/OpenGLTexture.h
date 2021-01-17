@@ -88,13 +88,14 @@ public:
 	virtual GLenum getTexSubImageFormat() = 0;
 	virtual GLenum getTexSubImageType() = 0;
 	virtual int getNumberOfChannels() = 0;
+	virtual std::string getTextureName() = 0;
 	static void incrementNumPixels(int numPixels) { m_iNumPixelsAllocd = uint32_t(numPixels + m_iNumPixelsAllocd); }
 	static int getNumPixels() { return int(m_iNumPixelsAllocd); }
 	void printDebugInit() {
-		::kernelDebugLogPattern("[OpenGL] Inited texture of size: %d x %d; total %d pixels alloc'd, addr: %x", m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
+		::kernelDebugLogPattern(("[OpenGL] Inited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
 	}
 	void printDebugDeInit() {
-		::kernelDebugLogPattern("[OpenGL] DeInited texture of size: %d x %d; total %d pixels alloc'd, addr %x", m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
+		::kernelDebugLogPattern(("[OpenGL] DeInited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
 	}
 protected:
 	unsigned int m_iWidth;
@@ -108,6 +109,7 @@ private:
 	void* m_pTextureToInitFrom = nullptr;
 	bool m_isOpaque;
 	bool m_bIsInited = false;
+	std::string m_sType;
 };
 
 class OpenGLTextureGlowmapRGBA32 : public OpenGLTexture {
@@ -126,6 +128,9 @@ public:
 	}
 	int getNumberOfChannels() override {
 		return 4;
+	}
+	std::string getTextureName() override {
+		return "RGBA32Glowmap";
 	}
 	int getPadSize() override { return m_iPadSize; };
 	int getGlowSize() override { return m_iGlowSize; };
@@ -155,6 +160,9 @@ public:
 	}
 	int getNumberOfChannels() override {
 		return 4;
+	}
+	std::string getTextureName() override {
+		return "RGBA32";
 	}
 	void requestGlowmapTile(float upleft_X, float upleft_Y, float size_X, float size_Y, float gridsize_X, float gridsize_Y, int numFramesPerRow, int numFramesPerCol, int iGlowSize) override {
 		// This function should be called when we request a render with this texture
@@ -218,6 +226,9 @@ public:
 	int getNumberOfChannels() override {
 		return 4;
 	}
+	std::string getTextureName() override {
+		return "RGBA32Grayscale(Font)";
+	}
 };
 
 class OpenGLTextureRGB16 : public OpenGLTexture {
@@ -236,5 +247,8 @@ public:
 	}
 	int getNumberOfChannels() override {
 		return 3;
+	}
+	std::string getTextureName() override {
+		return "RGB16";
 	}
 };

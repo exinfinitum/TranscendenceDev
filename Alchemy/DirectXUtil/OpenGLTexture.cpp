@@ -11,8 +11,6 @@ OpenGLTexture::OpenGLTexture(int width, int height)
 	m_pTextureID[0] = 0;
 	pboID[0] = 0;
 	pboID[1] = 0;
-	incrementNumPixels(uint64_t(m_iHeight * m_iWidth));
-	printDebugInit();
 }
 
 void OpenGLTexture::initTexture2D(int width, int height)
@@ -47,6 +45,7 @@ void OpenGLTexture::initTexture2D(int width, int height)
 	m_iHeight = height;
 	m_iWidth = width;
 	incrementNumPixels(uint64_t(m_iHeight * m_iWidth));
+	m_sType = getTextureName();
 	printDebugInit();
 }
 
@@ -59,13 +58,10 @@ OpenGLTexture::OpenGLTexture (void* texture, int width, int height, bool isOpaqu
 	m_pTextureID[0] = 0;
 	pboID[0] = 0;
 	pboID[1] = 0;
-	incrementNumPixels(uint64_t(m_iHeight * m_iWidth));
-	printDebugInit();
 	}
 
 void OpenGLTexture::initTexture2D (GLvoid* texture, int width, int height)
 	{
-	int iNumPixelsAllocdOld = uint64_t(m_iHeight * m_iWidth);
 	int iNumOfChannels = 4;
 	int iDataSize = width * height * iNumOfChannels;
 	glGetInternalformativ(GL_TEXTURE_2D, getInternalFormat(), GL_TEXTURE_IMAGE_FORMAT, 1, &m_pixelFormat);
@@ -95,11 +91,10 @@ void OpenGLTexture::initTexture2D (GLvoid* texture, int width, int height)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	m_iHeight = height;
 	m_iWidth = width;
+	m_sType = getTextureName();
 	int iNumPixelsAllocdNew = uint64_t(m_iHeight * m_iWidth);
-	if (iNumPixelsAllocdOld != iNumPixelsAllocdNew) {
-		incrementNumPixels(int(iNumPixelsAllocdNew - iNumPixelsAllocdOld));
-		printDebugInit();
-	}
+	incrementNumPixels(int(iNumPixelsAllocdNew));
+	printDebugInit();
 	}
 
 void OpenGLTexture::initTextureFromOpenGLThread ()
