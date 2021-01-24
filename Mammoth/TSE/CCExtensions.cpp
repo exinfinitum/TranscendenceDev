@@ -902,6 +902,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'repeating\n"
 			"	'shipCounterPerShot\n"
 			"   'stdCost\n"
+			"   'targetCriteria\n"
 			"\n"
 			"property (armor)\n\n"
 			"   'blindingImmune\n"
@@ -1408,6 +1409,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'noNavPaths (True/Nil)\n"
 			"   'noOrderGiver (True/Nil)\n"
 			"   'noTargetsOfOpportunity (True/Nil)\n"
+			"   'useAllPrimaryWeapons (True/Nil)\n"
 			"\n"
 			"   'combatSeparation {pixels}\n"
 			"   'fireAccuracy {percent}\n"
@@ -2174,6 +2176,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'pos\n"
 			"   'secondary\n"
 			"   'temperature\n"
+			"   'targetCriteria\n"
 			"\n"
 			"property (armor)\n\n"
 
