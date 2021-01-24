@@ -176,7 +176,10 @@ void CUniverse::AdjustDamage (SDamageCtx &Ctx) const
 
 	//	Otherwise, if the attacker is the player, then adjust
 
-	else if ((pOrderGiver = Ctx.Attacker.GetOrderGiver()) && pOrderGiver->IsPlayer() && pOrderGiver->IsAngryAt(Ctx.pObj))
+	else if ((pOrderGiver = Ctx.Attacker.GetOrderGiver()) 
+			&& pOrderGiver->IsPlayer() 
+			&& pOrderGiver->IsAngryAt(Ctx.pObj)
+			&& !Ctx.pObj->IsWreck())
 		rAdjust = m_Difficulty.GetEnemyDamageAdj();
 
 	//	Otherwise, no adjustment.
@@ -1621,7 +1624,7 @@ void CUniverse::NotifyOnPlayerEnteredGate (CTopologyNode *pDestNode, const CStri
 	//	never get an OnObjDestroyed message).
 	//	Note: We need gPlayer for OnGameEnd event
 
-	GetCC().DefineGlobal(STR_G_PLAYER_SHIP, GetCC().CreateNil());
+	GetCC().DefineGlobal(STR_G_PLAYER_SHIP, GetCC().GetNil());
 
 	//	Mark source and destination stargates as charted.
 
@@ -2539,7 +2542,7 @@ ALERROR CUniverse::SaveToStream (IWriteStream *pStream)
 	dwSave = OBJID_NULL;
 	if (m_pPOV && m_pPOV->GetSystem())
 		{
-		m_pPOV->GetSystem()->WriteObjRefToStream(m_pPOV, pStream);
+		m_pPOV->WriteObjRefToStream(m_pPOV, pStream);
 
 		if (!m_pPOV->IsPlayer())
 			kernelDebugLogPattern("ERROR: Saving without player ship.");
@@ -2740,7 +2743,22 @@ void CUniverse::SetNewSystem (CSystem &NewSystem, CSpaceObject *pPOV)
 
 		if ((pMission->IsCompletedNonPlayer() && pMission->CleanNonPlayer()) || pMission->IsDestroyed())
 			{
-			m_AllMissions.Delete(i);
+			if (!pMission->IsDestroyed())
+				{
+				if (m_Events.CancelEvent(pMission, false))
+					{
+					kernelDebugLogPattern("DEBUG: Canceled event for mission %s", pMission->GetNounPhrase());
+					}
+				}
+			else
+				{
+				if (m_Events.CancelEvent(pMission, false))
+					{
+					kernelDebugLogPattern("DEBUG: Canceled event for a destroyed mission %s", pMission->GetNounPhrase());
+					}
+				}
+
+			m_AllMissions.DeleteMission(i);
 			i--;
 			}
 		}
@@ -2934,6 +2952,19 @@ CTimeSpan CUniverse::StopGameTime (void)
 	{
 	CTimeDate StopTime(CTimeDate::Now);
 	return timeSpan(m_StartTime, StopTime);
+	}
+
+void CUniverse::StopSound (int iChannel)
+
+//	StopSound
+//
+//	Stops playing the given sound.
+
+	{
+	if (m_bNoSound || !m_pSoundMgr || iChannel == -1)
+		return;
+
+	m_pSoundMgr->Stop(iChannel);
 	}
 
 bool CUniverse::Update (SSystemUpdateCtx &Ctx, EUpdateSpeeds iUpdateMode)

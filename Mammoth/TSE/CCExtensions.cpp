@@ -246,6 +246,12 @@ ICCItem *fnObjActivateItem(CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 #define FN_OBJ_ENHANCE_ITEM			139
 #define FN_OBJ_CAN_DESTROY_TARGET	140
 #define FN_OBJ_CAN_HIT_TARGET		141
+#define FN_OBJ_CAN_APPLY_CONDITION	142
+#define FN_OBJ_APPLY_CONDITION		143
+#define FN_OBJ_CAN_REMOVE_CONDITION	144
+#define FN_OBJ_REMOVE_CONDITION		145
+#define FN_OBJ_MAKE_RADIOACTIVE		146
+#define FN_OBJ_DECONTAMINATE		147
 
 #define NAMED_ITEM_SELECTED_WEAPON		CONSTLIT("selectedWeapon")
 #define NAMED_ITEM_SELECTED_LAUNCHER	CONSTLIT("selectedLauncher")
@@ -291,7 +297,7 @@ ICCItem *fnObjGetArmor (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwDat
 #define FN_SHIP_BLINDNESS			14
 #define FN_SHIP_ENHANCE_ITEM		15
 #define FN_SHIP_CAN_INSTALL_DEVICE	16
-#define FN_SHIP_DECONTAMINATE		17
+//	spare
 #define FN_SHIP_IS_RADIOACTIVE		18
 #define FN_SHIP_CANCEL_ORDERS		19
 #define FN_SHIP_ADD_ENERGY_FIELD	20
@@ -304,7 +310,7 @@ ICCItem *fnObjGetArmor (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwDat
 #define FN_SHIP_SHIELD_DAMAGE		27
 #define FN_SHIP_SHIELD_MAX_HP		28
 #define FN_SHIP_RECHARGE_SHIELD		29
-#define FN_SHIP_MAKE_RADIOACTIVE	30
+//	spare
 #define FN_SHIP_ORDER_GATE			31
 #define FN_SHIP_ORDER_ESCORT		32
 #define FN_SHIP_ORDER_LOOT			33
@@ -1159,10 +1165,6 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(shpDamageArmor ship armorSegment damageType damage ['noSRSFlash]) -> damage done",
 			"ivvi*",	PPFLAG_SIDEEFFECTS,	},
 
-		{	"shpDecontaminate",				fnShipGetOld,		FN_SHIP_DECONTAMINATE,
-			"(shpDecontaminate ship) -> True/Nil",
-			NULL,	PPFLAG_SIDEEFFECTS,	},
-
 		{	"shpGetAISetting",				fnShipGet,			FN_SHIP_AI_SETTING,
 			"(shpGetAISetting ship setting)",
 			"is",	0,	},
@@ -1311,10 +1313,6 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 
 			"iv*",	PPFLAG_SIDEEFFECTS,	},
 
-		{	"shpMakeRadioactive",			fnShipGetOld,		FN_SHIP_MAKE_RADIOACTIVE,
-			"(shpMakeRadioactive ship) -> True/Nil",
-			NULL,	PPFLAG_SIDEEFFECTS,	},
-
 		{	"shpOrder",						fnShipSet,		FN_SHIP_ORDER,
 			"(shpOrder ship order [target] [count]) -> True/Nil\n\n"
 
@@ -1415,7 +1413,19 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'fireAccuracy {percent}\n"
 			"   'fireRangeAdj {percent}\n"
 			"   'fireRateAdj {value; 10 = normal; 20 = twice as slow}\n"
-			"   'perception {value}",
+			"   'perception {value}\n"
+			"\n"
+			"   'reactToAttack\n"
+			"      = 'chase\n"
+			"      = 'default\n"
+			"      = 'deter\n"
+			"      = 'deterNoManeuvers\n"
+			"      = 'none\n"
+			"\n"
+			"   'reactToThreat\n"
+			"      = {same as reactToAttack}\n"
+			"\n"
+			"   'threatRange {light-seconds}\n",
 
 			"isv",	0,	},
 
@@ -1480,9 +1490,50 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(objAddTradeOrder obj service criteria priceAdj) -> True/Nil",
 			"isvi",		PPFLAG_SIDEEFFECTS,	},
 
+		{	"objApplyCondition",				fnObjSet,		FN_OBJ_APPLY_CONDITION,
+			"(objApplyCondition obj condition [options]) -> result\n\n"
+			
+			"options:\n\n"
+			
+			"   applyTo: 'interior (optional)\n"
+			"   applyToItem: Item to apply to (optional)\n"
+			"   duration: Duration in ticks (optional)\n"
+			"\n"
+			"result:\n\n"
+			
+			"   resultCode: Result of applying condition\n"
+			"\n"
+			"resultCode:\n\n"
+			
+			"   'ok: Condition applied\n"
+			"   'alreadyApplied: Already in this condition\n"
+			"   'noEffect: Could not apply condition\n",
+
+			"is*",		PPFLAG_SIDEEFFECTS,	},
+
 		{	"objCalcBestTarget",				fnObjGet,		FN_OBJ_CALC_BEST_TARGET,
 			"(objCalcBestTarget obj [objList]) -> targetObj (or Nil)",
 			"i*",	0,	},
+
+		{	"objCanApplyCondition",				fnObjGet,		FN_OBJ_CAN_APPLY_CONDITION,
+			"(objCanApplyCondition obj condition [options]) -> result\n\n"
+			
+			"options:\n\n"
+			
+			"   applyTo: 'interior (optional)\n"
+			"   applyToItem: Item to apply to (optional)\n"
+			"\n"
+			"result:\n\n"
+			
+			"   resultCode: Result of applying condition\n"
+			"\n"
+			"resultCode:\n\n"
+			
+			"   'ok: Condition applied\n"
+			"   'alreadyApplied: Already in this condition\n"
+			"   'noEffect: Could not apply condition\n",
+
+			"is*",		0,	},
 
 		{	"objCanAttack",					fnObjGetOld,		FN_OBJ_CAN_ATTACK,
 			"(objCanAttack obj) -> True/Nil",
@@ -1546,6 +1597,27 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'tooMuchCargo",
 
 			"iv*",	0,	},
+
+		{	"objCanRemoveCondition",				fnObjGet,		FN_OBJ_CAN_REMOVE_CONDITION,
+			"(objCanRemoveCondition obj condition [options]) -> result\n\n"
+
+			"options:\n\n"
+
+			"   applyTo: 'interior (optional)\n"
+			"   applyToItem: Item to apply to (optional)\n"
+			"\n"
+			"result:\n\n"
+			
+			"   resultCode: Result of applying condition\n"
+			"\n"
+			"resultCode:\n\n"
+			
+			"   'ok: Condition removed\n"
+			"   'alreadyRemoved: Does not have this condition\n"
+			"   'noEffect: Could not remove condition\n"
+			"   'stillApplied: Removed condition, but still affected\n",
+
+			"is*",		0,	},
 
 		{	"objChangeEquipmentStatus",		fnObjSet,		FN_OBJ_SET_ABILITY,
 			"(objChangeEquipmentStatus obj equipment command [duration] [options]) -> True/Nil\n\n"
@@ -1705,10 +1777,6 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 		{	"objFireWeapon",				fnObjSet,		FN_OBJ_FIRE_WEAPON,
 			"(objFireWeapon obj weapon target [fireDelay] [checkFireDelay]) -> True/Nil",
 			"ivi*",	PPFLAG_SIDEEFFECTS, },
-
-		{	"objFixParalysis",				fnObjSet,		FN_OBJ_FIX_PARALYSIS,
-			"(objFixParalysis obj) -> True/Nil",
-			"i",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objGateTo",					fnObjGateTo,	0,
 			"(objGateTo obj node entrypoint [effectID]) -> True/Nil",
@@ -2269,10 +2337,6 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(objLowerShields obj) -> True/Nil",
 			NULL,	PPFLAG_SIDEEFFECTS,	},
 
-		{	"objMakeParalyzed",				fnObjSetOld,		FN_OBJ_PARALYSIS,
-			"(objMakeParalyzed obj ticks) -> True/Nil",
-			NULL,	PPFLAG_SIDEEFFECTS,	},
-
 		{	"objMatches",					fnObjGet,			FN_OBJ_MATCHES,
 			"(objMatches obj source filter) -> True/Nil\n\n"
 
@@ -2298,6 +2362,27 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 		{	"objRegisterForSystemEvents",	fnObjSet,		FN_OBJ_REGISTER_SYSTEM_EVENTS,
 			"(objRegisterForSystemEvents target range) -> True/Nil",
 			"ii",	PPFLAG_SIDEEFFECTS,	},
+
+		{	"objRemoveCondition",				fnObjSet,		FN_OBJ_REMOVE_CONDITION,
+			"(objRemoveCondition obj condition [options]) -> result\n\n"
+
+			"options:\n\n"
+
+			"   applyTo: 'interior (optional)\n"
+			"   applyToItem: Item to apply to (optional)\n"
+			"\n"
+			"result:\n\n"
+			
+			"   resultCode: Result of applying condition\n"
+			"\n"
+			"resultCode:\n\n"
+			
+			"   'ok: Condition removed\n"
+			"   'alreadyRemoved: Does not have this condition\n"
+			"   'noEffect: Could not remove condition\n"
+			"   'stillApplied: Removed condition, but still affected\n",
+
+			"is*",		PPFLAG_SIDEEFFECTS,	},
 
 		{	"objRemoveItem",				fnObjItem,		FN_OBJ_REMOVE_ITEM,
 			"(objRemoveItem obj item [count] [options]) -> True/Nil\n\n"
@@ -2983,6 +3068,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   T           Include structure-scale stations\n"
 			"   t:xyz;      Same as \"t +xyz;\"\n"
 			"   T:xyz;      Same as \"T +xyz;\"\n"
+			"   x           Include missiles where targetable='true'\n"
 			"   z           Include the player\n\n"
 			
 			"and may contain any number of the following options:\n\n"
@@ -3954,6 +4040,22 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 		//	DEPRECATED FUNCTIONS
 		//	--------------------
 
+		{	"shpMakeRadioactive",			fnObjSet,		FN_OBJ_MAKE_RADIOACTIVE,
+			"DEPRECATED: Use (objApplyCondition ...) instead.",
+			"i",	PPFLAG_SIDEEFFECTS,	},
+
+		{	"objMakeParalyzed",				fnObjSet,			FN_OBJ_PARALYSIS,
+			"DEPRECATED: Use (objApplyCondition ...) instead.",
+			"ii",	PPFLAG_SIDEEFFECTS,	},
+
+		{	"shpDecontaminate",				fnObjSet,			FN_OBJ_DECONTAMINATE,
+			"DEPRECATED: Use (objRemoveCondition ...) instead.",
+			"i",	PPFLAG_SIDEEFFECTS,	},
+
+		{	"objFixParalysis",				fnObjSet,		FN_OBJ_FIX_PARALYSIS,
+			"DEPRECATED: Use (objRemoveCondition ...) instead.",
+			"i",	PPFLAG_SIDEEFFECTS,	},
+
 		{	"objSetSovereign",				fnObjSetOld,		FN_OBJ_SOVEREIGN,
 			"DEPRECATED: Use (objSet@ obj 'sovereign sovereign) instead.",
 			NULL,	PPFLAG_SIDEEFFECTS,	},
@@ -4282,11 +4384,11 @@ ALERROR CUniverse::InitCodeChainPrimitives (void)
 	//	events, we may get undefined variable errors when trying to save
 	//	old versions of the globals)
 
-	m_CC.DefineGlobal(CONSTLIT("gPlayer"), m_CC.CreateNil());
-	m_CC.DefineGlobal(CONSTLIT("gPlayerShip"), m_CC.CreateNil());
-	m_CC.DefineGlobal(CONSTLIT("gSource"), m_CC.CreateNil());
-	m_CC.DefineGlobal(CONSTLIT("gItem"), m_CC.CreateNil());
-	m_CC.DefineGlobal(CONSTLIT("gType"), m_CC.CreateNil());
+	m_CC.DefineGlobal(CONSTLIT("gPlayer"), m_CC.GetNil());
+	m_CC.DefineGlobal(CONSTLIT("gPlayerShip"), m_CC.GetNil());
+	m_CC.DefineGlobal(CONSTLIT("gSource"), m_CC.GetNil());
+	m_CC.DefineGlobal(CONSTLIT("gItem"), m_CC.GetNil());
+	m_CC.DefineGlobal(CONSTLIT("gType"), m_CC.GetNil());
 
 	//	Register primitives
 
@@ -5516,6 +5618,7 @@ ICCItem *fnItemGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 		default:
 			ASSERT(FALSE);
+			return NULL;
 		}
 
 	return pResult;
@@ -5829,6 +5932,9 @@ ICCItem *fnObjData (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData)
 
 		case FN_OBJ_GET_STATIC_DATA_FOR_STATION_TYPE:
 			{
+			if (!pStationType)
+				throw CException(ERR_FAIL);
+
 			pResult = pStationType->GetStaticData(sAttrib)->Reference();
 			pArgs->Discard();
 			break;
@@ -5912,7 +6018,7 @@ ICCItem *fnObjData (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData)
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -6042,7 +6148,7 @@ ICCItem *fnObjEnumItems (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwDa
 
 	//	Associate the enumaration variable
 
-	pLocalSymbols->AddEntry(pVar, pCC->CreateNil());
+	pLocalSymbols->AddEntry(pVar, pCC->GetNil());
 
 	//	Setup the context
 
@@ -6210,7 +6316,7 @@ ICCItem *fnItemEnumTypes (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwD
 
 	//	Associate the enumaration variable
 
-	pLocalSymbols->AddEntry(pVar, pCC->CreateNil());
+	pLocalSymbols->AddEntry(pVar, pCC->GetNil());
 
 	//	Setup the context
 
@@ -6377,7 +6483,7 @@ ICCItem *fnObjGetArmor (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwDat
 			break;
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -6573,6 +6679,54 @@ ICCItem *fnObjGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 				else
 					return pCC->CreateNil();
 				}
+			}
+
+		case FN_OBJ_CAN_APPLY_CONDITION:
+			{
+			auto sCondition = pArgs->GetElement(1)->GetStringValue();
+			auto iCondition = CConditionSet::ParseCondition(sCondition);
+			if (iCondition == ECondition::none)
+				return pCC->CreateError(CONSTLIT("Unknown condition"), pArgs->GetElement(1));
+
+			ICCItemPtr pOptions;
+			if (pArgs->GetElement(2))
+				pOptions = ICCItemPtr(pArgs->GetElement(2)->Reference());
+			else
+				pOptions = ICCItemPtr(pCC->CreateNil());
+
+			SApplyConditionOptions Options;
+			if (!pObj->ParseConditionOptions(*pOptions, Options))
+				return pCC->CreateError(CONSTLIT("Invalid options"), pOptions);
+
+			auto iResult = pObj->CanApplyCondition(iCondition, Options);
+			ICCItemPtr pResult(ICCItem::SymbolTable);
+			pResult->SetStringAt(CONSTLIT("resultCode"), CConditionSet::AsID(iResult));
+
+			return pResult->Reference();
+			}
+
+		case FN_OBJ_CAN_REMOVE_CONDITION:
+			{
+			auto sCondition = pArgs->GetElement(1)->GetStringValue();
+			auto iCondition = CConditionSet::ParseCondition(sCondition);
+			if (iCondition == ECondition::none)
+				return pCC->CreateError(CONSTLIT("Unknown condition"), pArgs->GetElement(1));
+
+			ICCItemPtr pOptions;
+			if (pArgs->GetElement(2))
+				pOptions = ICCItemPtr(pArgs->GetElement(2)->Reference());
+			else
+				pOptions = ICCItemPtr(pCC->CreateNil());
+
+			SApplyConditionOptions Options;
+			if (!pObj->ParseConditionOptions(*pOptions, Options))
+				return pCC->CreateError(CONSTLIT("Invalid options"), pOptions);
+
+			auto iResult = pObj->CanRemoveCondition(iCondition, Options);
+			ICCItemPtr pResult(ICCItem::SymbolTable);
+			pResult->SetStringAt(CONSTLIT("resultCode"), CConditionSet::AsID(iResult));
+
+			return pResult->Reference();
 			}
 
 		case FN_OBJ_CAN_DESTROY_TARGET:
@@ -7825,7 +7979,7 @@ ICCItem *fnObjGetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData)
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -8212,6 +8366,30 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			return pCC->CreateTrue();
 			}
 
+		case FN_OBJ_APPLY_CONDITION:
+			{
+			auto sCondition = pArgs->GetElement(1)->GetStringValue();
+			auto iCondition = CConditionSet::ParseCondition(sCondition);
+			if (iCondition == ECondition::none)
+				return pCC->CreateError(CONSTLIT("Unknown condition"), pArgs->GetElement(1));
+
+			ICCItemPtr pOptions;
+			if (pArgs->GetElement(2))
+				pOptions = ICCItemPtr(pArgs->GetElement(2)->Reference());
+			else
+				pOptions = ICCItemPtr(pCC->CreateNil());
+
+			SApplyConditionOptions Options;
+			if (!pObj->ParseConditionOptions(*pOptions, Options))
+				return pCC->CreateError(CONSTLIT("Invalid options"), pOptions);
+
+			auto iResult = pObj->ApplyCondition(iCondition, Options);
+			ICCItemPtr pResult(ICCItem::SymbolTable);
+			pResult->SetStringAt(CONSTLIT("resultCode"), CConditionSet::AsID(iResult));
+
+			return pResult->Reference();
+			}
+
 		case FN_OBJ_CHARGE:
 			{
 			DWORD dwEconomyUNID;
@@ -8268,6 +8446,15 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			int iValue = (pArgs->GetCount() > 2 ? pArgs->GetElement(2) : pArgs->GetElement(1))->GetIntegerValue();
 			int iRemaining = (int)pObj->CreditMoney(dwEconomyUNID, iValue);
 			return pCC->CreateInteger(iRemaining);
+			}
+
+		case FN_OBJ_DECONTAMINATE:
+			{
+			SApplyConditionOptions Options;
+			Options.bNoImmunityCheck = true;
+
+			auto iResult = pObj->RemoveCondition(ECondition::radioactive, Options);
+			return pCC->CreateBool(CConditionSet::IsSuccessResult(iResult));
 			}
 
 		case FN_OBJ_DEPLETE_SHIELDS:
@@ -8613,9 +8800,11 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 				ICCItem *p_OldWeaponBonus = pCC->LookupGlobal(CONSTLIT("aWeaponBonus"), pCtx);
 				ICCItem *p_OldWeaponType = pCC->LookupGlobal(CONSTLIT("aWeaponType"), pCtx);
 
+				SUpdateCtx ObjCtx;
+
 				// Set the weapon's linked fire option to lkfAlways before firing, then set it back so that it will fire regardless of linked fire options.
 				pDevice->SetLinkedFireOptions(CDeviceClass::lkfAlways);
-				CDeviceClass::SActivateCtx ActivateCtx(pTarget, TargetList);
+				CDeviceClass::SActivateCtx ActivateCtx(ObjCtx, pTarget, TargetList);
 				bSuccess = pDevice->Activate(ActivateCtx);
 
 				pCtx->DefineInteger(CONSTLIT("aFireAngle"), p_OldFireAngle->GetIntegerValue());
@@ -8651,8 +8840,11 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 		case FN_OBJ_FIX_PARALYSIS:
 			{
-			pObj->ClearCondition(ECondition::paralyzed);
-			return pCC->CreateTrue();
+			SApplyConditionOptions Options;
+			Options.bNoImmunityCheck = true;
+
+			auto iResult = pObj->RemoveCondition(ECondition::paralyzed, Options);
+			return pCC->CreateBool(CConditionSet::IsSuccessResult(iResult));
 			}
 
 		case FN_OBJ_IDENTIFIED:
@@ -8686,6 +8878,15 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			//	Return the newly changed item
 
 			return CreateListFromItem(Item);
+			}
+
+		case FN_OBJ_MAKE_RADIOACTIVE:
+			{
+			SApplyConditionOptions Options;
+			Options.bNoImmunityCheck = true;
+
+			auto iResult = pObj->ApplyCondition(ECondition::radioactive, Options);
+			return pCC->CreateBool(CConditionSet::IsSuccessResult(iResult));
 			}
 
 		case FN_OBJ_INC_PROPERTY:
@@ -8731,6 +8932,16 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			//	Return the resulting speed
 
 			return CreateListFromVector(vNewVel);
+			}
+
+		case FN_OBJ_PARALYSIS:
+			{
+			SApplyConditionOptions Options;
+			Options.iTimer = pArgs->GetElement(1)->GetIntegerValue();
+			Options.bNoImmunityCheck = true;
+
+			auto iResult = pObj->ApplyCondition(ECondition::paralyzed, Options);
+			return pCC->CreateBool(CConditionSet::IsSuccessResult(iResult));
 			}
 
 		case FN_OBJ_POSITION:
@@ -8825,6 +9036,30 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 			pObj->GetSystem()->RegisterEventHandler(pObj, pArgs->GetElement(1)->GetIntegerValue() * LIGHT_SECOND);
 			return pCC->CreateTrue();
+
+		case FN_OBJ_REMOVE_CONDITION:
+			{
+			auto sCondition = pArgs->GetElement(1)->GetStringValue();
+			auto iCondition = CConditionSet::ParseCondition(sCondition);
+			if (iCondition == ECondition::none)
+				return pCC->CreateError(CONSTLIT("Unknown condition"), pArgs->GetElement(1));
+
+			ICCItemPtr pOptions;
+			if (pArgs->GetElement(2))
+				pOptions = ICCItemPtr(pArgs->GetElement(2)->Reference());
+			else
+				pOptions = ICCItemPtr(pCC->CreateNil());
+
+			SApplyConditionOptions Options;
+			if (!pObj->ParseConditionOptions(*pOptions, Options))
+				return pCC->CreateError(CONSTLIT("Invalid options"), pOptions);
+
+			auto iResult = pObj->RemoveCondition(iCondition, Options);
+			ICCItemPtr pResult(ICCItem::SymbolTable);
+			pResult->SetStringAt(CONSTLIT("resultCode"), CConditionSet::AsID(iResult));
+
+			return pResult->Reference();
+			}
 
 		case FN_OBJ_REMOVE_ITEM_ENHANCEMENT:
 			{
@@ -9265,16 +9500,6 @@ ICCItem *fnObjSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData)
 			break;
 			}
 
-		case FN_OBJ_PARALYSIS:
-			{
-			int iTime = pArgs->GetElement(1)->GetIntegerValue();
-			pArgs->Discard();
-
-			pObj->SetCondition(ECondition::paralyzed, iTime);
-			pResult = pCC->CreateTrue();
-			break;
-			}
-
 		case FN_OBJ_POSITION:
 			{
 			//	Second param is vector
@@ -9324,7 +9549,7 @@ ICCItem *fnObjSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData)
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -9484,7 +9709,7 @@ ICCItem *fnObjItemOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -9688,9 +9913,7 @@ ICCItem *fnMission (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 			//	Parse criteria
 
-			CMission::SCriteria Criteria;
-			if (!CMission::ParseCriteria(sCriteria, &Criteria))
-				return pCC->CreateError(CONSTLIT("Unable to parse criteria"), pArgs->GetElement(1));
+			CMissionCriteria Criteria(sCriteria);
 
 			//	Get list of missions that match criteria
 
@@ -9700,7 +9923,7 @@ ICCItem *fnMission (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 			//	Return a single mission
 
-			if (Criteria.bPriorityOnly)
+			if (Criteria.ReturnHighestPriority())
 				{
 				CMission *pBestMission = List.FindHighestPriority();
 				return pCC->CreateInteger((int)pBestMission);
@@ -10075,7 +10298,7 @@ ICCItem *fnShipClass (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -10176,78 +10399,9 @@ ICCItem *fnShipGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 		case FN_SHIP_ORDER_DESC:
 			{
-			IShipController *pController = pShip->GetController();
-			if (pController == NULL)
-				return pCC->CreateNil();
-
 			int iIndex = (pArgs->GetCount() > 1 ? pArgs->GetElement(1)->GetIntegerValue() : 0);
-
-			CSpaceObject *pTarget;
-			IShipController::SData Data;
-			IShipController::OrderTypes iOrder = pController->GetOrder(iIndex, &pTarget, &Data);
-			if (iOrder == IShipController::orderNone)
-				return pCC->CreateNil();
-
-			//	Create result list
-
-			ICCItem *pResult = pCC->CreateLinkedList();
-			if (pResult->IsError())
-				return pResult;
-
-			CCLinkedList *pList = (CCLinkedList *)pResult;
-
-			//	Add order name
-
-			ICCItem *pItem = pCC->CreateString(IShipController::GetOrderName(iOrder));
-			pList->Append(pItem);
-			pItem->Discard();
-
-			//	Add the target
-
-			if (IShipController::OrderHasTarget(iOrder))
-				{
-				pItem = pCC->CreateInteger((int)pTarget);
-				pList->Append(pItem);
-				pItem->Discard();
-				}
-
-			//	Add order data
-
-			switch (Data.iDataType)
-				{
-				case IShipController::dataInteger:
-					pList->AppendInteger(Data.dwData1);
-					break;
-
-				case IShipController::dataItem:
-					{
-					ICCItem *pItem = ::CreateListFromItem(Data.Item);
-					pList->Append(pItem);
-					pItem->Discard();
-					break;
-					}
-
-				case IShipController::dataPair:
-					pList->AppendInteger(Data.dwData1);
-					pList->AppendInteger(Data.dwData2);
-					break;
-
-				case IShipController::dataString:
-					pList->AppendString(Data.sData);
-					break;
-
-				case IShipController::dataVector:
-					{
-					ICCItem *pVector = ::CreateListFromVector(Data.vData);
-					pList->Append(pVector);
-					pVector->Discard();
-					break;
-					}
-				}
-
-			//	Done
-
-			return pResult;
+			const COrderDesc &OrderDesc = pShip->GetOrderDesc(iIndex);
+			return OrderDesc.AsCCItemList()->Reference();
 			}
 
 		default:
@@ -10318,16 +10472,6 @@ ICCItem *fnShipGetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 		case FN_SHIP_INSTALL_TARGETING:
 			pShip->SetAbility(ablTargetingSystem, ablInstall, -1, 0);
-			pResult = pCC->CreateTrue();
-			break;
-
-		case FN_SHIP_DECONTAMINATE:
-			pShip->ClearCondition(ECondition::radioactive);
-			pResult = pCC->CreateTrue();
-			break;
-
-		case FN_SHIP_MAKE_RADIOACTIVE:
-			pShip->SetCondition(ECondition::radioactive);
 			pResult = pCC->CreateTrue();
 			break;
 
@@ -10416,7 +10560,7 @@ ICCItem *fnShipGetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 			IShipController *pController = pShip->GetController();
 			if (pController)
 				{
-				CString sOrder = IShipController::GetOrderName(pController->GetCurrentOrderEx());
+				CString sOrder = IShipController::GetOrderName(pController->GetCurrentOrderDesc().GetOrder());
 				if (!sOrder.IsBlank())
 					pResult = pCC->CreateString(sOrder);
 				else
@@ -10429,23 +10573,20 @@ ICCItem *fnShipGetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 		case FN_SHIP_ORDER_TARGET:
 			{
-			IShipController *pController = pShip->GetController();
-			if (pController)
-				{
-				CSpaceObject *pTarget;
-				IShipController::OrderTypes iOrder = pController->GetCurrentOrderEx(&pTarget);
-				if (IShipController::OrderHasTarget(iOrder) && pTarget)
-					pResult = pCC->CreateInteger((int)pTarget);
-				else
-					pResult = pCC->CreateNil();
-				}
+			const COrderDesc &OrderDesc = pShip->GetCurrentOrderDesc();
+
+			CSpaceObject *pTarget = OrderDesc.GetTarget();
+			IShipController::OrderTypes iOrder = OrderDesc.GetOrder();
+
+			if (IShipController::OrderHasTarget(iOrder) && pTarget)
+				pResult = pCC->CreateInteger((int)pTarget);
 			else
 				pResult = pCC->CreateNil();
 			break;
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -10816,56 +10957,13 @@ ICCItem *fnShipSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 			//	Get the data
 
-			IShipController::SData Data;
-			if (pArgs->GetCount() > (iArg + 1))
-				{
-				if (pArgs->GetElement(iArg)->IsNil() && pArgs->GetElement(iArg+1)->IsNil())
-					{
-					//	If both arguments are Nil, then we omit them both. We do this
-					//	because some orders (like escort) behave differently depending
-					//	on whether arguments are nil or not.
-					}
-				else
-					{
-					Data.iDataType = IShipController::dataPair;
-					Data.dwData1 = pArgs->GetElement(iArg)->GetIntegerValue();
-					Data.dwData2 = pArgs->GetElement(iArg+1)->GetIntegerValue();
-					}
-				}
-			else if (pArgs->GetCount() > iArg)
-				{
-				IShipController::EDataTypes iDataType = IShipController::GetOrderDataType(iOrder);
-
-				if (pArgs->GetElement(iArg)->IsNil())
-					{
-					//	Nil argument is empty. We treat this the same as if the
-					//	caller specified no argument.
-					}
-				else if (iDataType == IShipController::dataItem)
-					{
-					Data.iDataType = iDataType;
-					Data.Item = pCtx->AsItem(pArgs->GetElement(iArg));
-					}
-				else if (iDataType == IShipController::dataString)
-					{
-					Data.iDataType = iDataType;
-					Data.sData = pArgs->GetElement(iArg)->GetStringValue();
-					}
-				else if (iDataType == IShipController::dataVector)
-					{
-					Data.iDataType = iDataType;
-					Data.vData = ::CreateVectorFromList(*pCC, pArgs->GetElement(iArg));
-					}
-				else
-					{
-					Data.iDataType = IShipController::dataInteger;
-					Data.dwData1 = pArgs->GetElement(iArg)->GetIntegerValue();
-					}
-				}
+			COrderDesc OrderDesc = COrderDesc::ParseFromCCItem(*pCtx, iOrder, pTarget, *pArgs, iArg);
+			if (!OrderDesc)
+				return pCC->CreateNil();
 
 			//	Done
 
-			pShip->GetController()->AddOrder(iOrder, pTarget, Data, (dwData == FN_SHIP_ORDER_IMMEDIATE));
+			pShip->GetController()->AddOrder(OrderDesc, (dwData == FN_SHIP_ORDER_IMMEDIATE));
 			return pCC->CreateTrue();
 			}
 
@@ -10875,7 +10973,7 @@ ICCItem *fnShipSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 			if (pObj && !pObj->IsDestroyed())
 				{
-				pShip->GetController()->AddOrder(IShipController::orderGoTo, pObj, IShipController::SData());
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderGoTo, pObj));
 				return pCC->CreateTrue();
 				}
 			else
@@ -11128,7 +11226,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 			if (pObj && !pObj->IsDestroyed())
 				{
-				pShip->GetController()->AddOrder(IShipController::orderDestroyTarget, pObj, IShipController::SData());
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderDestroyTarget, pObj));
 				pResult = pCC->CreateTrue();
 				}
 			else
@@ -11143,7 +11241,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 			if (pObj && !pObj->IsDestroyed())
 				{
-				pShip->GetController()->AddOrder(IShipController::orderDock, pObj, IShipController::SData());
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderDock, pObj));
 				pResult = pCC->CreateTrue();
 				}
 			else
@@ -11161,7 +11259,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 			if (pObj && !pObj->IsDestroyed())
 				{
-				pShip->GetController()->AddOrder(IShipController::orderEscort, pObj, IShipController::SData(dwFormation));
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderEscort, pObj, (int)dwFormation));
 				pResult = pCC->CreateTrue();
 				}
 			else
@@ -11176,7 +11274,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 			if (pObj && !pObj->IsDestroyed())
 				{
-				pShip->GetController()->AddOrder(IShipController::orderFollow, pObj, IShipController::SData());
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderFollow, pObj));
 				pResult = pCC->CreateTrue();
 				}
 			else
@@ -11194,7 +11292,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 			if (pGate == NULL || !pGate->IsDestroyed())
 				{
 				//	Note: OK if pGate == NULL.
-				pShip->GetController()->AddOrder(IShipController::orderGate, pGate, IShipController::SData());
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderGate, pGate));
 				pResult = pCC->CreateTrue();
 				}
 			else
@@ -11210,7 +11308,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 			if (pObj && !pObj->IsDestroyed())
 				{
-				pShip->GetController()->AddOrder(IShipController::orderGuard, pObj, IShipController::SData());
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderGuard, pObj));
 				pResult = pCC->CreateTrue();
 				}
 			else
@@ -11225,7 +11323,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 			if (pObj && !pObj->IsDestroyed())
 				{
-				pShip->GetController()->AddOrder(IShipController::orderLoot, pObj, IShipController::SData());
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderLoot, pObj));
 				pResult = pCC->CreateTrue();
 				}
 			else
@@ -11240,7 +11338,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 			if (pObj && !pObj->IsDestroyed())
 				{
-				pShip->GetController()->AddOrder(IShipController::orderMine, pObj, IShipController::SData());
+				pShip->GetController()->AddOrder(COrderDesc(IShipController::orderMine, pObj));
 				pResult = pCC->CreateTrue();
 				}
 			else
@@ -11258,7 +11356,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 
 				if (pCenter && !pCenter->IsDestroyed())
 					{
-					pShip->GetController()->AddOrder(IShipController::orderPatrol, pCenter, IShipController::SData(iRadius));
+					pShip->GetController()->AddOrder(COrderDesc(IShipController::orderPatrol, pCenter, iRadius));
 					pResult = pCC->CreateTrue();
 					}
 				else
@@ -11274,7 +11372,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 			{
 			int iWaitTime = pArgs->GetElement(1)->GetIntegerValue();
 			pArgs->Discard();
-			pShip->GetController()->AddOrder(IShipController::orderWait, NULL, IShipController::SData(iWaitTime));
+			pShip->GetController()->AddOrder(COrderDesc(IShipController::orderWait, NULL, iWaitTime));
 			pResult = pCC->CreateTrue();
 			break;
 			}
@@ -11285,7 +11383,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 			if (pArgs->GetCount() >= 2)
 				iWaitTime = pArgs->GetElement(1)->GetIntegerValue();
 			pArgs->Discard();
-			pShip->GetController()->AddOrder(IShipController::orderHold, NULL, IShipController::SData(iWaitTime));
+			pShip->GetController()->AddOrder(COrderDesc(IShipController::orderHold, NULL, iWaitTime));
 			pResult = pCC->CreateTrue();
 			break;
 			}
@@ -11444,8 +11542,7 @@ ICCItem *fnSovereignGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			}
 
 		default:
-			ASSERT(false);
-			return NULL;
+			throw CException(ERR_FAIL);
 		}
 	}
 
@@ -11539,7 +11636,7 @@ ICCItem *fnSovereignSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			}
 
 		default:
-			ASSERT(false);
+			throw CException(ERR_FAIL);
 		}
 
 	return pCC->CreateNil();
@@ -11707,7 +11804,7 @@ ICCItem *fnStationGetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwD
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -11755,7 +11852,7 @@ ICCItem *fnStationSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			return pCC->CreateTrue();
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pCC->CreateNil();
@@ -11815,7 +11912,7 @@ ICCItem *fnStationSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwD
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -11861,7 +11958,7 @@ ICCItem *fnStationType (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -12124,7 +12221,7 @@ ICCItem *fnSystemCreate (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 				return StdErrorNoSystem(*pCC);
 
 			CDesignType *pType = pCtx->GetUniverse().FindDesignType(pArgs->GetElement(0)->GetIntegerValue());
-			ICCItem *pOptions = (pArgs->GetCount() > 1 ? pArgs->GetElement(1) : pCC->CreateNil());
+			ICCItem *pOptions = (pArgs->GetCount() > 1 ? pArgs->GetElement(1) : pCC->GetNil());
 
 			CSpaceObject *pTarget = CreateObjFromItem(pOptions->GetElement(CONSTLIT("target")));
 			if (pTarget == NULL)
@@ -12160,6 +12257,7 @@ ICCItem *fnSystemCreate (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 				SShipCreateCtx Ctx;
 				Ctx.pSystem = pSystem;
 				Ctx.pTarget = pTarget;
+				Ctx.iDefaultOrder = (pTarget ? IShipController::orderDestroyTarget : IShipController::orderNone);
 				Ctx.dwFlags = SShipCreateCtx::ATTACK_NEAREST_ENEMY | SShipCreateCtx::RETURN_RESULT;
 
 				//	Figure out where the encounter will come from
@@ -12621,7 +12719,7 @@ ICCItem *fnSystemCreate (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			}
 
 		default:
-			ASSERT(false);
+			throw CException(ERR_FAIL);
 		}
 
 	return pCC->CreateNil();
@@ -12942,7 +13040,7 @@ ICCItem *fnSystemCreateStargate (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD d
 
 	CVector vPos;
 	int iLocID;
-	if (error = GetPosOrObject(pEvalCtx, pArgs->GetElement(1), &vPos, NULL, &iLocID))
+	if (error = GetPosOrObject(pEvalCtx, pArgs->GetElement(1), &vPos, NULL, &iLocID, pType))
 		{
 		//	If we couldn't find a location, then we abort, but return Nil
 		//	so that callers can recover.
@@ -14825,7 +14923,7 @@ ICCItem *fnSystemVectorMath (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwDat
 
 				if (pRadiusFunc)
 					{
-					ICCItem *pResult = pRadiusFunc->Execute(pEvalCtx, pCC->CreateNil());
+					ICCItem *pResult = pRadiusFunc->Execute(pEvalCtx, pCC->GetNil());
 
 					//	Function can return either a radius or a vector
 
@@ -14852,6 +14950,10 @@ ICCItem *fnSystemVectorMath (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwDat
 
 				return CreateListFromVector(vTry);
 				}
+
+			//	Should never get there.
+
+			throw CException(ERR_FAIL);
 			}
 
 		case FN_VECTOR_SUBTRACT:
@@ -14916,8 +15018,7 @@ ICCItem *fnSystemVectorMath (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwDat
 			}
 
 		default:
-			ASSERT(false);
-			return NULL;
+			throw CException(ERR_FAIL);
 		}
 	}
 
@@ -15330,7 +15431,7 @@ ICCItem *fnUniverseGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 					sName = pFoundShip->GetNounPhrase();
 					}
 				else
-					ASSERT(false);
+					throw CException(ERR_FAIL);
 
 				ICCItem *pValue = pCC->CreateInteger(dwUNID);
 				pList->Append(pValue);

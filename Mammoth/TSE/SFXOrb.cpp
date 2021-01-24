@@ -177,14 +177,6 @@ static LPCSTR STYLE_TABLE[] =
 		NULL,
 	};
 
-COrbEffectCreator::COrbEffectCreator (void) :
-			m_pSingleton(NULL)
-
-//	COrbEffectCreator constructor
-
-	{
-	}
-
 COrbEffectCreator::~COrbEffectCreator (void)
 
 //	COrbEffectCreator destructor
@@ -1081,7 +1073,7 @@ void COrbEffectPainter::CompositeFlareRay (CG32bitImage &Dest, int xCenter, int 
 	int xOffset = (int)vHalf.GetX();
 	int yOffset = (int)vHalf.GetY();
 
-    //  Paint the line
+	//  Paint the line
 
 	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
 	if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())) {
@@ -1411,7 +1403,7 @@ void COrbEffectPainter::PaintFlareRay (CG32bitImage &Dest, int xCenter, int yCen
 	int xOffset = (int)vHalf.GetX();
 	int yOffset = (int)vHalf.GetY();
 
-    //  Paint the line
+	//  Paint the line
 
 	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
 	if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())) {

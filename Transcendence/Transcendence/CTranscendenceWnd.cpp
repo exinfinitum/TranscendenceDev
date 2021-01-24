@@ -57,7 +57,6 @@ void CTranscendenceWnd::CleanUpPlayerShip (void)
 
 	m_DeviceDisplay.CleanUp();
 	m_MenuDisplay.CleanUp();
-	m_PickerDisplay.CleanUp();
 
 	m_bPaused = false;
 
@@ -331,6 +330,7 @@ void CTranscendenceWnd::ReportCrash (void)
 
 		case psUpdating:
 			m_sCrashInfo.Append(CONSTLIT("program state: updating universe\r\n"));
+			ReportCrashEvent(&m_sCrashInfo);
 			break;
 
 		case psUpdatingEvents:
@@ -540,7 +540,8 @@ void CTranscendenceWnd::ReportCrashEvent (CString *retsMessage)
 	{
 	try
 		{
-		retsMessage->Append(g_pProgramEvent->DebugCrashInfo());
+		if (g_pProgramEvent)
+			retsMessage->Append(g_pProgramEvent->DebugCrashInfo());
 		}
 	catch (...)
 		{

@@ -42,7 +42,7 @@
 			</GetGlobalDockScreen>
 		</Events>
 	</Sovereign>
-    
+	
 <!--
 
 PLAYER DATA
@@ -61,7 +61,7 @@ PLAYER DATA
 			sovereign=			"&svBlackMarket;"
 			inherit=			"&baBlackMarketStation;"
 
-			attributes=			"blackMarket, friendly, envEarth, envAvoidsAir, generic, human, majorStation, outlaws, populated"
+			attributes=			"blackMarket, blackMarketMissions, friendly, envEarth, envAvoidsAir, generic, human, majorStation, outlaws, populated"
 				 
 			dockScreen=			"Main"
 			abandonedScreen=	"&dsRPGAbandonedStation;"
@@ -133,8 +133,15 @@ PLAYER DATA
 		<!-- Configuration -->
 		
 		<Devices>
-			<Device deviceID="&itSlamCannon;"	omnidirectional="true" posAngle="45"  posRadius="60"/>
-			<Device deviceID="&itSlamCannon;"	omnidirectional="true" posAngle="215" posRadius="60"/>
+			<Device deviceID="&itSlamCannon;"	posAngle="60"   posRadius="60"	posZ="35"	fireAngle="60"   fireArc="120" />
+			<Device deviceID="&itSlamCannon;"	posAngle="150"  posRadius="60"	posZ="35"	fireAngle="150"  fireArc="120" />
+			<Device deviceID="&itSlamCannon;"	posAngle="-30"  posRadius="60"	posZ="35"	fireAngle="-30"  fireArc="120" />
+			<Device deviceID="&itSlamCannon;"	posAngle="-120" posRadius="60"	posZ="35"	fireAngle="-120" fireArc="120" />
+
+			<Device deviceID="&itArbalestCannon;"	posAngle="15"  posRadius="110" posZ="10"		fireAngle="15"   fireArc="180"	missileDefense="true" />
+			<Device deviceID="&itArbalestCannon;"	posAngle="105" posRadius="110" posZ="10"		fireAngle="105"  fireArc="180"	missileDefense="true" />
+			<Device deviceID="&itArbalestCannon;"	posAngle="195" posRadius="110" posZ="10"		fireAngle="195"  fireArc="180"	missileDefense="true" />
+			<Device deviceID="&itArbalestCannon;"	posAngle="285" posRadius="110" posZ="10"		fireAngle="285"  fireArc="180"	missileDefense="true" />
 		</Devices>
 
 		<!-- Ships and Defenses -->
@@ -205,8 +212,42 @@ PLAYER DATA
 			<GetRumors>
 				(append
 					(rpgRumorAdd 'commonwealthPub Nil 31 'scan)
+					(rpgRumorAdd 'corporateHotel Nil 21 'scan)
 					)
 			</GetRumors>
+
+			<GetGlobalRumors>
+				(append
+					(if (and (= (objGetType (@ gData 'stationObj)) &stHotel;)
+							(not (objGetData (@ gData 'stationObj) 'blackMarket.locationRumor))
+							(gr (typ@ &unidBlackMarketMember; 'xp) 0)
+							)
+						(block (
+							(otherStations (unvFindObject "TU +blackMarketMissions;"))
+							(nearestEntry (map otherStations '(reduceMin original) theEntry
+								(sysGetTopologyDistance (sysGetNode) (@ theEntry 2))
+								))
+							)
+							(if nearestEntry {
+								attributes: 'corporateHotel
+								priority: 16
+								textID: (cat 'rumor.corporateHotel.far (random 1 3))
+								data: {
+									systemName: (sysGetName (@ nearestEntry 2))
+									objectName: (fmtNoun (@ nearestEntry 3) (@ nearestEntry 4) 1 'article)
+									}
+								onExitRumor: (lambda (theRumor)
+									(block ()
+										(sysSetKnown (@ nearestEntry 2) True)
+										(unvSetObjectKnown (@ nearestEntry 2) "T +blackMarketMissions;" True)
+										(objSetData (@ theRumor 'stationObj) 'blackMarket.locationRumor True)
+										)
+									)
+								})
+							)
+						)
+					)
+			</GetGlobalRumors>
 		</Events>
 		
 		<StaticData>
@@ -239,21 +280,62 @@ PLAYER DATA
 
 				A woman dressed in a fancy neolinen suit talks to you:
 
-				"Do you know how to get a contact at the black market station?
+				"Do you know how to get a contact at the Black Market station?
 				You look like you might know."
 
 				You spend 5 credits on drinks.
 
 			</Text>
+			<Text id="rumor.corporateHotel">
 
-            <Text id="core.mapDesc">
+				You sit at the bar next to a hotel employee. He tells you about
+				his job:
 
-                Refuels up to level 6 &mdash;
+				"Business has been good since the Black Market station opened
+				up. We get a lot of customers from there. They come in to do 
+				deals with various groups: outlaws, smugglers, even some 
+				corporate types."
+			
+			</Text>
+			<Text id="rumor.corporateHotel.far1">
+
+				You sit at the bar next to a pilot. He tells you about 
+				%objectName% in the %systemName% system:
+
+				"I tell you, they got all the Martian nori you could ask for."
+			
+			</Text>
+			<Text id="rumor.corporateHotel.far2">
+
+				You sit at the bar next to a older woman. She tells you that her
+				daughter joined %objectName% in the %systemName% system:
+
+				"I hear from her every six month or so. She sounds fine but I
+				can tell that she's scared. I don't know if I'll ever see her
+				again."
+			
+			</Text>
+			<Text id="rumor.corporateHotel.far3">
+
+				You sit at the bar next to a freighter pilot. He tells you about
+				%objectName% in the %systemName% system:
+
+				"I used to fly for Korolov, but I'm getting paid almost double 
+				by the Black Market. It's only a little bit more dangerous."
+			
+			</Text>
+
+			<Text id="core.mapDesc">
+
+				Refuels up to level 6 &mdash;
 				Repairs/installs armor up to level 6 &mdash;
 				Installs purchased devices up to level 8 &mdash;
 				Buys and sells illegal and military items
 
-            </Text>
+			</Text>
+			<Code id="rpg.statusDetails">
+				(typTranslate &unidBlackMarketMember; 'rankDetails)
+			</Code>
 		</Language>
 	</StationType>
 
@@ -264,7 +346,7 @@ PLAYER DATA
 			sovereign=			"&svBlackMarket;"
 			inherit=			"&baBlackMarketStation;"
 				 
-			attributes=			"blackMarket, envEarth, majorStation, envAvoidsAir, friendly, generic, human, outlaws, populated"
+			attributes=			"blackMarket, blackMarketMissions, envEarth, majorStation, envAvoidsAir, friendly, generic, human, outlaws, populated"
 				 
 			dockScreen=			"Main"
 			abandonedScreen=	"&dsRPGAbandonedStation;"
@@ -343,8 +425,15 @@ PLAYER DATA
 		<!-- Configuration -->
 		
 		<Devices>
-			<Device deviceID="&itSlamCannon;"	omnidirectional="true" posAngle="45"  posRadius="60"/>
-			<Device deviceID="&itSlamCannon;"	omnidirectional="true" posAngle="215" posRadius="60"/>
+			<Device deviceID="&itSlamCannon;"	posAngle="15"   posRadius="60"	posZ="30"	fireAngle="15"   fireArc="180" />
+			<Device deviceID="&itSlamCannon;"	posAngle="105"  posRadius="60"	posZ="30"	fireAngle="105"  fireArc="180" />
+			<Device deviceID="&itSlamCannon;"	posAngle="195"  posRadius="60"	posZ="30"	fireAngle="195"  fireArc="180" />
+			<Device deviceID="&itSlamCannon;"	posAngle="285"  posRadius="60"	posZ="30"	fireAngle="285"  fireArc="180" />
+
+			<Device deviceID="&itArbalestCannon;"	posAngle="15"  posRadius="110" posZ="10"		fireAngle="15"   fireArc="180"	missileDefense="true" />
+			<Device deviceID="&itArbalestCannon;"	posAngle="105" posRadius="110" posZ="10"		fireAngle="105"  fireArc="180"	missileDefense="true" />
+			<Device deviceID="&itArbalestCannon;"	posAngle="195" posRadius="110" posZ="10"		fireAngle="195"  fireArc="180"	missileDefense="true" />
+			<Device deviceID="&itArbalestCannon;"	posAngle="285" posRadius="110" posZ="10"		fireAngle="285"  fireArc="180"	missileDefense="true" />
 		</Devices>
 
 		<!-- Ships and Defenses -->
@@ -363,21 +452,18 @@ PLAYER DATA
 
 		<!-- Image and Effects -->
 		
-		<Image			imageID="&rsStations5;" imageX="0" imageY="896" imageWidth="256" imageHeight="256"/>
+		<Image			imageID="&rsBlackMarketShipyard;" imageWidth="480" imageHeight="480" viewportRatio="0.04625"/>
 
 		<DockingPorts>
-			<Port x="53"	y="146" />
-			<Port x="-92"	y="100" />
-			<Port x="-148"	y="-42" />
-			<Port x="-64"	y="-134" />
-			<Port x="108"	y="-116" />
-			<Port x="148"	y="5" />
+			<Port posAngle="-13" posRadius="140" posZ="0"/>
+			<Port posAngle="42" posRadius="140" posZ="0"/>
+			<Port posAngle="77" posRadius="140" posZ="0"/>
+			<Port posAngle="132" posRadius="140" posZ="0"/>
 
-			<Port x="62"	y="43" />
-			<Port x="-19"	y="76" />
-			<Port x="-67"	y="12" />
-			<Port x="-72"	y="-60" />
-			<Port x="12"	y="-72" />
+			<Port posAngle="167" posRadius="140" posZ="0"	bringToFront="true"/>
+			<Port posAngle="222" posRadius="140" posZ="0"	sendToBack="true"/>
+			<Port posAngle="257" posRadius="140" posZ="0"/>
+			<Port posAngle="312" posRadius="140" posZ="0"/>
 		</DockingPorts>
 		
 		<!-- Dock Screens -->
@@ -427,21 +513,24 @@ PLAYER DATA
 			<Data id="blackMarket.destroyBountyHunters">(random 1 5)</Data>
 		</StaticData>
 		
-        <Language>
+		<Language>
+			<Text id="core.mapDesc">
+
+				Refuels up to level 7 &mdash; Repairs/installs armor up to 
+				level 9 &mdash; Installs devices up to level 9 &mdash; Buys and
+				sells illegal and military items
+
+			</Text>
 			<Text id="rpg.stationWillNotBuy">
 
 				%StationName% buys illegal and military items. We are not 
 				interested in buying %itemName%.
 
 			</Text>
-            <Text id="core.mapDesc">
-
-                Refuels up to level 7 &mdash; Repairs/installs armor up to 
-				level 9 &mdash; Installs devices up to level 9 &mdash; Buys and
-				sells illegal and military items
-
-            </Text>
-        </Language>
+			<Code id="rpg.statusDetails">
+				(typTranslate &unidBlackMarketMember; 'rankDetails)
+			</Code>
+		</Language>
 	</StationType>
 
 	<!-- Tempus Lab -->
@@ -580,9 +669,12 @@ PLAYER DATA
 			<Text id="core.mapDesc">
 				"Sells illegal items"
 			</Text>
+			<Code id="rpg.statusDetails">
+				(typTranslate &unidBlackMarketMember; 'rankDetails)
+			</Code>
 		</Language>
 	</StationType>
-    
+	
 <!-- SHIP CLASSES -->
 
 	<!-- Level 5: Molotok/A-class Heavy Gunship -->
@@ -864,7 +956,7 @@ PLAYER DATA
 				))
 			)
 	</Globals>
-    
+	
 <!-- DOCK SCREENS -->
 
 	<!-- Black Market Pay Debt -->
@@ -998,10 +1090,10 @@ PLAYER DATA
 		</Language>
 	</DockScreen>
 	
-    <!-- Bounty Hunters 
-        Based on code by JohnBWatson. Thank you! -->
+	<!-- Bounty Hunters 
+		Based on code by JohnBWatson. Thank you! -->
 	
-    <Sovereign UNID="&svBlackMarketBountyHunter;"
+	<Sovereign UNID="&svBlackMarketBountyHunter;"
 			name="bounty hunters"
 			demonym=":a bounty hunter(s)"
 			alignment="neutral"
@@ -1014,7 +1106,7 @@ PLAYER DATA
 			<Relationship sovereign="&svPlayer;" disposition="enemy" mutual="true"/>
 		</Relationships>
 	</Sovereign>
-    
+	
 <!-- BASE CLASSES -->
 
 	<Type unid="&baBlackMarketStation;"
@@ -1058,12 +1150,12 @@ PLAYER DATA
 								
 							;	If the player is not part of the Black Market, then she is 
 							;	treated as an enemy.
-                    
+					
 							(if (= (typ@ &unidBlackMarketMember; 'xp) 0)
 								(block Nil
 									(sovSetDisposition &svBlackMarket; &svPlayer; 'enemy)
 									(sovSetDisposition &svPlayer; &svBlackMarket; 'enemy)
-    								)
+									)
 									
 								;	Otherwise, this is a Black Market crime
 								
@@ -1074,7 +1166,7 @@ PLAYER DATA
 										(objSetData gPlayerShip "blackMarketCrime" (cat "the destruction of " (objGetName gSource 4)))
 										)
 									)
-	    						)
+								)
 						
 							;	After death, only a certain number of bounty hunters go 
 							;	after the player.
@@ -1158,6 +1250,7 @@ PLAYER DATA
 
 <!-- RESOURCES -->
 
+	<Image UNID="&rsBlackMarketShipyard;"	bitmap="Resources\BlackMarketShipyard.jpg" bitmask="Resources\BlackMarketShipyardMask.bmp" loadOnUse="true"/>
 	<Image UNID="&rsBlackMarketStation;"	bitmap="Resources\BlackMarketStation.jpg" bitmask="Resources\BlackMarketStationMask.bmp" loadOnUse="true"/>
 
 	<Image UNID="&rsMolotokA;"				bitmap="Resources\MolotokA.jpg" bitmask="Resources\MolotokAMask.bmp" loadOnUse="true"/>

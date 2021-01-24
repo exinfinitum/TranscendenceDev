@@ -35,6 +35,7 @@
 
 #define FIELD_NAME								CONSTLIT("name")
 
+#define PROPERTY_ENEMY_OBJECT_CACHE				CONSTLIT("enemyObjectCache")
 #define PROPERTY_NAME							CONSTLIT("name")
 #define PROPERTY_PLAYER_THREAT_LEVEL			CONSTLIT("playerThreatLevel")
 #define PROPERTY_PLURAL							CONSTLIT("plural")
@@ -192,6 +193,12 @@ static SAlignData ALIGN_DATA[CSovereign::alignCount] =
 		{	CONSTDEF("unorganized"),	alignNeutral,				0 },
 		{	CONSTDEF("subsapient"),		alignNeutral,				0 },
 		{	CONSTDEF("predator"),		alignDestructiveChaos,		ALIGN_FLAG_DESTRUCTIVE },
+	};
+
+const char *CSovereign::m_CACHED_EVENTS[CACHED_EVENT_COUNT] = 
+	{
+	"OnShipDestroyedByPlayer",
+	"OnStationDestroyedByPlayer"
 	};
 
 CSovereign::CSovereign (void)
@@ -693,6 +700,9 @@ ALERROR CSovereign::OnBindDesign (SDesignLoadCtx &Ctx)
 
 	{
 	InitRelationships();
+
+	InitCachedEvents(CACHED_EVENT_COUNT, m_CACHED_EVENTS, m_CachedEvents);
+
 	return NOERROR;
 	}
 
@@ -762,7 +772,21 @@ ICCItemPtr CSovereign::OnGetProperty (CCodeChainCtx &Ctx, const CString &sProper
 	{
 	CCodeChain &CC = GetUniverse().GetCC();
 
-	if (strEquals(sProperty, PROPERTY_NAME))
+	if (strEquals(sProperty, PROPERTY_ENEMY_OBJECT_CACHE))
+		{
+		const CSystem *pSystem = GetUniverse().GetCurrentSystem();
+		if (!pSystem)
+			return ICCItemPtr::Nil();
+
+		InitEnemyObjectList(pSystem);
+		ICCItemPtr pResult(ICCItem::List);
+		for (int i = 0; i < m_EnemyObjects.GetCount(); i++)
+			pResult->Append(CTLispConvert::CreateObject(m_EnemyObjects.GetObj(i)));
+
+		return pResult;
+		}
+
+	else if (strEquals(sProperty, PROPERTY_NAME))
 		return ICCItemPtr(GetNounPhrase());
 
 	else if (strEquals(sProperty, PROPERTY_PLAYER_THREAT_LEVEL))
@@ -781,17 +805,71 @@ ICCItemPtr CSovereign::OnGetProperty (CCodeChainCtx &Ctx, const CString &sProper
 		return NULL;
 	}
 
-void CSovereign::OnObjDestroyedByPlayer (CSpaceObject *pObj)
+void CSovereign::OnObjDestroyedByPlayer (const SDestroyCtx &Ctx)
 
 //	OnObjDestroyedByPlayer
 //
 //	One of our objects (ship/station) was destroyed by the player.
 
 	{
-	if (pObj->GetCategory() == CSpaceObject::catStation)
+	if (Ctx.Obj.GetCategory() == CSpaceObject::catStation)
+		{
 		m_iStationsDestroyedByPlayer++;
+
+		SEventHandlerDesc Event;
+		if (FindEventHandlerSovereign(eventOnStationDestroyedByPlayer, &Event))
+			{
+			CCodeChainCtx CCX(GetUniverse());
+
+			//	Setup
+
+			CCX.DefineContainingType(this);
+			CCX.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.Obj);
+			CCX.DefineSpaceObject(CONSTLIT("aDestroyer"), Ctx.Attacker.GetObj());
+			CCX.DefineSpaceObject(CONSTLIT("aOrderGiver"), Ctx.GetOrderGiver());
+			CCX.DefineSpaceObject(CONSTLIT("aWreckObj"), Ctx.pWreck);
+			CCX.DefineBool(CONSTLIT("aDestroy"), Ctx.WasDestroyed());
+			CCX.DefineString(CONSTLIT("aDestroyReason"), GetDestructionName(Ctx.iCause));
+
+			//	Execute
+
+			ICCItemPtr pResult = CCX.RunCode(Event);
+
+			//	Done
+
+			if (pResult->IsError())
+				ReportEventError(CONSTLIT("OnStationDestroyedByPlayer"), pResult);
+			}
+		}
 	else
+		{
 		m_iShipsDestroyedByPlayer++;
+
+		SEventHandlerDesc Event;
+		if (FindEventHandlerSovereign(eventOnShipDestroyedByPlayer, &Event))
+			{
+			CCodeChainCtx CCX(GetUniverse());
+
+			//	Setup
+
+			CCX.DefineContainingType(this);
+			CCX.DefineSpaceObject(CONSTLIT("aObjDestroyed"), Ctx.Obj);
+			CCX.DefineSpaceObject(CONSTLIT("aDestroyer"), Ctx.Attacker.GetObj());
+			CCX.DefineSpaceObject(CONSTLIT("aOrderGiver"), Ctx.GetOrderGiver());
+			CCX.DefineSpaceObject(CONSTLIT("aWreckObj"), Ctx.pWreck);
+			CCX.DefineBool(CONSTLIT("aDestroy"), Ctx.WasDestroyed());
+			CCX.DefineString(CONSTLIT("aDestroyReason"), GetDestructionName(Ctx.iCause));
+
+			//	Execute
+
+			ICCItemPtr pResult = CCX.RunCode(Event);
+
+			//	Done
+
+			if (pResult->IsError())
+				ReportEventError(CONSTLIT("OnShipDestroyedByPlayer"), pResult);
+			}
+		}
 	}
 
 ALERROR CSovereign::OnPrepareBindDesign (SDesignLoadCtx &Ctx)

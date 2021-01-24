@@ -50,6 +50,28 @@ CG32bitImage &CG32bitImage::operator= (const CG32bitImage &Src)
 	return *this;
 	}
 
+bool CG32bitImage::AllocRGBA (int iSize)
+
+//	AllocRGBA
+//
+//	Allocates the RGBA buffer. We assume we are clean. If allocation fails, we 
+//	return FALSE.
+
+	{
+	try 
+		{
+		m_pRGBA = new CG32bitPixel [iSize];
+		}
+	catch (...)
+		{
+		m_pRGBA = NULL;
+		return false;
+		}
+
+	m_bFreeRGBA = true;
+	return true;
+	}
+
 void CG32bitImage::BltToDC (HDC hDC, int x, int y) const
 
 //	BltToDC
@@ -215,8 +237,9 @@ void CG32bitImage::Copy (const CG32bitImage &Src)
 	//	Copy the buffer
 
 	int iSize = CalcBufferSize(Src.m_iPitch / sizeof(DWORD), Src.m_cyHeight);
-	m_pRGBA = new CG32bitPixel [iSize];
-	m_bFreeRGBA = true;
+	if (!AllocRGBA(iSize))
+		return;
+
 	m_bMarked = Src.m_bMarked;
 
 	CG32bitPixel *pSrc = Src.m_pRGBA;
@@ -298,6 +321,11 @@ void CG32bitImage::CopyTransformed (const RECT &rcDest, const CG32bitImage &Src,
 	int xSrcEnd = xSrc + cxSrc;
 	int ySrcEnd = ySrc + cySrc;
 
+	//	Short-circuit
+
+	if (Src.IsEmpty())
+		return;
+
 	//	Compute vectors that move us by 1 pixel
 
 	CVector vOrigin = DestToSrc.Transform(CVector(0.0, 0.0));
@@ -364,8 +392,8 @@ bool CG32bitImage::Create (int cxWidth, int cyHeight, EAlphaTypes AlphaType, CG3
 
 	m_iPitch = cxWidth * sizeof(DWORD);
 	int iSize = CalcBufferSize(m_iPitch / sizeof(DWORD), cyHeight);
-	m_pRGBA = new CG32bitPixel [iSize];
-	m_bFreeRGBA = true;
+	if (!AllocRGBA(iSize))
+		return false;
 
 	//	Initialize
 
@@ -451,8 +479,9 @@ bool CG32bitImage::CreateFromBitmap (HBITMAP hImage, HBITMAP hMask, EBitmapTypes
 
 		m_iPitch = cxWidth * sizeof(DWORD);
 		int iSize = CalcBufferSize(m_iPitch / sizeof(DWORD), cyHeight);
-		m_pRGBA = new CG32bitPixel [iSize];
-		m_bFreeRGBA = true;
+		if (!AllocRGBA(iSize))
+			return false;
+
 		m_cxWidth = cxWidth;
 		m_cyHeight = cyHeight;
 		ResetClipRect();
@@ -811,8 +840,9 @@ bool CG32bitImage::CreateFromImageTransformed (const CG32bitImage &Source, int x
 	m_cyHeight = RectHeight(rcDest);
 	m_iPitch = m_cxWidth * sizeof(DWORD);
 	int iSize = CalcBufferSize(m_iPitch / sizeof(DWORD), m_cyHeight);
-	m_pRGBA = new CG32bitPixel [iSize];
-	m_bFreeRGBA = true;
+	if (!AllocRGBA(iSize))
+		return false;
+
 	m_AlphaType = Source.GetAlphaType();
 	ResetClipRect();
 

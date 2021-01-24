@@ -55,6 +55,7 @@ const DWORD MAX_DISRUPT_TIME_BEFORE_DAMAGE =	(60 * g_TicksPerSecond);
 #define PROPERTY_COUNTER_INCREMENT_RATE			CONSTLIT("counterIncrementRate")
 #define PROPERTY_COUNTER_VALUE					CONSTLIT("counterValue")
 #define PROPERTY_COUNTER_VALUE_INCREMENT		CONSTLIT("counterValueIncrement")
+#define PROPERTY_CHALLENGE_RATING				CONSTLIT("challengeRating")
 #define PROPERTY_CHARACTER						CONSTLIT("character")
 #define PROPERTY_CHARACTER_NAME					CONSTLIT("characterName")
 #define PROPERTY_DEVICE_DAMAGE_IMMUNE			CONSTLIT("deviceDamageImmune")
@@ -1862,7 +1863,7 @@ void CShip::DeactivateShields (void)
 		EnableDevice(iShieldDev, false);
 	}
 
-CString CShip::DebugCrashInfo (void)
+CString CShip::DebugCrashInfo (void) const
 
 //	DebugCrashInfo
 //
@@ -2524,9 +2525,12 @@ CSpaceObject *CShip::GetBase (void) const
 //	Get the base for this ship
 
 	{
+	if (m_pDeferredOrders)
+		return m_pDeferredOrders->pBase;
+
 	//	If we're docked, then that's our base
 
-	if (m_pDocked)
+	else if (m_pDocked)
 		return m_pDocked;
 
 	//	Otherwise, ask the controller
@@ -2712,6 +2716,21 @@ CDesignType *CShip::GetDefaultDockScreen (CString *retsName, ICCItemPtr *retpDat
 		*retpData = NULL;
 
 	return m_pClass->GetFirstDockScreen(retsName);
+	}
+
+const CSoundResource *CShip::GetDockScreenAmbientSound () const
+
+//	GetDockScreenAmbientSound
+//
+//	Returns the ambient sound for dock screen.
+
+	{
+	if (const CPlayerSettings *pPlayerSettings = m_pClass->GetPlayerSettings())
+		{
+		return pPlayerSettings->GetDockScreenVisuals(GetUniverse()).GetAmbient();
+		}
+	else
+		return NULL;
 	}
 
 CSpaceObject *CShip::GetEscortPrincipal (void) const
@@ -3102,6 +3121,9 @@ ICCItem *CShip::GetPropertyCompatible (CCodeChainCtx &Ctx, const CString &sName)
 	else if (strEquals(sName, PROPERTY_COUNTER_INCREMENT_RATE))
 		return CC.CreateInteger(GetCounterIncrementRate());
 
+	else if (strEquals(sName, PROPERTY_CHALLENGE_RATING))
+		return CC.CreateInteger(CChallengeRatingCalculator::CalcChallengeRating(*this));
+		
 	else if (strEquals(sName, PROPERTY_CHARACTER))
 		return (m_pCharacter ? CC.CreateInteger(m_pCharacter->GetUNID()) : CC.CreateNil());
 
@@ -3954,13 +3976,12 @@ bool CShip::IsPlayerEscort (void) const
 	if (m_pController->IsPlayerEscort())
 		return true;
 
-	CSpaceObject *pTarget;
-	IShipController::OrderTypes iOrder = GetCurrentOrder(&pTarget);
-	switch (iOrder)
+	const COrderDesc &OrderDesc = GetCurrentOrderDesc();
+	switch (OrderDesc.GetOrder())
 		{
 		case IShipController::orderEscort:
 		case IShipController::orderFollow:
-			return (pTarget && pTarget->IsPlayer());
+			return (OrderDesc.GetTarget() && OrderDesc.GetTarget()->IsPlayer());
 
 		default:
 			return false;
@@ -4127,6 +4148,106 @@ void CShip::OnAcceptedMission (CMission &MissionObj)
 	m_pController->OnAcceptedMission(MissionObj);
 	}
 
+EConditionResult CShip::OnApplyCondition (ECondition iCondition, const SApplyConditionOptions &Options)
+
+//	OnApplyCondition
+//
+//	Apply the condition.
+
+	{
+	//	Set the condition
+
+	switch (iCondition)
+		{
+		case ECondition::blind:
+			{
+			DWORD dwOptions = 0;
+			if (Options.bNoMessage)
+				dwOptions |= ablOptionNoMessage;
+
+			SetAbility(ablShortRangeScanner, ablDamage, Options.iTimer, dwOptions);
+			return EConditionResult::ok;
+			}
+
+		case ECondition::disarmed:
+			{
+			if (m_iDisarmedTimer == 0)
+				{
+				if (Options.iTimer < 0)
+					m_iDisarmedTimer = -1;
+				else
+					m_iDisarmedTimer = Min(Options.iTimer, MAX_SHORT);
+
+				return EConditionResult::ok;
+				}
+			else
+				return EConditionResult::alreadyApplied;
+			}
+
+		case ECondition::LRSBlind:
+			{
+			DWORD dwOptions = 0;
+			if (Options.bNoMessage)
+				dwOptions |= ablOptionNoMessage;
+
+			SetAbility(ablLongRangeScanner, ablDamage, Options.iTimer, 0);
+			return EConditionResult::ok;
+			}
+
+		case ECondition::paralyzed:
+			{
+			if (m_iParalysisTimer == 0)
+				{
+				if (Options.iTimer < 0)
+					m_iParalysisTimer = -1;
+				else
+					m_iParalysisTimer = Min(Options.iTimer, MAX_SHORT);
+
+				return EConditionResult::ok;
+				}
+			else
+				return EConditionResult::alreadyApplied;
+			}
+
+		case ECondition::radioactive:
+			{
+			if (!m_fRadioactive)
+				{
+				//	Set time to death by radiation
+
+				if (!GetProperty(PROPERTY_CORE_NO_RADIATION_DEATH)->IsNil())
+					m_iContaminationTimer = -1;
+				else if (Options.iTimer < 0)
+					m_iContaminationTimer = (IsPlayer() ? 180 : 60) * g_TicksPerSecond;
+				else
+					m_iContaminationTimer = Min(Options.iTimer, MAX_SHORT);
+
+				//	Set cause so that the epitaph is correct if/when we die.
+
+				if (!Options.Cause.IsEmpty())
+					{
+					if (m_pIrradiatedBy == NULL)
+						m_pIrradiatedBy = new CDamageSource;
+
+					*m_pIrradiatedBy = Options.Cause;
+					m_pIrradiatedBy->SetCause(killedByRadiationPoisoning);
+					}
+
+				//	Set radioactive and notify UI
+
+				m_fRadioactive = true;
+				m_pController->OnShipStatus(IShipController::statusRadiationWarning, m_iContaminationTimer);
+				return EConditionResult::ok;
+				}
+			else
+				return EConditionResult::alreadyApplied;
+			}
+
+		default:
+			return EConditionResult::noEffect;
+		}
+	}
+
 void CShip::OnAscended (void)
 
 //	OnAscended
@@ -4172,57 +4293,144 @@ void CShip::OnBounce (CSpaceObject *pBarrierObj, const CVector &vPos)
 	m_pController->OnHitBarrier(pBarrierObj, vPos);
 	}
 
-void CShip::OnClearCondition (ECondition iCondition, DWORD dwFlags)
+EConditionResult CShip::OnCanApplyCondition (ECondition iCondition, const SApplyConditionOptions &Options) const
 
-//	OnClearCondition
+//	OnCanApplyCondition
 //
-//	Clears the condition
+//	Returns result if trying to apply a condition.
 
 	{
+	//	There are some conditions that we do not handle at this level. They need
+	//	to be applied as an overlay or such.
+
 	switch (iCondition)
 		{
+		//	These we handle.
+
 		case ECondition::blind:
-			{
-			DWORD dwOptions = 0;
-			if (dwFlags & FLAG_NO_MESSAGE)
-				dwOptions |= ablOptionNoMessage;
-
-			SetAbility(ablShortRangeScanner, ablRepair, -1, dwOptions);
-			break;
-			}
-
 		case ECondition::disarmed:
-			m_iDisarmedTimer = 0;
-			break;
-
 		case ECondition::LRSBlind:
-			{
-			DWORD dwOptions = 0;
-			if (dwFlags & FLAG_NO_MESSAGE)
-				dwOptions |= ablOptionNoMessage;
-
-			SetAbility(ablLongRangeScanner, ablRepair, -1, dwOptions);
+		case ECondition::paralyzed:
+		case ECondition::radioactive:
+		case ECondition::timeStopped:
 			break;
+
+		//	Anything else, we do not handle.
+
+		default:
+			return EConditionResult::noEffect;
+		}
+
+	//	Otherwise, see where we're applying the condition.
+
+	switch (Options.ApplyTo.iPart)
+		{
+		//	If applying to interior, then we don't get benefit of armor or hull.
+
+		case EObjectPart::interior:
+			{
+			return EConditionResult::ok;
 			}
 
-		case ECondition::paralyzed:
-			m_iParalysisTimer = 0;
-			break;
+		//	We're apply the condition to an item (e.g., using a barrel on an 
+		//	item). We ignore shields, etc.
 
-		case ECondition::radioactive:
-			if (m_fRadioactive)
+		case EObjectPart::item:
+			{
+			SpecialDamageTypes iSpecialDamage = DamageDesc::GetSpecialDamageFromCondition(iCondition);
+			if (iSpecialDamage != specialNone)
 				{
-				if (m_pIrradiatedBy)
+				//	If we're applying to installed armor, then we get a chance
+				//	to test immunities.
+
+				if (Options.ApplyTo.Item.IsArmor() 
+						&& Options.ApplyTo.Item.IsInstalled())
 					{
-					delete m_pIrradiatedBy;
-					m_pIrradiatedBy = NULL;
+					const CArmorItem ArmorItem = Options.ApplyTo.Item.AsArmorItem();
+					if (ArmorItem.IsImmune(iSpecialDamage))
+						return EConditionResult::noEffect;
+
+					//	Still get a chance to test hull
+
+					if (m_pClass->GetHullDesc().IsImmuneTo(iSpecialDamage))
+						return EConditionResult::noEffect;
+
+					return EConditionResult::ok;
 					}
 
-				m_iContaminationTimer = 0;
-				m_fRadioactive = false;
-				m_pController->OnShipStatus(IShipController::statusRadiationCleared);
+				//	Otherwise, we're applying to an item in cargo hold, so we
+				//	don't have any immunities.
+
+				else
+					return EConditionResult::ok;
 				}
+			else
+				{
+				SApplyConditionOptions NewOptions(Options);
+				NewOptions.ApplyTo = SObjectPartDesc();
+				return OnCanApplyCondition(iCondition, NewOptions);
+				}
+
 			break;
+			}
+
+		//	Default means treat the ship as a whole
+
+		default:
+			{
+			SpecialDamageTypes iSpecialDamage = DamageDesc::GetSpecialDamageFromCondition(iCondition);
+			if (iSpecialDamage != specialNone)
+				{
+				if (m_Armor.IsImmune(iSpecialDamage))
+					return EConditionResult::noEffect;
+
+				if (m_pClass->GetHullDesc().IsImmuneTo(iSpecialDamage))
+					return EConditionResult::noEffect;
+
+				return EConditionResult::ok;
+				}
+			else
+				return EConditionResult::ok;
+
+			break;
+			}
+		}
+	}
+
+EConditionResult CShip::OnCanRemoveCondition (ECondition iCondition, const SApplyConditionOptions &Options) const
+
+//	OnCanRemoveCondition
+//
+//	Returns result when attempting to remove condition.
+//	NOTE: We only return whether we are able to remove the condition from the
+//	ship. We do not check to see if the condition is acquired a different way.
+
+	{
+	//	Otherwise, see where we're applying the condition.
+
+	switch (Options.ApplyTo.iPart)
+		{
+		//	If applying to interior, then we don't get benefit of armor or hull.
+
+		case EObjectPart::interior:
+			{
+			return EConditionResult::ok;
+			}
+
+		//	We're apply the condition to an item (e.g., using a barrel on an 
+		//	item). We ignore shields, etc.
+
+		case EObjectPart::item:
+			{
+			return EConditionResult::ok;
+			}
+
+		//	Default means treat the ship as a whole
+
+		default:
+			{
+			return EConditionResult::ok;
+			}
 		}
 	}
 
@@ -4828,10 +5036,10 @@ void CShip::OnDocked (CSpaceObject *pObj)
 	m_pDocked = pObj;
 
 	//	If we've docked with a radioactive object then we become radioactive
-	//	unless our armor is immune
+	//	unless our armor is immune (ApplyCondition does all the proper checks).
 
-	if (pObj->IsRadioactive() && !IsImmuneTo(specialRadiation))
-		SetCondition(ECondition::radioactive);
+	if (pObj->IsRadioactive())
+		ApplyCondition(ECondition::radioactive, SApplyConditionOptions());
 
 	//	Tell our items that we docked with something
 
@@ -5928,6 +6136,71 @@ void CShip::OnReadFromStream (SLoadCtx &Ctx)
 	m_pClass->InitEffects(this, &m_Effects);
 	}
 
+EConditionResult CShip::OnRemoveCondition (ECondition iCondition, const SApplyConditionOptions &Options)
+
+//	OnRemoveCondition
+//
+//	Remove the condition.
+
+	{
+	switch (iCondition)
+		{
+		case ECondition::blind:
+			{
+			DWORD dwOptions = 0;
+			if (Options.bNoMessage)
+				dwOptions |= ablOptionNoMessage;
+
+			SetAbility(ablShortRangeScanner, ablRepair, -1, dwOptions);
+			return EConditionResult::ok;
+			}
+
+		case ECondition::disarmed:
+			{
+			m_iDisarmedTimer = 0;
+			return EConditionResult::ok;
+			}
+
+		case ECondition::LRSBlind:
+			{
+			DWORD dwOptions = 0;
+			if (Options.bNoMessage)
+				dwOptions |= ablOptionNoMessage;
+
+			SetAbility(ablLongRangeScanner, ablRepair, -1, dwOptions);
+			return EConditionResult::ok;
+			}
+
+		case ECondition::paralyzed:
+			{
+			m_iParalysisTimer = 0;
+			return EConditionResult::ok;
+			}
+
+		case ECondition::radioactive:
+			{
+			if (m_fRadioactive)
+				{
+				if (m_pIrradiatedBy)
+					{
+					delete m_pIrradiatedBy;
+					m_pIrradiatedBy = NULL;
+					}
+
+				m_iContaminationTimer = 0;
+				m_fRadioactive = false;
+				m_pController->OnShipStatus(IShipController::statusRadiationCleared);
+				return EConditionResult::ok;
+				}
+			else
+				return EConditionResult::alreadyRemoved;
+			}
+
+		default:
+			return EConditionResult::noEffect;
+		}
+	}
+
 void CShip::OnRemoved (SDestroyCtx &Ctx)
 
 //	OnRemoved
@@ -5950,97 +6223,6 @@ void CShip::OnRemoved (SDestroyCtx &Ctx)
 
 			pAttached->Remove(removedFromSystem, CDamageSource(this, removedFromSystem), true);
 			}
-		}
-	}
-
-void CShip::OnSetCondition (ECondition iCondition, int iTimer)
-
-//	OnSetCondition
-//
-//	Sets (or clears) the given condition.
-
-	{
-	switch (iCondition)
-		{
-		case ECondition::blind:
-			SetAbility(ablShortRangeScanner, ablDamage, iTimer, 0);
-			break;
-
-		case ECondition::disarmed:
-			if (m_iDisarmedTimer == 0)
-				{
-				if (iTimer < 0)
-					m_iDisarmedTimer = -1;
-				else
-					m_iDisarmedTimer = Min(iTimer, MAX_SHORT);
-				}
-			break;
-
-		case ECondition::LRSBlind:
-			SetAbility(ablLongRangeScanner, ablDamage, iTimer, 0);
-			break;
-
-		case ECondition::paralyzed:
-			if (m_iParalysisTimer == 0)
-				{
-				if (iTimer < 0)
-					m_iParalysisTimer = -1;
-				else
-					m_iParalysisTimer = Min(iTimer, MAX_SHORT);
-				}
-			break;
-
-		case ECondition::radioactive:
-			if (!m_fRadioactive)
-				{
-				if (!GetProperty(PROPERTY_CORE_NO_RADIATION_DEATH)->IsNil())
-					m_iContaminationTimer = -1;
-				else if (iTimer < 0)
-					m_iContaminationTimer = (IsPlayer() ? 180 : 60) * g_TicksPerSecond;
-				else
-					m_iContaminationTimer = Min(iTimer, MAX_SHORT);
-
-				m_fRadioactive = true;
-				m_pController->OnShipStatus(IShipController::statusRadiationWarning, m_iContaminationTimer);
-				}
-			break;
-		}
-	}
-
-void CShip::OnSetConditionDueToDamage (SDamageCtx &DamageCtx, ECondition iCondition)
-
-//	OnSetConditionDueToDamage
-//
-//	Damage has imparted the given condition.
-
-	{
-	switch (iCondition)
-		{
-		case ECondition::blind:
-			SetCondition(iCondition, DamageCtx.GetBlindTime());
-			break;
-
-		case ECondition::paralyzed:
-			SetCondition(iCondition, DamageCtx.GetParalyzedTime());
-			break;
-
-		case ECondition::radioactive:
-			if (!IsRadioactive())
-				{
-				//	Remember the object that hit us so that we can report
-				//	it back if/when we are destroyed.
-
-				if (m_pIrradiatedBy == NULL)
-					m_pIrradiatedBy = new CDamageSource;
-
-				*m_pIrradiatedBy = DamageCtx.Attacker;
-				m_pIrradiatedBy->SetCause(killedByRadiationPoisoning);
-
-				//	Radioactive
-
-				SetCondition(iCondition);
-				}
-			break;
 		}
 	}
 
@@ -6153,7 +6335,7 @@ void CShip::OnWriteToStream (IWriteStream *pStream)
 
 	dwSave = m_pClass->GetUNID();
 	pStream->Write(dwSave);
-	GetSystem()->WriteSovereignRefToStream(m_pSovereign, pStream);
+	CSystem::WriteSovereignRefToStream(m_pSovereign, pStream);
 
 	m_sName.WriteToStream(pStream);
 	pStream->Write(m_dwNameFlags);
@@ -6274,7 +6456,7 @@ void CShip::OnWriteToStream (IWriteStream *pStream)
 	//	Irradiated by
 
 	if (m_pIrradiatedBy)
-		m_pIrradiatedBy->WriteToStream(GetSystem(), pStream);
+		m_pIrradiatedBy->WriteToStream(pStream);
 
 	//	Controller
 
@@ -6570,7 +6752,12 @@ void CShip::ProgramDamage (CSpaceObject *pHacker, const ProgramDesc &Program)
 
 			int iSuccess = 50 + 10 * (Program.iAILevel - iTargetLevel);
 			if (mathRandom(1, 100) <= iSuccess)
-				SetCondition(ECondition::disarmed, Program.iAILevel * mathRandom(30, 60));
+				{
+				SApplyConditionOptions Options;
+				Options.iTimer = Program.iAILevel * mathRandom(30, 60);
+
+				ApplyCondition(ECondition::disarmed, Options);
+				}
 
 			break;
 			}
@@ -7310,19 +7497,18 @@ void CShip::SetOrdersFromGenerator (SShipGeneratorCtx &Ctx)
 
 	//	If the ship still has no orders, then set them based on orders= attribute
 
-	if (GetController()->GetCurrentOrderEx() == IShipController::orderNone)
+	if (GetCurrentOrderDesc().GetOrder() == IShipController::orderNone)
 		{
-		CSpaceObject *pOrderTarget = NULL;
 		bool bDockWithBase = false;
 		bool bIsSubordinate = false;
 		bool bNeedsDockOrder = false;
-		switch (Ctx.iOrder)
+		switch (Ctx.OrderDesc.GetOrder())
 			{
 			case IShipController::orderNone:
 				//	If a ship has no orders and it has a base, then dock with the base
 				if (Ctx.pBase 
 						&& Ctx.pBase->CanObjRequestDock(this)
-						&& GetController()->GetCurrentOrderEx() == IShipController::orderNone)
+						&& GetCurrentOrderDesc().GetOrder() == IShipController::orderNone)
 					{
 					bDockWithBase = true;
 					bNeedsDockOrder = true;
@@ -7330,25 +7516,27 @@ void CShip::SetOrdersFromGenerator (SShipGeneratorCtx &Ctx)
 				break;
 
 			case IShipController::orderDock:
-				pOrderTarget = ((Ctx.pBase && Ctx.pBase->CanObjRequestDock(this)) ? Ctx.pBase : NULL);
+				Ctx.OrderDesc.SetTarget((Ctx.pBase && Ctx.pBase->CanObjRequestDock(this)) ? Ctx.pBase : NULL);
 				bDockWithBase = true;
 				break;
 
 			case IShipController::orderGuard:
-				pOrderTarget = Ctx.pBase;
+				Ctx.OrderDesc.SetTarget(Ctx.pBase);
 				bIsSubordinate = true;
 				bDockWithBase = true;
 				break;
 
 			case IShipController::orderMine:
 			case IShipController::orderPatrol:
+			case IShipController::orderOrbitExact:
+			case IShipController::orderOrbitPatrol:
 			case IShipController::orderSentry:
-				pOrderTarget = Ctx.pBase;
+				Ctx.OrderDesc.SetTarget(Ctx.pBase);
 				bIsSubordinate = true;
 				break;
 
 			case IShipController::orderGateOnThreat:
-				pOrderTarget = Ctx.pBase;
+				Ctx.OrderDesc.SetTarget(Ctx.pBase);
 				bNeedsDockOrder = true;
 				bDockWithBase = true;
 				break;
@@ -7357,22 +7545,21 @@ void CShip::SetOrdersFromGenerator (SShipGeneratorCtx &Ctx)
 				//	For backwards compatibility...
 				if (Ctx.pBase)
 					{
-					Ctx.iOrder = IShipController::orderGateOnThreat;
-					pOrderTarget = Ctx.pBase;
+					Ctx.OrderDesc = COrderDesc(IShipController::orderGateOnThreat, Ctx.pBase);
 					bNeedsDockOrder = true;
 					bDockWithBase = true;
 					}
 				else
 					{
 					//	OK if this is NULL...we just go to closest gate
-					pOrderTarget = Ctx.pTarget;
+					Ctx.OrderDesc.SetTarget(Ctx.pTarget);
 					}
 
 				break;
 
 			case IShipController::orderEscort:
 			case IShipController::orderFollow:
-				pOrderTarget = Ctx.pBase;
+				Ctx.OrderDesc.SetTarget(Ctx.pBase);
 				break;
 
 			case IShipController::orderDestroyTarget:
@@ -7380,7 +7567,7 @@ void CShip::SetOrdersFromGenerator (SShipGeneratorCtx &Ctx)
 			case IShipController::orderDestroyTargetHold:
 			case IShipController::orderAttackStation:
 			case IShipController::orderBombard:
-				pOrderTarget = Ctx.pTarget;
+				Ctx.OrderDesc.SetTarget(Ctx.pTarget);
 				break;
 			}
 
@@ -7402,32 +7589,32 @@ void CShip::SetOrdersFromGenerator (SShipGeneratorCtx &Ctx)
 		else if (bNeedsDockOrder)
 			{
 			if (Ctx.pBase)
-				GetController()->AddOrder(IShipController::orderDock, Ctx.pBase, IShipController::SData());
+				GetController()->AddOrder(COrderDesc(IShipController::orderDock, Ctx.pBase));
 			else
 				kernelDebugLogPattern("Unable to add ship order %d to ship class %x; no target specified", IShipController::orderDock, GetType()->GetUNID());
 			}
 
 		//	Add main order
 
-		if (Ctx.iOrder != IShipController::orderNone)
+		if (Ctx.OrderDesc.GetOrder() != IShipController::orderNone)
 			{
 			//	If this order requires a target, make sure we have one
 
 			bool bTargetRequired;
-			IShipController::OrderHasTarget(Ctx.iOrder, &bTargetRequired);
-			if (bTargetRequired && pOrderTarget == NULL)
-				kernelDebugLogPattern("Unable to add ship order %d to ship class %x; no target specified", Ctx.iOrder, GetType()->GetUNID());
+			IShipController::OrderHasTarget(Ctx.OrderDesc.GetOrder(), &bTargetRequired);
+			if (bTargetRequired && Ctx.OrderDesc.GetTarget() == NULL)
+				kernelDebugLogPattern("Unable to add ship order %d to ship class %x; no target specified", Ctx.OrderDesc.GetOrder(), GetType()->GetUNID());
 
 			//	Add the order
 
 			else
-				GetController()->AddOrder(Ctx.iOrder, pOrderTarget, Ctx.OrderData);
+				GetController()->AddOrder(Ctx.OrderDesc);
 			}
 
 		//	If necessary, append an order to attack nearest enemy ships
 
 		if (Ctx.dwCreateFlags & SShipCreateCtx::ATTACK_NEAREST_ENEMY)
-			GetController()->AddOrder(IShipController::orderAttackNearestEnemy, NULL, IShipController::SData());
+			GetController()->AddOrder(COrderDesc(IShipController::orderAttackNearestEnemy));
 
 		//	If this ship is ordered to guard then it counts as a subordinate
 
@@ -7562,10 +7749,14 @@ bool CShip::SetProperty (const CString &sName, ICCItem *pValue, CString *retsErr
 		}
 	else if (strEquals(sName, PROPERTY_RADIOACTIVE))
 		{
+		SApplyConditionOptions Options;
+		Options.bNoImmunityCheck = true;
+
 		if (pValue->IsNil())
-			ClearCondition(ECondition::radioactive);
+			RemoveCondition(ECondition::radioactive, Options);
 		else
-			SetCondition(ECondition::radioactive);
+			ApplyCondition(ECondition::radioactive, Options);
+
 		return true;
 		}
 	else if (strEquals(sName, PROPERTY_ROTATION))

@@ -117,14 +117,13 @@ bool CSpaceObjectCriteria::MatchesOrder (const CSpaceObject *pSource, const CSpa
 
 		default:
 			{
-			IShipController::OrderTypes iOrder = IShipController::orderNone;
-			CSpaceObject *pTarget = NULL;
+			const COrderDesc *pOrderDesc = NULL;
 
 			CShip *pShip = const_cast<CSpaceObject *>(&Obj)->AsShip();
-			if (pShip && pShip->GetController())
-				iOrder = pShip->GetController()->GetCurrentOrderEx(&pTarget);
+			if (pShip)
+				pOrderDesc = &pShip->GetCurrentOrderDesc();
 
-			return (m_iOrder == iOrder && pSource == pTarget);
+			return (pOrderDesc && m_iOrder == pOrderDesc->GetOrder() && pSource == pOrderDesc->GetTarget());
 			}
 		}
 	}
@@ -221,6 +220,7 @@ void CSpaceObjectCriteria::Parse (CSpaceObject *pSource, const CString &sCriteri
 //		s			Include ships
 //		t			Include stations (including planets)
 //		v			Include intangible objects
+//		x			Include missiles where targetable='true'
 //		z			Include the player
 //
 //		A			Active objects only (i.e., objects that can attack)
@@ -485,10 +485,15 @@ void CSpaceObjectCriteria::ParseSubExpression (const char *pPos)
 				m_bIncludeVirtual = true;
 				break;
 
+			case 'x':
+				m_dwCategories |= CSpaceObject::catMissile;
+				m_bTargetableMissilesOnly = true;
+				break;
+			
 			case 'X':
 				m_bTargetIsSource = true;
 				break;
-
+			
 			case 'Y':
 				m_bAngryObjectsOnly = true;
 				break;

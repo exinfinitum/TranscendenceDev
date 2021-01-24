@@ -209,10 +209,10 @@ void CAIBehaviorCtx::CalcBestWeapon (CShip *pShip, CSpaceObject *pTarget, Metric
 		//	See if this weapon shoots missiles.
 
 		DWORD dwTargetTypes = DeviceItem.GetTargetTypes();
-		if (dwTargetTypes & CTargetList::typeMissile)
+		if (dwTargetTypes & CTargetList::SELECT_MISSILE)
 			m_fShootAllMissiles = true;
 
-		else if (dwTargetTypes & CTargetList::typeTargetableMissile)
+		else if (dwTargetTypes & CTargetList::SELECT_TARGETABLE_MISSILE)
 			m_fShootTargetableMissiles = true;
 
 		//	If this is a secondary weapon, remember that we have some and 
@@ -471,6 +471,7 @@ bool CAIBehaviorCtx::CalcIsBetterTarget (CShip *pShip, CSpaceObject *pCurTarget,
 	//	The new target must be a real target
 
 	if (pNewTarget == NULL 
+			|| pCurTarget == pNewTarget
 			|| pNewTarget->IsDestroyed()
 			|| !pNewTarget->CanAttack()
 			|| !pShip->IsEnemy(pNewTarget))
@@ -516,6 +517,69 @@ bool CAIBehaviorCtx::CalcIsBetterTarget (CShip *pShip, CSpaceObject *pCurTarget,
 				return false;
 			}
 		}
+	}
+
+bool CAIBehaviorCtx::CalcIsDeterNeeded (CShip &Ship, CSpaceObject &Target) const
+
+//	CalcIsDeterNeeded
+//
+//	Returns TRUE if we should continue to deter this target.
+
+	{
+	//	Must be a valid target
+
+	if (Target.IsDestroyed()
+			|| !Target.CanAttack()
+			|| IsNonCombatant())
+		return false;
+
+	//	If the target is beyond our weapon range, then stop.
+
+	Metric rDist2 = (Target.GetPos() - Ship.GetPos()).Length2();
+	if (rDist2 > GetMaxWeaponRange2())
+		return false;
+
+	//	If the target is no longer visible, then stop.
+
+	CPerceptionCalc Perception(Ship.GetPerception());
+	if (!Perception.CanBeTargeted(&Target, rDist2))
+		return false;
+
+	//	If we haven't been attacked in a while, then we can stop deterring.
+
+	if (!IsBeingAttacked(DETER_ATTACK_TIME_THRESHOLD))
+		return false;
+
+	//	Otherwise, continue deterring.
+
+	return true;
+	}
+
+bool CAIBehaviorCtx::CalcIsPossibleTarget (CShip &Ship, CSpaceObject &Target) const
+
+//	CalcIsPossibleTarget
+//
+//	Returns TRUE if we can target and destroy the object.
+
+	{
+	//	Must be a valid target
+
+	if (Target.IsDestroyed()
+			|| !Target.CanAttack()
+			|| IsNonCombatant())
+		return false;
+
+	//	If the target is no longer visible, then stop.
+
+	Metric rDist2 = (Target.GetPos() - Ship.GetPos()).Length2();
+
+	CPerceptionCalc Perception(Ship.GetPerception());
+	if (!Perception.CanBeTargeted(&Target, rDist2))
+		return false;
+
+	//	Otherwise, valid target
+
+	return true;
 	}
 
 bool CAIBehaviorCtx::CalcNavPath (CShip *pShip, const CVector &vTo)
@@ -882,6 +946,25 @@ void CAIBehaviorCtx::ClearNavPath (void)
 		}
 	}
 
+void CAIBehaviorCtx::CommunicateWithBaseAttackDeter (CShip &Ship, CSpaceObject &AttackerObj, CSpaceObject *pOrderGiver)
+
+//	CommunicateWithBaseAttackDeter
+//
+//	Sends a message to our base that we were attacked.
+
+	{
+	//	If we were attacked twice (excluding multi-shot weapons)
+	//	then we tell our station about this
+
+	CSpaceObject *pBase;
+	CSpaceObject *pTarget;
+	if (IsSecondAttack()
+			&& (pBase = Ship.GetBase())
+			&& pBase->IsAngryAt(&AttackerObj)
+			&& (pTarget = pBase->CalcTargetToAttack(&AttackerObj, pOrderGiver)))
+		Ship.Communicate(pBase, msgAttackDeter, pTarget);
+	}
+
 void CAIBehaviorCtx::CommunicateWithEscorts (CShip *pShip, MessageTypes iMessage, CSpaceObject *pParam1, DWORD dwParam2)
 
 //	CommunicateWithEscorts
@@ -1130,7 +1213,7 @@ void CAIBehaviorCtx::Update (CShip *pShip)
 		pShip->Highlight();
 	}
 
-void CAIBehaviorCtx::WriteToStream (CSystem *pSystem, IWriteStream *pStream)
+void CAIBehaviorCtx::WriteToStream (IWriteStream *pStream)
 
 //	WriteToStream
 //
@@ -1156,7 +1239,7 @@ void CAIBehaviorCtx::WriteToStream (CSystem *pSystem, IWriteStream *pStream)
 	//	CAISettings
 
 	m_AISettings.WriteToStream(pStream);
-	m_ShipControls.WriteToStream(pSystem, pStream);
+	m_ShipControls.WriteToStream(pStream);
 
 	//	State
 
@@ -1198,7 +1281,7 @@ void CAIBehaviorCtx::WriteToStream (CSystem *pSystem, IWriteStream *pStream)
 		dwSave = m_iNavPathPos;
 		pStream->Write(dwSave);
 
-		m_pNavPath->OnWriteToStream(pSystem, pStream);
+		m_pNavPath->OnWriteToStream(pStream);
 		}
 
 	//	Flags

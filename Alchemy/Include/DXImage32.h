@@ -223,6 +223,7 @@ class CG32bitImage : public TImagePlane<CG32bitImage>
 		void CreateOpenGLTexture (void) { if (m_bOpenGLInitialized) { m_pOpenGLTexture = std::make_unique<OpenGLTextureRGBA32>(GetPixelArray(), GetWidth(), GetHeight(), GetAlphaType() == EAlphaTypes::alpha8); } }
 
 	private:
+		bool AllocRGBA (int iSize);
 		static int CalcBufferSize (int cxWidth, int cyHeight) { return (cxWidth * cyHeight); }
 		void Copy (const CG32bitImage &Src);
 		void InitBMI (BITMAPINFO **retpbi) const;

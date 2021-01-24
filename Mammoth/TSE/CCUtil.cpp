@@ -445,7 +445,7 @@ CStation *CreateStationObjFromItem (CCodeChain &CC, ICCItem *pArg)
 	return (pObj ? pObj->AsStation() : NULL);
 	}
 
-CVector CreateVectorFromList (CCodeChain &CC, ICCItem *pList)
+CVector CreateVectorFromList (CCodeChain &CC, const ICCItem *pList)
 
 //	CreateVectorFromList
 //
@@ -557,18 +557,29 @@ CDamageSource GetDamageSourceArg (CCodeChain &CC, ICCItem *pArg)
 		CSpaceObject *pSecondarySource = CreateObjFromItem(pArg->GetElement(CONSTLIT("secondaryObj")));
 
 		CString sSourceName;
-		ICCItem *pValue = pArg->GetElement(CONSTLIT("sourceName"));
-		if (pValue)
-			sSourceName = pValue->GetStringValue();
-
 		DWORD dwSourceFlags = 0;
-		pValue = pArg->GetElement(CONSTLIT("sourceNameFlags"));
-		if (pValue)
-			dwSourceFlags = pValue->GetIntegerValue();
+
+		if (const ICCItem *pNamePattern = pArg->GetElement((CONSTLIT("namePattern"))))
+			{
+			if (const ICCItem *pPattern = pNamePattern->GetElement(CONSTLIT("pattern")))
+				sSourceName = pPattern->GetStringValue();
+
+			if (const ICCItem *pFlags = pNamePattern->GetElement(CONSTLIT("flags")))
+				dwSourceFlags = pFlags->GetIntegerValue();
+			}
+		else
+			{
+			const ICCItem *pValue = pArg->GetElement(CONSTLIT("sourceName"));
+			if (pValue)
+				sSourceName = pValue->GetStringValue();
+
+			pValue = pArg->GetElement(CONSTLIT("sourceNameFlags"));
+			if (pValue)
+				dwSourceFlags = pValue->GetIntegerValue();
+			}
 
 		DestructionTypes iCause = killedByDamage;
-		pValue = pArg->GetElement(CONSTLIT("cause"));
-		if (pValue)
+		if (const ICCItem *pValue = pArg->GetElement(CONSTLIT("cause")))
 			iCause = ::GetDestructionCause(pValue->GetStringValue());
 
 		return CDamageSource(pSource, iCause, pSecondarySource, sSourceName, dwSourceFlags);
@@ -763,7 +774,8 @@ ALERROR GetPosOrObject (CEvalContext *pEvalCtx,
 						ICCItem *pArg, 
 						CVector *retvPos, 
 						CSpaceObject **retpObj,
-						int *retiLocID)
+						int *retiLocID, 
+						CStationType *pStationToPlace)
 
 //	GetPosOrObject
 //
@@ -816,7 +828,7 @@ ALERROR GetPosOrObject (CEvalContext *pEvalCtx,
 
 			//	Get a random location
 
-			if (!pSystem->FindRandomLocation(Criteria, 0, COrbit(), NULL, &iLocID))
+			if (!pSystem->FindRandomLocation(Criteria, 0, COrbit(), pStationToPlace, &iLocID))
 				return ERR_NOTFOUND;
 
 			//	Return the position
@@ -891,11 +903,7 @@ void DefineGlobalSpaceObject (CCodeChain &CC, const CString &sVar, const CSpaceO
 	if (pObj)
 		CC.DefineGlobalInteger(sVar, (int)pObj);
 	else
-		{
-		ICCItem *pValue = CC.CreateNil();
-		CC.DefineGlobal(sVar, pValue);
-		pValue->Discard();
-		}
+		CC.DefineGlobal(sVar, CC.GetNil());
 	}
 
 void DefineGlobalVector (CCodeChain &CC, const CString &sVar, const CVector &vVector)
@@ -915,7 +923,7 @@ void DefineGlobalWeaponType (CCodeChain &CC, const CString &sVar, CItemType *pWe
 	if (pWeaponType)
 		CC.DefineGlobalInteger(sVar, pWeaponType->GetUNID());
 	else
-		CC.DefineGlobal(sVar, CC.CreateNil());
+		CC.DefineGlobal(sVar, CC.GetNil());
 	}
 
 ICCItem *StdErrorNoSystem (CCodeChain &CC)

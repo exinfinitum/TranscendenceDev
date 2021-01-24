@@ -29,6 +29,7 @@
 #define PROPERTY_CURRENCY_NAME					CONSTLIT("currencyName")
 #define PROPERTY_CYBER_DEFENSE_LEVEL			CONSTLIT("cyberDefenseLevel")
 #define PROPERTY_DAMAGE_DESC					CONSTLIT("damageDesc")
+#define PROPERTY_DEBUG							CONSTLIT("debug")
 #define PROPERTY_DESTINY						CONSTLIT("destiny")
 #define PROPERTY_DOCKING_PORTS					CONSTLIT("dockingPorts")
 #define PROPERTY_EVENT_SUBSCRIBERS				CONSTLIT("eventSubscribers")
@@ -63,7 +64,7 @@
 #define SCALE_SHIP								CONSTLIT("ship")
 #define SCALE_FLOTSAM							CONSTLIT("flotsam")
 
-TPropertyHandler<CSpaceObject> CSpaceObject::m_BasePropertyTable = std::array<TPropertyHandler<CSpaceObject>::SPropertyDef, 5> {{
+TPropertyHandler<CSpaceObject> CSpaceObject::m_BasePropertyTable = std::array<TPropertyHandler<CSpaceObject>::SPropertyDef, 8> {{
 		{
 		"ascended",		"True|Nil",
 		[](const CSpaceObject &Obj, const CString &sProperty) { return ICCItemPtr(Obj.IsAscended()); },
@@ -89,8 +90,47 @@ TPropertyHandler<CSpaceObject> CSpaceObject::m_BasePropertyTable = std::array<TP
 		},
 
 		{
+		"data",				"Map of object data (including some properties)",
+		[](const CSpaceObject &Obj, const CString &sProperty) { return Obj.m_Data.GetDataAsItem(CONSTLIT("*")); },
+		[](CSpaceObject &Obj, const CString &sProperty, const ICCItem &Value, CString *retsError) { Obj.m_Data.SetData(CONSTLIT("*"), &Value); return true; },
+		},
+		
+		{
+		"debug",			"True|Nil",
+		[](const CSpaceObject &Obj, const CString &sProperty) { return ICCItemPtr(Obj.InDebugMode()); },
+		[](CSpaceObject &Obj, const CString &sProperty, const ICCItem &Value, CString *retsError) { if (Obj.GetUniverse().InDebugMode()) Obj.m_fDebugMode = !Value.IsNil(); return true; },
+		},
+		
+		{
 		"escortingPlayer",	"True|Nil",
 		[](const CSpaceObject &Obj, const CString &sProperty) { return ICCItemPtr(Obj.IsPlayerEscort()); },
+		NULL,
+		},
+		
+		{
+		"usableItems",	"List of items that can be used",
+		[](const CSpaceObject &Obj, const CString &sProperty)
+			{
+			SUsableItemOptions Options;
+			CMenuData List = Obj.GetUsableItems(Options);
+			if (List.GetCount() == 0)
+				return ICCItemPtr::Nil();
+			else
+				{
+				const CItemList &ItemList = Obj.GetItemList();
+
+				ICCItemPtr pResult(ICCItem::List);
+				for (int i = 0; i < List.GetCount(); i++)
+					{
+					int iIndex = List.GetItemData(i);
+
+					ICCItemPtr pItem(CreateListFromItem(ItemList.GetItem(iIndex)));
+					pResult->Append(pItem);
+					}
+
+				return pResult;
+				}
+			},
 		NULL,
 		}
 		
@@ -103,41 +143,52 @@ bool CSpaceObject::FindCustomProperty (const CString &sProperty, ICCItemPtr &pRe
 //	Finds and evaluates a custom property.
 
 	{
-	if (CDesignType *pType = GetType())
-		{
-		EPropertyType iType;
-		if (!pType->FindCustomProperty(sProperty, pResult, &iType))
-			return false;
+	CDesignType *pType;
+	EPropertyType iType = EPropertyType::propNone;
 
-		//	If the property is an object property, then we need to look in 
-		//	object data.
+	//	First look for property in override
 
-		if (iType == EPropertyType::propVariant 
-				|| iType == EPropertyType::propData
-				|| iType == EPropertyType::propObjData)
-			{
-			pResult = GetData(sProperty);
-			return true;
-			}
+	if (m_pOverride
+			&& m_pOverride->FindCustomProperty(sProperty, pResult, &iType))
+		{ }
 
-		//	If this is a dynamic property, we need to evaluate.
+	//	Otherwise, look in object type
 
-		else if (iType == EPropertyType::propDynamicData)
-			{
-			CCodeChainCtx CCX(GetUniverse());
-			CCX.SaveAndDefineSourceVar(this);
+	else if ((pType = GetType())
+			&& pType->FindCustomProperty(sProperty, pResult, &iType))
+		{ }
 
-			pResult = CCX.RunCode(pResult);
-			return true;
-			}
+	//	Otherwise, not found
 
-		//	Otherwise we have a valid property.
-
-		else
-			return true;
-		}
 	else
 		return false;
+
+	//	If the property is an object property, then we need to look in 
+	//	object data.
+
+	if (iType == EPropertyType::propVariant 
+			|| iType == EPropertyType::propData
+			|| iType == EPropertyType::propObjData)
+		{
+		pResult = GetData(sProperty);
+		return true;
+		}
+
+	//	If this is a dynamic property, we need to evaluate.
+
+	else if (iType == EPropertyType::propDynamicData)
+		{
+		CCodeChainCtx CCX(GetUniverse());
+		CCX.SaveAndDefineSourceVar(this);
+
+		pResult = CCX.RunCode(pResult);
+		return true;
+		}
+
+	//	Otherwise we have a valid property.
+
+	else
+		return true;
 	}
 
 ICCItemPtr CSpaceObject::GetProperty (CCodeChainCtx &CCX, const CString &sProperty) const
@@ -552,11 +603,19 @@ bool CSpaceObject::SetProperty (const CString &sName, ICCItem *pValue, CString *
 
 	//	See if this is a custom property, we set data
 
-	else if (CDesignType *pType = GetType())
+	else
 		{
+		EPropertyType iType = EPropertyType::propNone;
 		ICCItemPtr pDummy;
-		EPropertyType iType;
-		if (!pType->FindCustomProperty(sName, pDummy, &iType))
+		CDesignType *pType;
+
+		if (m_pOverride
+				&& m_pOverride->FindCustomProperty(sName, pDummy, &iType))
+			{ }
+		else if ((pType = GetType())
+				&& pType->FindCustomProperty(sName, pDummy, &iType))
+			{ }
+		else
 			return false;
 
 		switch (iType)
@@ -574,7 +633,4 @@ bool CSpaceObject::SetProperty (const CString &sName, ICCItem *pValue, CString *
 				return false;
 			}
 		}
-
-	else
-		return false;
 	}

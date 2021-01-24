@@ -164,6 +164,7 @@
 #define PROPERTY_CHALLENGE_RATING				CONSTLIT("challengeRating")
 #define PROPERTY_CURRENCY						CONSTLIT("currency")
 #define PROPERTY_CURRENCY_NAME					CONSTLIT("currencyName")
+#define PROPERTY_DEFENDER_COMBAT_STRENGTH_TARGET	CONSTLIT("defenderCombatStrengthTarget")
 #define PROPERTY_ENCOUNTERED_BY_NODE			CONSTLIT("encounteredByNode")
 #define PROPERTY_ENCOUNTERED_TOTAL				CONSTLIT("encounteredTotal")
 #define PROPERTY_HULL_TYPE						CONSTLIT("hullType")
@@ -187,6 +188,7 @@
 
 #define MAX_ATTACK_DISTANCE						(g_KlicksPerPixel * 512)
 
+#define SPECIAL_IS_ENCOUNTERED_IN				CONSTLIT("isEncounteredIn:")
 #define SPECIAL_IS_ENEMY_OF						CONSTLIT("isEnemyOf:")
 #define SPECIAL_IS_SHIP_ENCOUNTER				CONSTLIT("isShipEncounter:")
 #define SPECIAL_IS_STATION_ENCOUNTER			CONSTLIT("isStationEncounter:")
@@ -364,6 +366,14 @@ Metric CStationType::CalcBalanceHitsAdj (int iLevel) const
 	static constexpr Metric MAX_HITS_ADJ = 2.0;
 
 	return Min(MAX_HITS_ADJ, sqrt((Metric)CalcHitsToDestroy(iLevel) / BALANCE_STD_HITS_TO_DESTROY));
+	}
+
+Metric CStationType::GetStdChallenge (int iLevel)
+	{
+	if (iLevel < 1 || iLevel > MAX_SYSTEM_LEVEL)
+		return 0.0;
+
+	return STD_STATION_DATA[iLevel].rChallenge;
 	}
 
 int CStationType::CalcChallengeRating (const int iLevel, const Metric rBalance)
@@ -783,6 +793,31 @@ Metric CStationType::CalcWeaponStrength (int iLevel) const
 	return rTotal;
 	}
 
+bool CStationType::CanAttack () const
+
+//	CanAttack
+//
+//	Returns TRUE if the station type can normally attack.
+
+	{
+	//	Sometimes we override...
+
+	if (m_fCanAttack)
+		return true;
+	else if (m_fCannotAttack)
+		return false;
+	
+	//	If we have any installed weapon, we can attack
+
+	for (int i = 0; i < m_AverageDevices.GetCount(); i++)
+		if (m_AverageDevices.GetDeviceItem(i).IsWeapon())
+			return true;
+
+	//	If we get this far, then we cannot attack.
+
+	return false;
+	}
+
 TSharedPtr<CG32bitImage> CStationType::CreateFullImage (SGetImageCtx &ImageCtx, const CCompositeImageSelector &Selector, const CCompositeImageModifiers &Modifiers, RECT &retrcImage, int &retxCenter, int &retyCenter) const
 
 //	CreateFullImage
@@ -790,6 +825,8 @@ TSharedPtr<CG32bitImage> CStationType::CreateFullImage (SGetImageCtx &ImageCtx, 
 //	Returns an image of the station, including any satellite segments.
 
 	{
+	DEBUG_TRY
+
 	//	Get the main image
 
 	int iVariant;
@@ -883,6 +920,8 @@ TSharedPtr<CG32bitImage> CStationType::CreateFullImage (SGetImageCtx &ImageCtx, 
 
 		return pCompositeImage;
 		}
+
+	DEBUG_CATCH
 	}
 
 bool CStationType::FindDataField (const CString &sField, CString *retsValue) const
@@ -1550,13 +1589,23 @@ ALERROR CStationType::OnCreateFromXML (SDesignLoadCtx &Ctx, CXMLElement *pDesc)
 	m_fNoMapIcon = pDesc->GetAttributeBool(NO_MAP_ICON_ATTRIB);
 	m_fNoMapDetails = pDesc->GetAttributeBool(NO_MAP_DETAILS_ATTRIB);
 	m_fTimeStopImmune = pDesc->GetAttributeBool(TIME_STOP_IMMUNE_ATTRIB);
-	m_fCanAttack = pDesc->GetAttributeBool(CAN_ATTACK_ATTRIB);
 	m_fReverseArticle = pDesc->GetAttributeBool(REVERSE_ARTICLE_ATTRIB);
 	m_fNoBlacklist = (pDesc->GetAttributeBool(NO_BLACKLIST_ATTRIB) || pDesc->GetAttributeBool(IGNORE_FRIENDLY_FIRE_ATTRIB));
 	m_fAnonymous = pDesc->GetAttributeBool(ANONYMOUS_ATTRIB);
 	m_iAlertWhenAttacked = pDesc->GetAttributeInteger(ALERT_WHEN_ATTACKED_ATTRIB);
 	m_iAlertWhenDestroyed = pDesc->GetAttributeInteger(ALERT_WHEN_DESTROYED_ATTRIB);
 	m_iStealth = pDesc->GetAttributeIntegerBounded(STEALTH_ATTRIB, CSpaceObject::stealthMin, CSpaceObject::stealthMax, CSpaceObject::stealthNormal);
+
+	//	Can attack?
+
+	CString sValue;
+	if (pDesc->FindAttribute(CAN_ATTACK_ATTRIB, &sValue))
+		{
+		if (CXMLElement::IsBoolTrueValue(sValue))
+			m_fCanAttack = true;
+		else
+			m_fCannotAttack = true;
+		}
 
 	//	Suppress or force map label
 	//
@@ -2008,6 +2057,14 @@ ICCItemPtr CStationType::OnGetProperty (CCodeChainCtx &Ctx, const CString &sProp
 			return ICCItemPtr::Nil();
 		}
 
+	else if (strEquals(sProperty, PROPERTY_DEFENDER_COMBAT_STRENGTH_TARGET))
+		{
+		Metric rStrength = m_DefenderCount.GetChallengeStrength(GetLevel());
+		if (rStrength)
+			return ICCItemPtr(rStrength);
+		else
+			return ICCItemPtr::Nil();
+		}
 	else if (strEquals(sProperty, PROPERTY_ENCOUNTERED_BY_NODE))
 		{
 		ICCItemPtr pResult(ICCItem::SymbolTable);
@@ -2138,6 +2195,22 @@ bool CStationType::OnHasSpecialAttribute (const CString &sAttrib) const
 //	Returns TRUE if we have the special attribute
 
 	{
+	if (strStartsWith(sAttrib, SPECIAL_IS_ENCOUNTERED_IN))
+		{
+		CString sValue = strSubString(sAttrib, SPECIAL_IS_ENCOUNTERED_IN.GetLength());
+		if (int iLevel = strToInt(sValue, 0))
+			{
+			return m_EncounterRecord.IsEncounteredIn(iLevel, m_EncounterDesc);
+			}
+		else
+			{
+			const CTopologyNode *pNode = GetUniverse().GetTopology().FindTopologyNode(sValue);
+			if (pNode == NULL)
+				return false;
+
+			return m_EncounterRecord.IsEncounteredIn(*pNode, m_EncounterDesc);
+			}
+		}
 	if (strStartsWith(sAttrib, SPECIAL_IS_ENEMY_OF))
 		{
 		CString sValue = strSubString(sAttrib, SPECIAL_IS_ENEMY_OF.GetLength());

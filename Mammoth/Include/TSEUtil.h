@@ -390,7 +390,7 @@ class CIntegerRangeCriteria
 class DiceRange
 	{
 	public:
-		DiceRange (void) : m_iFaces(0), m_iCount(0), m_iBonus(0) { }
+		DiceRange (void) { }
 		DiceRange (int iFaces, int iCount, int iBonus);
 
 		int GetAveValue (void) const { return (m_iCount * (m_iFaces + 1) / 2) + m_iBonus; }
@@ -415,9 +415,9 @@ class DiceRange
 		static bool LoadIfValid (const CString &sAttrib, DiceRange *retValue);
 
 	private:
-		int m_iFaces;
-		int m_iCount;
-		int m_iBonus;
+		int m_iFaces = 0;
+		int m_iCount = 0;
+		int m_iBonus = 0;
 	};
 
 class CCurrencyBlock
@@ -529,7 +529,7 @@ class CDamageSource
 		CDamageSource (void) { }
 		CDamageSource (CSpaceObject *pSource, DestructionTypes iCause = killedByDamage, CSpaceObject *pSecondarySource = NULL, const CString &sSourceName = NULL_STR, DWORD dwSourceFlags = 0);
 
-		bool CanHit (CSpaceObject *pTarget) const;
+		bool CanHit (const CSpaceObject &Target) const;
 		bool CanHitFriends (void) const;
 		DestructionTypes GetCause (void) const { return m_iCause; }
 		CString GetDamageCauseNounPhrase (DWORD dwFlags);
@@ -550,7 +550,7 @@ class CDamageSource
 		bool IsEmpty (void) const { return (GetObj() == NULL); }
 		bool IsEnemy (CDamageSource &Src) const;
 		bool IsEqual (const CDamageSource &Src) const;
-		bool IsEqual (CSpaceObject *pSrc) const;
+		bool IsEqual (const CSpaceObject &Src) const;
 		bool IsFriend (CSovereign *pSovereign) const;
 		bool IsPlayer (void) const { return ((m_dwFlags & FLAG_IS_PLAYER) ? true : false); }
 		void OnLeaveSystem (void);
@@ -559,7 +559,7 @@ class CDamageSource
 		void SetAutomatedWeapon (bool bValue = true) { if (bValue) m_dwFlags |= FLAG_IS_AUTOMATED_WEAPON; else m_dwFlags &= FLAG_IS_AUTOMATED_WEAPON; }
 		void SetCause (DestructionTypes iCause) { m_iCause = iCause; }
 		void SetObj (CSpaceObject *pSource);
-		void WriteToStream (CSystem *pSystem, IWriteStream *pStream);
+		void WriteToStream (IWriteStream *pStream);
 
 		static const CDamageSource &Null (void) { return m_Null; }
 		
@@ -603,8 +603,10 @@ class CDamageAdjDesc
 		ALERROR Bind (SDesignLoadCtx &Ctx, const CDamageAdjDesc *pDefault);
 		int GetAbsorbAdj (DamageTypes iDamageType) const;
 		int GetAdj (DamageTypes iDamageType) const { return (iDamageType == damageGeneric ? 100 : m_iDamageAdj[iDamageType]); }
+		int GetAdj (DamageTypes iDamageType, const CItemEnhancementStack *pEnhancements) const;
 		void GetAdjAndDefault (DamageTypes iDamageType, int *retiAdj, int *retiDefault) const;
 		int GetHPBonus (DamageTypes iDamageType) const;
+		int GetHPBonus (DamageTypes iDamageType, const CItemEnhancementStack *pEnhancements) const;
 		ICCItem *GetDamageAdjProperty (const CItemEnhancementStack *pEnhancements = NULL) const;
 		ICCItem *GetHPBonusProperty (const CItemEnhancementStack *pEnhancements = NULL) const;
 		ALERROR InitFromArray (int *pTable);
@@ -616,6 +618,7 @@ class CDamageAdjDesc
 		static int GetBonusFromAdj (int iDamageAdj, int iDefault = 100);
 		static int GetDamageAdjFromHPBonus (int iBonus);
 		static Metric GetDamageTypeFraction (int iLevel, DamageTypes iDamageType);
+		static DamageTypes ParseDamageTypeFromProperty (const CString &sProperty);
 
 	private:
 		enum EAdjustmentTypes
@@ -641,15 +644,9 @@ class CDamageAdjDesc
 
 struct SVisibleDamage
 	{
-	SVisibleDamage (void) :
-			iShieldLevel(-1),
-			iArmorLevel(-1),
-			iHullLevel(-1)
-		{ }
-
-	int iShieldLevel;				//	0-100: shield level; -1 = no shields
-	int iArmorLevel;				//	0-100: armor integrity; -1 = no armor
-	int iHullLevel;					//	0-100: hull integrity; -1 = no interior compartments
+	int iShieldLevel = -1;				//	0-100: shield level; -1 = no shields
+	int iArmorLevel = -1;				//	0-100: armor integrity; -1 = no armor
+	int iHullLevel = -1;				//	0-100: hull integrity; -1 = no interior compartments
 	};
 
 class CPerceptionCalc
@@ -805,7 +802,7 @@ class CSpaceObjectList
 		void SetAllocSize (int iNewCount);
 		void SetObj (int iIndex, CSpaceObject *pObj) { m_List[iIndex] = pObj; }
 		void Subtract (const CSpaceObjectList &List);
-		void WriteToStream (CSystem *pSystem, IWriteStream *pStream);
+		void WriteToStream (IWriteStream *pStream);
 
 	private:
 		static void ResolveObjProc (void *pCtx, DWORD dwObjID, CSpaceObject *pObj);
@@ -1131,14 +1128,14 @@ template <class TYPE> class TSEListNode
 				}
 			}
 
-		void WriteToStream (CSystem *pSystem, IWriteStream *pStream)
+		void WriteToStream (IWriteStream *pStream)
 			{
 			DWORD dwCount = GetCount();
 			pStream->Write((char *)&dwCount, sizeof(DWORD));
 			TYPE *pNext = GetNext();
 			while (pNext)
 				{
-				pNext->OnWriteToStream(pSystem, pStream);
+				pNext->OnWriteToStream(pStream);
 				pNext = pNext->GetNext();
 				}
 			}
@@ -1156,8 +1153,11 @@ class CRegenDesc
 		CRegenDesc (int iHPPerEra);
 
 		void Add (const CRegenDesc &Desc);
+		int GetCyclesPerBurst () const { return m_iCyclesPerBurst; }
 		double GetHPPer180 (int iTicksPerCycle = 1) const;
+		int GetHPPerCycle () const { return m_iHPPerCycle; }
 		int GetHPPerEra (void) const;
+		int GetHPPerEraRemainder () const { return m_iHPPerEraRemainder; }
 		int GetRegen (int iTick, int iTicksPerCycle = 1) const;
 		void Init (int iHPPerEra, int iCyclesPerBurst = 1);
 		void InitFromRegen (double rRegen, int iTicksPerCycle = 1);

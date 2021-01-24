@@ -57,6 +57,12 @@
 			nestedScreen=		"true"
 			inherit=			"&dsDockScreenBase;"
 			>
+		<Display type="detailsPane">
+			<OnDisplayInit>
+				(objTranslate gSource 'rpg.statusDetails)
+			</OnDisplayInit>
+		</Display>
+
 		<Panes>
 			<Default>
 				<OnPaneInit>
@@ -304,6 +310,7 @@
 							(setq actions (list
 								{
 									label: (or (@ pageDesc 'acceptLabel)
+										(and translateID (typTranslate translateID (@ pageDesc 'acceptLabelID)))
 										(msnTranslate missionObj (@ pageDesc 'acceptLabelID))
 										(msnTranslate missionObj 'AcceptLabel)
 										(typTranslate &unidCommonText; 'actionAccept)
@@ -313,6 +320,7 @@
 									}
 								{
 									label: (or (@ pageDesc 'declineLabel)
+										(and translateID (typTranslate translateID (@ pageDesc 'declineLabelID)))
 										(msnTranslate missionObj (@ pageDesc 'declineLabelID))
 										(msnTranslate missionObj 'DeclineLabel)
 										(typTranslate &unidCommonText; 'actionDecline)

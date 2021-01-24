@@ -56,7 +56,7 @@ CPlayerShipController::~CPlayerShipController (void)
 		delete m_pDebugNavPath;
 	}
 
-void CPlayerShipController::AddOrder (OrderTypes Order, CSpaceObject *pTarget, const IShipController::SData &Data, bool bAddBefore)
+void CPlayerShipController::AddOrder (const COrderDesc &OrderDesc, bool bAddBefore)
 
 //	AddOrder
 //
@@ -72,30 +72,30 @@ void CPlayerShipController::AddOrder (OrderTypes Order, CSpaceObject *pTarget, c
 
 	//	For now, we only deal with one order at a time
 
-	switch (Order)
+	switch (OrderDesc.GetOrder())
 		{
 		case orderGuard:
 		case orderEscort:
-			SetDestination(pTarget);
+			SetDestination(OrderDesc.GetTarget());
 			break;
 
 		case orderDock:
 		case orderGate:
-			SetDestination(pTarget, OPTION_HIGHLIGHT);
+			SetDestination(OrderDesc.GetTarget(), OPTION_HIGHLIGHT);
 			break;
 
 		case orderAimAtTarget:
 		case orderDestroyTarget:
 			if (m_pShip->HasTargetingComputer())
-				SetTarget(pTarget);
+				SetTarget(OrderDesc.GetTarget());
 
-			SetDestination(pTarget, OPTION_HIGHLIGHT);
+			SetDestination(OrderDesc.GetTarget(), OPTION_HIGHLIGHT);
 			break;
 		}
 
 	//	Remember our orders
 
-	m_iOrder = Order;
+	m_OrderDesc = OrderDesc;
 	}
 
 bool CPlayerShipController::AreAllDevicesEnabled (void)
@@ -161,7 +161,7 @@ void CPlayerShipController::CancelAllOrders (void)
 //	Cancel all orders
 
 	{
-	m_iOrder = orderNone;
+	m_OrderDesc = COrderDesc();
 	SetDestination(NULL);
 	}
 
@@ -172,7 +172,7 @@ void CPlayerShipController::CancelCurrentOrder (void)
 //	Cancel current order
 
 	{
-	m_iOrder = orderNone;
+	m_OrderDesc = COrderDesc();
 	SetDestination(NULL);
 	}
 
@@ -688,17 +688,17 @@ DWORD CPlayerShipController::GetCommsStatus (void)
 	return dwStatus;
 	}
 
-IShipController::OrderTypes CPlayerShipController::GetCurrentOrderEx (CSpaceObject **retpTarget, IShipController::SData *retData)
+const COrderDesc &CPlayerShipController::GetCurrentOrderDesc () const
 
 //	GetCurrentOrderEx
 //
 //	Returns the current order
 
 	{
-	return GetOrder(0, retpTarget, retData);
+	return GetOrderDesc(0);
 	}
 
-IShipController::OrderTypes CPlayerShipController::GetOrder (int iIndex, CSpaceObject **retpTarget, IShipController::SData *retData) const
+const COrderDesc &CPlayerShipController::GetOrderDesc (int iIndex) const
 
 //	GetOrder
 //
@@ -706,9 +706,9 @@ IShipController::OrderTypes CPlayerShipController::GetOrder (int iIndex, CSpaceO
 
 	{
 	if (iIndex > 0)
-		return orderNone;
+		return COrderDesc::Null;
 
-	switch (m_iOrder)
+	switch (m_OrderDesc.GetOrder())
 		{
 		case orderGuard:
 		case orderEscort:
@@ -716,18 +716,17 @@ IShipController::OrderTypes CPlayerShipController::GetOrder (int iIndex, CSpaceO
 		case orderAimAtTarget:
 		case orderDestroyTarget:
 			if (m_pDestination == NULL)
-				return orderNone;
+				return COrderDesc::Null;
+			else if (m_pDestination != m_OrderDesc.GetTarget())
+				{
+				//	For backwards compatibility.
+				const_cast<CPlayerShipController *>(this)->m_OrderDesc.SetTarget(m_pDestination);
+				}
 
-			if (retpTarget)
-				*retpTarget = m_pDestination;
-
-			if (retData)
-				*retData = SData();
-
-			return m_iOrder;
+			return m_OrderDesc;
 
 		default:
-			return orderNone;
+			return COrderDesc::Null;
 		}
 	}
 
@@ -797,7 +796,7 @@ void CPlayerShipController::Init (CTranscendenceWnd *pTrans)
 		Undock();
 	}
 
-void CPlayerShipController::InitTargetList (TargetTypes iTargetType, bool bUpdate)
+void CPlayerShipController::InitTargetList (ETargetClass iTargetType, bool bUpdate)
 
 //	InitTargetList
 //
@@ -845,9 +844,9 @@ void CPlayerShipController::InitTargetList (TargetTypes iTargetType, bool bUpdat
 			//	we're looking for friendly targets
 
 			int iMainKey = -1;
-			if ((iTargetType == targetEnemies) == (m_pShip->IsAngryAt(pObj) && pObj->CanBeAttacked()))
+			if ((iTargetType == ETargetClass::enemies) == (m_pShip->IsAngryAt(pObj) && pObj->CanBeAttacked()))
 				{
-				if (iTargetType == targetEnemies)
+				if (iTargetType == ETargetClass::enemies)
 					{
 					if (pObj->GetScale() == scaleShip || pObj->GetScale() == scaleStructure)
 						iMainKey = 0;
@@ -2042,10 +2041,10 @@ CTargetList CPlayerShipController::GetTargetList (void) const
 
 	DWORD dwTargetTypes = m_pShip->GetDeviceSystem().GetTargetTypes();
 
-	if (dwTargetTypes & CTargetList::typeMissile)
+	if (dwTargetTypes & CTargetList::SELECT_MISSILE)
 		Options.bIncludeMissiles = true;
 
-	if (dwTargetTypes & CTargetList::typeMinable)
+	if (dwTargetTypes & CTargetList::SELECT_MINABLE)
 		Options.bIncludeMinable = true;
 
 	//	Done
@@ -2183,6 +2182,9 @@ void CPlayerShipController::OnObjDestroyed (const SDestroyCtx &Ctx)
 
 	if (m_pSession)
 		m_pSession->OnObjDestroyed(Ctx);
+
+	if (m_OrderDesc.GetTarget() == Ctx.Obj)
+		m_OrderDesc = COrderDesc();
 	}
 
 void CPlayerShipController::OnObjHit (const SDamageCtx &Ctx)
@@ -2400,7 +2402,7 @@ void CPlayerShipController::ReadFromStream (SLoadCtx &Ctx, CShip *pShip)
 //	DWORD		m_pStation (CSpaceObject ref)
 //	DWORD		m_pTarget (CSpaceObject ref)
 //	DWORD		m_pDestination (CSpaceObject ref)
-//	DWORD		m_iOrder
+//	COrderDesc	m_OrderDesc
 //	DWORD		m_iManeuver
 //	CCurrencyBlock m_Credits
 //	CPlayerGameStats m_Stats
@@ -2445,13 +2447,15 @@ void CPlayerShipController::ReadFromStream (SLoadCtx &Ctx, CShip *pShip)
 	CSystem::ReadObjRefFromStream(Ctx, &m_pTarget);
 	CSystem::ReadObjRefFromStream(Ctx, &m_pDestination, true);
 
-	if (Ctx.dwVersion >= 100)
+	if (Ctx.dwVersion >= 195)
+		m_OrderDesc.ReadFromStream(Ctx);
+	else if (Ctx.dwVersion >= 100)
 		{
 		Ctx.pStream->Read(dwLoad);
-		m_iOrder = (OrderTypes)dwLoad;
+		m_OrderDesc = COrderDesc((OrderTypes)dwLoad);
 		}
 	else
-		m_iOrder = orderNone;
+		m_OrderDesc = COrderDesc();
 
 	Ctx.pStream->Read(dwLoad);
 	m_iManeuver = (EManeuverTypes)dwLoad;
@@ -2654,7 +2658,7 @@ void CPlayerShipController::Reset (void)
 
 	//	Clear orders
 
-	m_iOrder = orderNone;
+	m_OrderDesc = COrderDesc();
 
 	//	Clear auto
 
@@ -2690,7 +2694,7 @@ void CPlayerShipController::SelectNearestTarget (void)
 
 	//	Initialize target list
 
-	InitTargetList(targetEnemies);
+	InitTargetList(ETargetClass::enemies);
 	if (m_TargetList.GetCount() > 0)
 		SetTarget(m_TargetList[0]);
 	else
@@ -2812,7 +2816,7 @@ void CPlayerShipController::SelectNextFriendly (int iDir)
 
 	if (m_pTarget && !(m_pShip->IsAngryAt(m_pTarget) && m_pTarget->CanBeAttacked()))
 		{
-		InitTargetList(targetFriendlies, true);
+		InitTargetList(ETargetClass::friendlies, true);
 
 		//	If we're going forwards, we default to first target; otherwise
 		//	we default to last target
@@ -2851,7 +2855,7 @@ void CPlayerShipController::SelectNextFriendly (int iDir)
 
 	else
 		{
-		InitTargetList(targetFriendlies);
+		InitTargetList(ETargetClass::friendlies);
 
 		if (m_TargetList.GetCount() > 0)
 			SetTarget(m_TargetList[iDir == 1 ? 0 : m_TargetList.GetCount() - 1]);
@@ -2880,7 +2884,7 @@ void CPlayerShipController::SelectNextTarget (int iDir)
 
 	if (m_pTarget && m_pShip->IsAngryAt(m_pTarget) && m_pTarget->CanBeAttacked())
 		{
-		InitTargetList(targetEnemies, true);
+		InitTargetList(ETargetClass::enemies, true);
 
 		//	If we're going forwards, we default to first target; otherwise
 		//	we default to last target
@@ -2919,7 +2923,7 @@ void CPlayerShipController::SelectNextTarget (int iDir)
 
 	else
 		{
-		InitTargetList(targetEnemies);
+		InitTargetList(ETargetClass::enemies);
 
 		if (m_TargetList.GetCount() > 0)
 			SetTarget(m_TargetList[iDir == 1 ? 0 : m_TargetList.GetCount() - 1]);
@@ -2993,7 +2997,7 @@ ALERROR CPlayerShipController::SwitchShips (CShip *pNewShip, SPlayerChangedShips
 	//	the previous controller, which is us)
 
 	pOldShip->SetController(m_Universe.CreateShipController(NULL_STR), false);
-	pOldShip->GetController()->AddOrder(IShipController::orderWait, NULL, IShipController::SData());
+	pOldShip->GetController()->AddOrder(COrderDesc(IShipController::orderWait));
 
 	//	Old ship stops tracking fuel (otherwise, it would run out)
 
@@ -3262,6 +3266,27 @@ void CPlayerShipController::UpdateHelp (int iTick)
 			}
 		}
 
+	//	If we have something in our cargo hold other than fuel (or usable items)
+	//	then tell the player how to view inventory.
+
+	if (m_UIMsgs.IsEnabled(uimsgShipStatusHint) && !bEnemiesInRange)
+		{
+		CItemListManipulator ItemList(m_pShip->GetItemList());
+		CItemCriteria NonFuelItems(CONSTLIT("*~fU"));
+		ItemList.SetFilter(NonFuelItems);
+		bool bHasNonFuelItems = ItemList.MoveCursorForward();
+
+		if (!m_pSession->InSystemMap()
+				&& bHasNonFuelItems
+				&& m_UIMsgs.ShowMessage(m_Universe, uimsgShipStatusHint)
+				&& CanShowShipStatus())
+			{
+			DisplayCommandHint(CGameKeys::keyShipStatus, Translate(CONSTLIT("hintShipStatus")));
+			m_iLastHelpTick = iTick;
+			return;
+			}
+		}
+
 	//	If we've never used the map, and then tell the player about the map
 
 	if (m_UIMsgs.IsEnabled(uimsgMapHint))
@@ -3378,7 +3403,7 @@ void CPlayerShipController::WriteToStream (IWriteStream *pStream)
 //	DWORD		m_pStation (CSpaceObject ref)
 //	DWORD		m_pTarget (CSpaceObject ref)
 //	DWORD		m_pDestination (CSpaceObject ref)
-//	DWORD		m_iOrder
+//	COrderDesc	m_OrderDesc
 //	DWORD		m_iManeuver
 //	CCurrencyBlock m_Credits
 //	CPlayerGameStats m_Stats
@@ -3404,7 +3429,7 @@ void CPlayerShipController::WriteToStream (IWriteStream *pStream)
 	m_pShip->WriteObjRefToStream(m_pTarget, pStream);
 	m_pShip->WriteObjRefToStream(m_pDestination, pStream);
 
-	pStream->Write((DWORD)m_iOrder);
+	m_OrderDesc.WriteToStream(*pStream, *m_pShip);
 
 	pStream->Write((DWORD)m_iManeuver);
 	m_Credits.WriteToStream(pStream);
@@ -3434,5 +3459,5 @@ void CPlayerShipController::WriteToStream (IWriteStream *pStream)
 
 	//	Maneuver controller
 
-	m_ManeuverController.WriteToStream(*pStream, m_pShip->GetSystem());
+	m_ManeuverController.WriteToStream(*pStream);
 	}

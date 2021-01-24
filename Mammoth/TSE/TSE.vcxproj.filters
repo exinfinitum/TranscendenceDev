@@ -386,6 +386,12 @@
     <ClInclude Include="..\Include\TSEEngineDefs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\TSESpaceObjectDefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StationImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CAdventureRecord.cpp">
@@ -1539,6 +1545,33 @@
     </ClCompile>
     <ClCompile Include="CTopologyNodeCriteria.cpp">
       <Filter>Source Files\Topology</Filter>
+    </ClCompile>
+    <ClCompile Include="CMissionCriteria.cpp">
+      <Filter>Source Files\Missions</Filter>
+    </ClCompile>
+    <ClCompile Include="CMenuData.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="PowerProperties.cpp">
+      <Filter>Source Files\DesignTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="COrbitExactOrder.cpp">
+      <Filter>Source Files\ShipAI</Filter>
+    </ClCompile>
+    <ClCompile Include="CInteractionLevel.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="COrderDesc.cpp">
+      <Filter>Source Files\ShipAI</Filter>
+    </ClCompile>
+    <ClCompile Include="CAIDeterModule.cpp">
+      <Filter>Source Files\ShipAI</Filter>
+    </ClCompile>
+    <ClCompile Include="CDeterChaseOrder.cpp">
+      <Filter>Source Files\ShipAI</Filter>
+    </ClCompile>
+    <ClCompile Include="CChallengeRatingCalculator.cpp">
+      <Filter>Source Files\Stations</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

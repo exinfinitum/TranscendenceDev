@@ -19,6 +19,7 @@
 #define TABLE_TAG					CONSTLIT("Table")
 
 #define BUILD_ATTRIB				CONSTLIT("build")
+#define BUILD_REINFORCEMENTS_ATTRIB	CONSTLIT("buildReinforcements")
 #define CHANCE_ATTRIB				CONSTLIT("chance")
 #define CLASS_ATTRIB				CONSTLIT("class")
 #define CONTROLLER_ATTRIB			CONSTLIT("controller")
@@ -26,6 +27,7 @@
 #define EVENT_HANDLER_ATTRIB		CONSTLIT("eventHandler")
 #define ITEM_TABLE_ATTRIB			CONSTLIT("itemTable")
 #define LEVEL_FREQUENCY_ATTRIB		CONSTLIT("levelFrequency")
+#define MAX_COUNT_ATTRIB			CONSTLIT("maxCount")
 #define MAX_SHIPS_ATTRIB			CONSTLIT("maxShips")
 #define NAME_ATTRIB					CONSTLIT("name")
 #define ORDERS_ATTRIB				CONSTLIT("orders")
@@ -105,6 +107,7 @@ class CSingleShip : public IShipGenerator
 
 		DiceRange m_Count;							//	Number of ships to create
 		int m_iMaxCountInSystem;					//	Do not exceed this number of ship of this class in system (or -1)
+		int m_iMaxCountForBase = -1;				//	Do not exceed this number of ships of this class for base (or -1)
 
 		CShipClassRef m_pShipClass;					//	Ship class to create
 		CSovereignRef m_pSovereign;					//	Sovereign
@@ -120,8 +123,7 @@ class CSingleShip : public IShipGenerator
 
 		CDesignTypeRef<CDesignType> m_pOverride;	//	Override (event handler)
 		CString m_sController;						//	Controller to use (or "" to use default)
-		IShipController::OrderTypes m_iOrder;		//	Ship order
-		IShipController::SData m_OrderData;			//	Order data
+		COrderDesc m_OrderDesc;						//	Ship order
 	};
 
 class CTableOfShipGenerators : public IShipGenerator
@@ -658,6 +660,28 @@ void CSingleShip::CreateShip (SShipCreateCtx &Ctx,
 		return;
 		}
 
+	//	See if we've exceeded maximum counts
+
+	if (m_iMaxCountForBase > 0)
+		{
+		int iShipsLeft = m_iMaxCountForBase;
+		for (i = 0; i < Ctx.pSystem->GetObjectCount(); i++)
+			{
+			CSpaceObject *pObj = Ctx.pSystem->GetObject(i);
+			if (pObj 
+					&& pObj->GetClassUNID() == dwClass
+					&& pObj->GetBase() == Ctx.pBase)
+				{
+				if (--iShipsLeft == 0)
+					{
+					if (retpShip)
+						*retpShip = NULL;
+					return;
+					}
+				}
+			}
+		}
+
 	//	If we've got a maximum, then see if we've already got too many ships of this
 	//	ship class.
 
@@ -694,8 +718,10 @@ void CSingleShip::CreateShip (SShipCreateCtx &Ctx,
 	GeneratorCtx.pOnCreate = m_pOnCreate;
 	GeneratorCtx.dwCreateFlags = Ctx.dwFlags;
 
-	GeneratorCtx.iOrder = m_iOrder;
-	GeneratorCtx.OrderData = m_OrderData;
+	if (m_OrderDesc)
+		GeneratorCtx.OrderDesc = m_OrderDesc;
+	else
+		GeneratorCtx.OrderDesc = COrderDesc(Ctx.iDefaultOrder);
 
 	GeneratorCtx.pBase = Ctx.pBase;
 	GeneratorCtx.pTarget = Ctx.pTarget;
@@ -706,12 +732,14 @@ void CSingleShip::CreateShip (SShipCreateCtx &Ctx,
 
 	if (Ctx.pBase == NULL && Ctx.pGate != NULL)
 		{
-		switch (m_iOrder)
+		switch (GeneratorCtx.OrderDesc.GetOrder())
 			{
 			case IShipController::orderEscort:
 			case IShipController::orderFollow:
 			case IShipController::orderGateOnThreat:
 			case IShipController::orderGuard:
+			case IShipController::orderOrbitExact:
+			case IShipController::orderOrbitPatrol:
 			case IShipController::orderMine:
 			case IShipController::orderPatrol:
 			case IShipController::orderSentry:
@@ -937,6 +965,8 @@ ALERROR CSingleShip::LoadFromXML (SDesignLoadCtx &Ctx, const CXMLElement *pDesc)
 	if (m_Count.IsEmpty())
 		m_Count.SetConstant(1);
 
+	m_iMaxCountForBase = pDesc->GetAttributeIntegerBounded(MAX_COUNT_ATTRIB, 0, -1, -1);
+
 	//	Load name
 
 	CXMLElement *pNames = pDesc->GetContentElementByTag(NAMES_TAG);
@@ -989,17 +1019,22 @@ ALERROR CSingleShip::LoadFromXML (SDesignLoadCtx &Ctx, const CXMLElement *pDesc)
 
 	//	Load orders
 
-	if (!IShipController::ParseOrderString(pDesc->GetAttribute(ORDERS_ATTRIB), &m_iOrder, &m_OrderData))
+	CString sOrder;
+	if (pDesc->FindAttribute(ORDERS_ATTRIB, &sOrder))
 		{
-		Ctx.sError = strPatternSubst("Invalid order: %s", pDesc->GetAttribute(ORDERS_ATTRIB));
-		return ERR_FAIL;
+		m_OrderDesc = COrderDesc::ParseFromString(sOrder);
+		if (!m_OrderDesc)
+			{
+			Ctx.sError = strPatternSubst("Invalid order: %s", pDesc->GetAttribute(ORDERS_ATTRIB));
+			return ERR_FAIL;
+			}
 		}
 
 	//	If we have no orders, warn
 
 #ifdef DEBUG
 	if (g_pUniverse->InDebugMode()
-			&& m_iOrder == IShipController::orderNone
+			&& !m_OrderDesc
 			&& Ctx.pType
 			&& Ctx.pType->GetType() != designShipTable
 			&& m_pOverride.GetUNID() == 0
@@ -1012,11 +1047,11 @@ ALERROR CSingleShip::LoadFromXML (SDesignLoadCtx &Ctx, const CXMLElement *pDesc)
 
 	//	For backwards compatibility, handle patrol distance
 
-	switch (m_iOrder)
+	switch (m_OrderDesc.GetOrder())
 		{
 		case IShipController::orderPatrol:
-			if (m_OrderData.AsInteger() == 0)
-				m_OrderData = IShipController::SData(pDesc->GetAttributeIntegerBounded(PATROL_DIST_ATTRIB, 1, -1, 1));
+			if (m_OrderDesc.GetDataInteger() == 0)
+				m_OrderDesc.SetDataInteger(pDesc->GetAttributeIntegerBounded(PATROL_DIST_ATTRIB, 1, -1, 1));
 			break;
 		}
 
@@ -1062,7 +1097,7 @@ ALERROR CSingleShip::LoadFromXML (SDesignLoadCtx &Ctx, const CXMLElement *pDesc)
 
 	//	Options
 
-	m_bBuild = pDesc->GetAttributeBool(BUILD_ATTRIB);
+	m_bBuild = pDesc->GetAttributeBool(BUILD_ATTRIB) || pDesc->GetAttributeBool(BUILD_REINFORCEMENTS_ATTRIB);
 
 	//	Validate
 

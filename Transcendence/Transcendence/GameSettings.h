@@ -247,6 +247,7 @@ class CGameSettings
 			no3DSystemMap,					//	3D system map projection
 			maxResolution,					//	Maximum vertical resolution
 			noGPUAcceleration,				//	Do not use GPU textures for blts
+			noSpaceBackground,				//	Show old starfield background
 
 			//	Sounds options
 			noSound,						//	No sound (either music or sound effects)
@@ -277,7 +278,11 @@ class CGameSettings
 			introSpoilers,					//	Show high-level ships in intro
 
 			//	Constants
+<<<<<<< HEAD
 			OPTIONS_COUNT = 55,
+=======
+			OPTIONS_COUNT = 54,
+>>>>>>> master
 			};
 
 		CGameSettings (IExtraSettingsHandler *pExtra = NULL) : m_pExtra(pExtra) { }

@@ -260,6 +260,7 @@
     <ClInclude Include="..\Include\TSEEngineDefs.h" />
     <ClInclude Include="..\Include\TSEListImpl.h" />
     <ClInclude Include="..\Include\TSEOverlays.h" />
+    <ClInclude Include="..\Include\TSESpaceObjectDefs.h" />
     <ClInclude Include="..\Include\TSESpaceObjectUtil.h" />
     <ClInclude Include="..\Include\TSEAdventureDesc.h" />
     <ClInclude Include="..\Include\TSEArmor.h" />
@@ -327,6 +328,7 @@
     <ClInclude Include="..\Include\TSEConfigurationDescInlines.h" />
     <ClInclude Include="ItemGeneratorImpl.h" />
     <ClInclude Include="ScriptParserImpl.h" />
+    <ClInclude Include="StationImpl.h" />
     <ClInclude Include="SystemCreateImpl.h" />
     <ClInclude Include="CrewAIImpl.h" />
     <ClInclude Include="GameFileCompatibility.h" />
@@ -362,6 +364,7 @@
     <ClCompile Include="CAccessibilitySettings.cpp" />
     <ClCompile Include="CAdventureHighScoreList.cpp" />
     <ClCompile Include="CAdventureRecord.cpp" />
+    <ClCompile Include="CAIDeterModule.cpp" />
     <ClCompile Include="CAISettings.cpp" />
     <ClCompile Include="CAngleGenerator.cpp" />
     <ClCompile Include="CApproachOrder.cpp" />
@@ -379,6 +382,7 @@
     <ClCompile Include="CAutoMiningCalc.cpp" />
     <ClCompile Include="CAutoTargetCalc.cpp" />
     <ClCompile Include="CCargoDesc.cpp" />
+    <ClCompile Include="CChallengeRatingCalculator.cpp" />
     <ClCompile Include="CCircleRadiusDisruptor.cpp" />
     <ClCompile Include="CCommunicationsHandler.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
@@ -410,6 +414,7 @@
     <ClCompile Include="CDelaunayStargateGenerator.cpp" />
     <ClCompile Include="CDesignPropertyDefinitions.cpp" />
     <ClCompile Include="CDesignTypeCriteria.cpp" />
+    <ClCompile Include="CDeterChaseOrder.cpp" />
     <ClCompile Include="CDeviceItem.cpp" />
     <ClCompile Include="CDeviceSystem.cpp" />
     <ClCompile Include="CDifferentiatedItem.cpp" />
@@ -456,17 +461,21 @@
     <ClCompile Include="CInputKeyPainter.cpp" />
     <ClCompile Include="CIntegerRangeCriteria.cpp" />
     <ClCompile Include="CIntegralRotationDesc.cpp" />
+    <ClCompile Include="CInteractionLevel.cpp" />
     <ClCompile Include="CItemCriteria.cpp" />
     <ClCompile Include="CItemEncounterDefinitions.cpp" />
     <ClCompile Include="CItemLevelCriteria.cpp" />
     <ClCompile Include="CItemTypeProbabilityTable.cpp" />
+    <ClCompile Include="COrbitExactOrder.cpp" />
     <ClCompile Include="CLabelPainter.cpp" />
     <ClCompile Include="CLanguage.cpp" />
     <ClCompile Include="CLightningBundlePainter.cpp" />
     <ClCompile Include="CLocationSelectionTable.cpp" />
     <ClCompile Include="CMapLabelArranger.cpp" />
     <ClCompile Include="CMapLabelPainter.cpp" />
+    <ClCompile Include="CMenuData.cpp" />
     <ClCompile Include="CMissileItem.cpp" />
+    <ClCompile Include="CMissionCriteria.cpp" />
     <ClCompile Include="CNameDesc.cpp" />
     <ClCompile Include="CNamedEffects.cpp" />
     <ClCompile Include="CNetworkTopologyCreator.cpp" />
@@ -474,6 +483,7 @@
     <ClCompile Include="CObjectJointList.cpp" />
     <ClCompile Include="CObjectTrackerCriteria.cpp" />
     <ClCompile Include="COrbitFocusGenerator.cpp" />
+    <ClCompile Include="COrderDesc.cpp" />
     <ClCompile Include="COverlay.cpp" />
     <ClCompile Include="COverlayCounterDesc.cpp" />
     <ClCompile Include="COverlayList.cpp" />
@@ -661,6 +671,7 @@
     <ClCompile Include="MissileProperties.cpp" />
     <ClCompile Include="MissionProperties.cpp" />
     <ClCompile Include="ObjectImageProperties.cpp" />
+    <ClCompile Include="PowerProperties.cpp" />
     <ClCompile Include="SDamageCtx.cpp" />
     <ClCompile Include="SFXDisintegrate.cpp" />
     <ClCompile Include="SFXGlow.cpp" />
