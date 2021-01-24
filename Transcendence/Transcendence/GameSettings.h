@@ -278,11 +278,7 @@ class CGameSettings
 			introSpoilers,					//	Show high-level ships in intro
 
 			//	Constants
-<<<<<<< HEAD
 			OPTIONS_COUNT = 55,
-=======
-			OPTIONS_COUNT = 54,
->>>>>>> master
 			};
 
 		CGameSettings (IExtraSettingsHandler *pExtra = NULL) : m_pExtra(pExtra) { }

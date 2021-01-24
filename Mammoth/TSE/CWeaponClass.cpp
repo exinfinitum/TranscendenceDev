@@ -1358,7 +1358,7 @@ bool CWeaponClass::CalcSingleTarget (CInstalledDevice &Device,
 				{
 				//  Reacquire target if we can do so
 				if (bCanReacquireTarget)
-					retpTarget = CalcBestTarget(Device, ActivateCtx.TargetList, NULL, &retiFireAngle);
+					retpTarget = CalcBestTarget(Device, ActivateCtx.GetTargetList(), NULL, &retiFireAngle);
 
 				if (retpTarget)
 					{

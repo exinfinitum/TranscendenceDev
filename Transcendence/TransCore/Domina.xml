@@ -753,20 +753,12 @@
 			weaponBonusAdj=	"100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100"
 			>
 		<Effect>
-<<<<<<< HEAD
 			<Orb	style=			"flare"
 					intensity=		"70"
 					blendMode=		"screen"
 					radius=			"16"
 					primaryColor=	"0x80, 0xff, 0xff"
 					secondaryColor=	"0x00, 0xff, 0xff"
-=======
-			<Starburst
-					spikeCount=		"20"
-					spikeLength=	"4d8"
-					primaryColor=	"#80ffbf"
-					secondaryColor=	"#00ff80"
->>>>>>> master
 					/>
 		</Effect>
 	</OverlayType>
