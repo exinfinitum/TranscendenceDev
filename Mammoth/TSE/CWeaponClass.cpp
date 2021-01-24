@@ -5582,8 +5582,10 @@ void CWeaponClass::Update (CInstalledDevice *pDevice, CSpaceObject *pSource, SDe
 
 			if ((dwContinuous % iContinuousDelay) == 0 || (int(dwContinuous) > iBurstLengthInFrames))
 				{
-				if (ActivateCtx.TargetList.IsEmpty())
-					ActivateCtx.TargetList = pSource->GetTargetList();
+				if (ActivateCtx.GetTargetList().IsEmpty()) {
+					auto targetList = pSource->GetTargetList();
+					ActivateCtx.SetTargetList(targetList);
+				}
 
 				ActivateCtx.iRepeatingCount = 1 + iContinuous - min(int(dwContinuous / iContinuousDelay), iContinuous + 1);
 				ActivateCtx.iChargeFrame = 1 + iChargeTime - min((int(dwContinuous) - iBurstLengthInFrames) + 1, iChargeTime + 1);
