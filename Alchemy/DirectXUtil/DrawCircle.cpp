@@ -301,9 +301,30 @@ void CGDraw::RingGlowing (CG32bitImage &Dest, int x, int y, int iRadius, int iWi
 //	RingGlowing
 //
 //	Draw a glowing ring
+//	TODO(heliogenesis): OpenGLify this function
 
 	{
 	CGlowingRingPainter Painter(Dest, iRadius, iWidth, rgbColor);
+	auto pRenderQueue = Dest.GetCanvasMasterRenderQueue();
+	if ((pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())))
+		{
+		pRenderQueue->addOrbToEffectRenderQueue(
+			x, y, iRadius * 2, iRadius * 2, Dest.GetWidth(), Dest.GetHeight(),
+			0.0,
+			float(iWidth) / float(iRadius),
+			1.0,
+			0,
+			-1, // TODO(heliogenesis): move to an enum; an orb with a style of -1 is a glow ring
+			0,
+			0,
+			0,
+			1,
+			1,
+			glm::vec3(float(rgbColor.GetRed()), float(rgbColor.GetGreen()), float(rgbColor.GetBlue())) / float(255.0),
+			glm::vec3(float(rgbColor.GetRed()), float(rgbColor.GetGreen()), float(rgbColor.GetBlue())) / float(255.0),
+			0.0f,
+			OpenGLRenderLayer::blendMode::blendNormal);
+		}
 	Painter.Draw(x, y);
 	}
 
