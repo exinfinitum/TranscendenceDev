@@ -308,8 +308,6 @@ public:
 	~OpenGLMasterRenderQueue (void);
 	void renderAllQueues (void);
 	void renderToGlowmaps (void);
-	void setObjectTextureShader (OpenGLShader *shader) { m_pObjectTextureShader = shader; }
-	OpenGLShader* getObjectTextureShader (void) { return m_pObjectTextureShader; }
 	void addImageToRenderQueue(int startPixelX, int startPixelY, int sizePixelX,
 		int sizePixelY, int posPixelX, int posPixelY, float rotationInDegrees, OpenGLTexture* image, int texWidth, int texHeight,
 		int texQuadWidth, int texQuadHeight, int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength = 1.0,
@@ -387,11 +385,11 @@ private:
 	void deinitCanvasVAO (void);
 	void clear (void);
 	OpenGLVAO* m_pCanvasVAO;
-	OpenGLShader *m_pObjectTextureShader;
-	OpenGLShader *m_pGlowmapShader;
-	OpenGLShader *m_pRayShader;
-	OpenGLShader *m_pOrbShader;
-	OpenGLShader *m_pPerlinNoiseShader;
+	std::unique_ptr<OpenGLShader> m_pObjectTextureShader;
+	std::unique_ptr<OpenGLShader> m_pGlowmapShader;
+	std::unique_ptr<OpenGLShader> m_pRayShader;
+	std::unique_ptr<OpenGLShader> m_pOrbShader;
+	std::unique_ptr<OpenGLShader> m_pPerlinNoiseShader;
 	std::unique_ptr<OpenGLAnimatedNoise> m_pPerlinNoiseTexture;
 	// TODO: Maybe use filenames of texture images as the key rather than pointer to OpenGLTextures? Using pointers as map keys is not reliable.
 	OpenGLRenderLayer* m_pActiveRenderLayer;
