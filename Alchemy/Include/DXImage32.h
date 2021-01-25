@@ -215,12 +215,13 @@ class CG32bitImage : public TImagePlane<CG32bitImage>
 
 		//  OpenGL functions
 		static OpenGLMasterRenderQueue *GetMasterRenderQueue (void) { return m_pOGLRenderQueue.get(); }
+		OpenGLMasterRenderQueue *GetCanvasMasterRenderQueue (void) { return m_bOpenGLInitialized ? m_pOGLRenderQueue.get() : nullptr; }
 		//OpenGLMasterRenderQueue *GetMasterRenderQueue(void) const { return m_pOGLRenderQueue; }
 		OpenGLTexture *GetOpenGLTexture(void) { if (!m_pOpenGLTexture) { CreateOpenGLTexture(); } return m_pOpenGLTexture.get(); }
 		void InitOpenGL (void);
 		//void SetCurrentTickForShaders (int currTick) { if (m_pOGLRenderQueue) m_pOGLRenderQueue->setCurrentTick(currTick); }
 		void SetCurrentTickForShaders(int currTick) { if (m_pOGLRenderQueue) m_pOGLRenderQueue.get()->setCurrentTick(currTick); }
-		void CreateOpenGLTexture (void) { if (m_bOpenGLInitialized) { m_pOpenGLTexture = std::make_unique<OpenGLTextureRGBA32>(GetPixelArray(), GetWidth(), GetHeight(), GetAlphaType() == EAlphaTypes::alpha8); } }
+		void CreateOpenGLTexture (void) { if (m_pOGLRenderQueue != nullptr) { m_pOpenGLTexture = std::make_unique<OpenGLTextureRGBA32>(GetPixelArray(), GetWidth(), GetHeight(), GetAlphaType() == EAlphaTypes::alpha8); } }
 
 	private:
 		bool AllocRGBA (int iSize);
@@ -239,7 +240,7 @@ class CG32bitImage : public TImagePlane<CG32bitImage>
 		static std::unique_ptr<OpenGLMasterRenderQueue> m_pOGLRenderQueue; // TODO: Use shared_ptr instead of unique_ptr
 		//OpenGLMasterRenderQueue *m_pOGLRenderQueue = NULL;
 		std::unique_ptr<OpenGLTextureRGBA32> m_pOpenGLTexture = nullptr;
-		static bool m_bOpenGLInitialized;
+		bool m_bOpenGLInitialized = false;
 	};
 
 //	Drawing Classes ------------------------------------------------------------

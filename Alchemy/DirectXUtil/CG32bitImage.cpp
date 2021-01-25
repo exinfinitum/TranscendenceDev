@@ -7,7 +7,6 @@
 #include "PixelMacros.h"
 
 CG32bitImage CG32bitImage::m_NullImage;
-bool CG32bitImage::m_bOpenGLInitialized = false;
 std::unique_ptr<OpenGLMasterRenderQueue> CG32bitImage::m_pOGLRenderQueue = nullptr;
 
 CG32bitImage::CG32bitImage (void)
