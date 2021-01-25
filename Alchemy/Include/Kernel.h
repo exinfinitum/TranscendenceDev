@@ -1286,6 +1286,7 @@ void kernelClearDebugLog (void);
 void kernelDebugLogPattern (const char *pszLine, ...);
 void kernelDebugLogString (const CString &sLine);
 CString kernelGetSessionDebugLog (void);
+CTextFileLog* kernelGetDebugLog (void);
 
 #define KERNEL_FLAG_INTERNETS					0x00000001
 BOOL kernelInit (DWORD dwFlags = 0);

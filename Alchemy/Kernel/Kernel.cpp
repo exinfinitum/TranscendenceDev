@@ -177,6 +177,19 @@ void Kernel::kernelClearDebugLog (void)
 	kernelSetDebugLog(NULL);
 	}
 
+CTextFileLog* Kernel::kernelGetDebugLog(void)
+
+//	kernetGetDebugLog
+//
+//	Returns pointer to the debug log.
+
+{
+	if (g_pDebugLog == NULL)
+		return nullptr;
+
+	return g_pDebugLog;
+}
+
 CString Kernel::kernelGetSessionDebugLog (void)
 
 //	kernetGetSessionDebugLog

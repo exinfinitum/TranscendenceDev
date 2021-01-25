@@ -97,6 +97,9 @@ public:
 	void printDebugDeInit() {
 		::kernelDebugLogPattern(("[OpenGL] DeInited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
 	}
+	void printPrepDebugDeInit() {
+		::kernelDebugLogPattern(("[OpenGL] Preparing to DeInit texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
+	}
 protected:
 	unsigned int m_iWidth;
 	unsigned int m_iHeight;
