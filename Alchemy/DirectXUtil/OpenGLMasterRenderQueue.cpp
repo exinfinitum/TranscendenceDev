@@ -22,13 +22,13 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	glGenFramebuffers(1, &fbo);
 	glGenRenderbuffers(1, &rbo);
 	// TODO: Replace m_p*Shader with unique_ptrs
-	m_pGlowmapShader = new OpenGLShader("./shaders/glowmap_vertex_shader.glsl", "./shaders/glowmap_fragment_shader.glsl");
-	m_pObjectTextureShader = new OpenGLShader("./shaders/instanced_vertex_shader.glsl", "./shaders/instanced_fragment_shader.glsl");
-	m_pRayShader = new OpenGLShader("./shaders/ray_vertex_shader.glsl", "./shaders/ray_fragment_shader.glsl");
-	m_pOrbShader = new OpenGLShader("./shaders/orb_vertex_shader.glsl", "./shaders/orb_fragment_shader.glsl");
-	m_pPerlinNoiseShader = new OpenGLShader("./shaders/fbm_vertex_shader.glsl", "./shaders/fbm_fragment_shader.glsl");
+	m_pGlowmapShader = std::make_unique<OpenGLShader>("./shaders/glowmap_vertex_shader.glsl", "./shaders/glowmap_fragment_shader.glsl");
+	m_pObjectTextureShader = std::make_unique<OpenGLShader>("./shaders/instanced_vertex_shader.glsl", "./shaders/instanced_fragment_shader.glsl");
+	m_pRayShader = std::make_unique<OpenGLShader>("./shaders/ray_vertex_shader.glsl", "./shaders/ray_fragment_shader.glsl");
+	m_pOrbShader = std::make_unique<OpenGLShader>("./shaders/orb_vertex_shader.glsl", "./shaders/orb_fragment_shader.glsl");
+	m_pPerlinNoiseShader = std::make_unique<OpenGLShader>("./shaders/fbm_vertex_shader.glsl", "./shaders/fbm_fragment_shader.glsl");
 	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(512, 512, 64);
-	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader);
+	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader.get());
 	m_pActiveRenderLayer = &m_renderLayers[0];
 	m_renderLayers[layerStations + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderProper);
 	m_renderLayers[layerFGWeaponFire + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
@@ -240,7 +240,7 @@ void OpenGLMasterRenderQueue::renderAllQueues(void)
 {
 	for (OpenGLRenderLayer &renderLayer : m_renderLayers) {
 		renderLayer.renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight),
-		m_pObjectTextureShader, m_pRayShader, m_pGlowmapShader, m_pOrbShader, fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
+		m_pObjectTextureShader.get(), m_pRayShader.get(), m_pGlowmapShader.get(), m_pOrbShader.get(), fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
 		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 	}
 	for (const auto& texture : m_texturesForDeletion) {
@@ -252,7 +252,7 @@ void OpenGLMasterRenderQueue::renderAllQueues(void)
 void OpenGLMasterRenderQueue::renderToGlowmaps(void)
 {
 	for (OpenGLRenderLayer& renderLayer : m_renderLayers) {
-		renderLayer.GenerateGlowmaps(fbo, m_pCanvasVAO, m_pGlowmapShader);
+		renderLayer.GenerateGlowmaps(fbo, m_pCanvasVAO, m_pGlowmapShader.get());
 	}
 }
 void OpenGLMasterRenderQueue::clear(void)
