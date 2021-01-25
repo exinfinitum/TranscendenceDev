@@ -187,6 +187,7 @@ void CPaintHelper::PaintStatusBar (CG32bitImage &Dest, int x, int y, int iTick, 
 //	PaintStatusBar
 //
 //	Paints a status bar
+//	TODO(heliogenesis): Implement scaling; we should have a lower bound on size if zoomed out
 
 	{
 	if (iMaxPos == 0)
@@ -202,9 +203,19 @@ void CPaintHelper::PaintStatusBar (CG32bitImage &Dest, int x, int y, int iTick, 
 	int iFill = Max(1, iPos * STATUS_BAR_WIDTH / iMaxPos);
 
 	//	Draw
+	if (CG32bitImage::GetMasterRenderQueue())
+		{
+		//	Use DrawLine if we are using OpenGL.
+		int yPoint = yStart + (STATUS_BAR_HEIGHT / 2) + 1;
+		Dest.DrawLine(xStart, yPoint, xStart + iFill, yPoint, STATUS_BAR_HEIGHT - 3, rgbNormal);
+		Dest.DrawLine(xStart + iFill, yPoint, xStart + STATUS_BAR_WIDTH, yPoint, STATUS_BAR_HEIGHT - 3, rgbBlack);
+		}
+	else
+		{
+		Dest.Fill(xStart, yStart + 1, iFill, STATUS_BAR_HEIGHT - 2, rgbNormal);
+		Dest.Fill(xStart + iFill, yStart + 1, STATUS_BAR_WIDTH - iFill, STATUS_BAR_HEIGHT - 2, rgbBlack);
+		}
 
-	Dest.Fill(xStart, yStart + 1, iFill, STATUS_BAR_HEIGHT - 2, rgbNormal);
-	Dest.Fill(xStart + iFill, yStart + 1, STATUS_BAR_WIDTH - iFill, STATUS_BAR_HEIGHT - 2, rgbBlack);
 
 	Dest.DrawLine(xStart, yStart, xStart + STATUS_BAR_WIDTH, yStart, 1, rgbDark);
 	Dest.DrawLine(xStart, yStart + STATUS_BAR_HEIGHT - 1, xStart + STATUS_BAR_WIDTH, yStart + STATUS_BAR_HEIGHT - 1, 1, rgbDark);
