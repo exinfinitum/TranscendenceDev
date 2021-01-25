@@ -244,8 +244,7 @@ void OpenGLMasterRenderQueue::renderAllQueues(void)
 		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
 	}
 	for (const auto& texture : m_texturesForDeletion) {
-		texture->incrementNumPixels(-(texture->getHeight() * texture->getWidth()));
-		texture->printDebugDeInit();
+		texture->printPrepDebugDeInit();
 	}
 	m_texturesForDeletion.clear();
 }

@@ -141,6 +141,10 @@ OpenGLTexture::~OpenGLTexture ()
 	{
 	auto t1 = &m_pTextureID[0];
 	auto t2 = &pboID[0];
+	if (::kernelGetDebugLog()) {
+		incrementNumPixels(-(getHeight() * getWidth()));
+		printDebugDeInit();
+	}
 	if (pboID[0] != 0 && pboID[1] != 0) {
 		glDeleteBuffers(2, &pboID[0]);
 	}
