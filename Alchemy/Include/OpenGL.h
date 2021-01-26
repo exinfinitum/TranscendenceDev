@@ -361,6 +361,8 @@ public:
 	void setCurrentTick (int currTick) { m_iCurrentTick = currTick; }
 	void setCanvasDimensions(int width, int height) { m_iCanvasHeight = height; m_iCanvasWidth = width; }
 	void handOffTextureForDeletion(std::unique_ptr<OpenGLTexture> texPtr) {
+		std::unique_lock<std::mutex> lck(m_deleteTextureMutex);
+		::kernelDebugLogPattern("[OpenGL] Handing off texture at addr: %x for deletion from thread %d", int(texPtr.get()), GetCurrentThreadId());
 		m_texturesForDeletion.push_back(std::move(texPtr));
 	 }
 	void setPointerToCanvas(void* canvas) { m_pCanvas = canvas; }
@@ -410,7 +412,7 @@ private:
 	unsigned int m_iCanvasHeight;
 	unsigned int fbo;
 	unsigned int rbo;
-	std::mutex m_shipRenderQueueAddMutex;
+	std::mutex m_deleteTextureMutex;
 	void* m_pCanvas;
 	bool m_bPrevObjAddedIsParticle = false;
 #if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)

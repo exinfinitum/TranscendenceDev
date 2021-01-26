@@ -92,13 +92,13 @@ public:
 	static void incrementNumPixels(int numPixels) { m_iNumPixelsAllocd = uint32_t(numPixels + m_iNumPixelsAllocd); }
 	static int getNumPixels() { return int(m_iNumPixelsAllocd); }
 	void printDebugInit() {
-		::kernelDebugLogPattern(("[OpenGL] Inited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
+		::kernelDebugLogPattern(("[OpenGL] Inited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x, thread %d").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this, GetCurrentThreadId());
 	}
 	void printDebugDeInit() {
-		::kernelDebugLogPattern(("[OpenGL] DeInited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
+		::kernelDebugLogPattern(("[OpenGL] DeInited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x, thread %d").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this, GetCurrentThreadId());
 	}
 	void printPrepDebugDeInit() {
-		::kernelDebugLogPattern(("[OpenGL] Preparing to DeInit texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this);
+		::kernelDebugLogPattern(("[OpenGL] Preparing to DeInit texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x, thread %d").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this, GetCurrentThreadId());
 	}
 protected:
 	unsigned int m_iWidth;
