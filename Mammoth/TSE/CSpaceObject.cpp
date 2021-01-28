@@ -6584,8 +6584,8 @@ void CSpaceObject::PaintEffects (CG32bitImage &Dest, int x, int y, SViewportPain
 			Ctx.iRotation = pEffect->iRotation;
 
 			pEffect->pPainter->Paint(Dest, 
-					x + pEffect->xOffset,
-					y + pEffect->yOffset,
+					x + static_cast<int>(round(static_cast<Metric>(pEffect->xOffset) / g_ZoomScale)),
+					y + static_cast<int>(round(static_cast<Metric>(pEffect->yOffset) / g_ZoomScale)),
 					Ctx);
 
 			pEffect = pEffect->pNext;
