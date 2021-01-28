@@ -487,11 +487,11 @@ void CEffectGroupCreator::ApplyOffsets (SViewportPaintCtx *ioCtx, int *retx, int
 //	Adds appropriate offsets to Ctx
 
 	{
-	int xOffset = (int)(m_xOffset * ioCtx->rOffsetScale);
-	int yOffset = (int)(m_yOffset * ioCtx->rOffsetScale);
+	int xOffset = (int)(m_xOffset * ioCtx->rOffsetScale / ioCtx->fZoomScale);
+	int yOffset = (int)(m_yOffset * ioCtx->rOffsetScale / ioCtx->fZoomScale);
 	if (m_iAngleOffset || m_iRadiusOffset)
 		{
-		CVector vVec = PolarToVector(360 + ioCtx->iRotation + m_iAngleOffset, (Metric)m_iRadiusOffset * ioCtx->rOffsetScale);
+		CVector vVec = PolarToVector(360 + ioCtx->iRotation + m_iAngleOffset, (Metric)m_iRadiusOffset * ioCtx->rOffsetScale / ioCtx->fZoomScale);
 		xOffset += (int)vVec.GetX();
 		yOffset += (int)vVec.GetY();
 		}
