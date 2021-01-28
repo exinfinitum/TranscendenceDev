@@ -4449,7 +4449,7 @@ void CStation::OnSystemCreated (SSystemCreateCtx &CreateCtx)
 	FinishCreation(&CreateCtx);
 	}
 
-void CStation::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CStation::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

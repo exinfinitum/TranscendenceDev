@@ -896,7 +896,7 @@ void CMission::OnReadFromStream (SLoadCtx &Ctx)
 #endif
 	}
 
-void CMission::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CMission::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

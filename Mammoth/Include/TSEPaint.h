@@ -110,7 +110,7 @@ struct SViewportPaintCtx
 
 		CThreadPool *pThreadPool = NULL;		//	Thread pool for painting.
 
-		Metric fZoomScale = 1.0;					//	Value to scale by (for zoom)
+		Metric rZoomScale = 1.0;					//	Value to scale by (for zoom)
 
 		//	Options
 

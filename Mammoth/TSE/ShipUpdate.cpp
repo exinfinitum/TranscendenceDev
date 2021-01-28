@@ -5,7 +5,7 @@
 
 #include "PreComp.h"
 
-void CShip::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CShip::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //
@@ -213,7 +213,7 @@ void CShip::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
 	//	last tick.
 
 	if (WasPainted())
-		m_Effects.Update(this, m_pClass->GetEffectsDesc(), GetRotation(), CalcEffectsMask());
+		m_Effects.Update(this, m_pClass->GetEffectsDesc(), GetRotation(), CalcEffectsMask(), rZoomScale);
 
 	//	Invalidate
 

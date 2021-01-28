@@ -1108,7 +1108,7 @@ void CMissile::OnReadFromStream (SLoadCtx &Ctx)
 		m_Overlays.ReadFromStream(Ctx, this);
 	}
 
-void CMissile::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CMissile::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

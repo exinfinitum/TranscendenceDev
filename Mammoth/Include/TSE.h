@@ -1335,7 +1335,7 @@ class CSpaceObject
 		virtual void OnRemoved (SDestroyCtx &Ctx) { }
 		virtual void OnSetEventFlags (void) { }
 		virtual void OnSetSovereign (CSovereign *pSovereign) { }
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) { }
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) { }
 		virtual void OnUpdateExtended (const CTimeSpan &ExtraTime) { }
 		virtual void OnUpdatePlayer (SUpdateCtx &Ctx) { }
 		virtual void OnWriteToStream (IWriteStream *pStream) { }

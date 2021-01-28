@@ -51,7 +51,7 @@ class CAreaDamage : public TSpaceObjectImpl<OBJID_CAREADAMAGE>
 		virtual void OnDestroyed (SDestroyCtx &Ctx) override;
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 
 	private:
@@ -93,7 +93,7 @@ class CBeam : public TSpaceObjectImpl<OBJID_CBEAM>
 		virtual EDamageResults OnDamage (SDamageCtx &Ctx) override { return damagePassthrough; }
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 
 	private:
@@ -186,7 +186,7 @@ class CContinuousBeam : public TSpaceObjectImpl<OBJID_CCONTINUOUSBEAM>
 		virtual void OnDestroyed (SDestroyCtx &Ctx) override;
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 
 	private:
@@ -281,7 +281,7 @@ class CDisintegrationEffect : public TSpaceObjectImpl<OBJID_CDISINTEGRATIONEFFEC
 		virtual EDamageResults OnDamage (SDamageCtx &Ctx) override { return damagePassthrough; }
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnUpdateExtended (const CTimeSpan &ExtraTime) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 		virtual void OnMove (const CVector &vOldPos, Metric rSeconds) override;
@@ -351,7 +351,7 @@ class CEffect : public TSpaceObjectImpl<OBJID_CEFFECT>
 		virtual void OnMove (const CVector &vOldPos, Metric rSeconds) override;
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnUpdateExtended (const CTimeSpan &ExtraTime) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 
@@ -411,7 +411,7 @@ class CFractureEffect : public TSpaceObjectImpl<OBJID_CFRACTUREEFFECT>
 		virtual EDamageResults OnDamage (SDamageCtx &Ctx) override { return damagePassthrough; }
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnUpdateExtended (const CTimeSpan &ExtraTime) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 		virtual void OnMove (const CVector &vOldPos, Metric rSeconds) override;
@@ -563,7 +563,7 @@ class CMissile : public TSpaceObjectImpl<OBJID_CMISSILE>
 		virtual ICCItemPtr OnFindProperty (CCodeChainCtx &CCX, const CString &sProperty) const override;
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 
 	private:
@@ -652,7 +652,7 @@ class CParticleDamage : public TSpaceObjectImpl<OBJID_CPARTICLEDAMAGE>
 		virtual void OnDestroyed (SDestroyCtx &Ctx) override;
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 
 	private:
@@ -824,7 +824,7 @@ class CParticleEffect : public TSpaceObjectImpl<OBJID_CPARTICLEEFFECT>
 		virtual EDamageResults OnDamage (SDamageCtx &Ctx) override;
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 		virtual void OnMove (const CVector &vOldPos, Metric rSeconds) override;
 		virtual bool PointInObject (const CVector &vObjPos, const CVector &vPointPos) const override;
@@ -933,7 +933,7 @@ class CRadiusDamage : public TSpaceObjectImpl<OBJID_CRADIUSDAMAGE>
 		virtual void OnDestroyed (SDestroyCtx &Ctx) override;
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 
 	private:
@@ -1305,7 +1305,7 @@ class CShip : public TSpaceObjectImpl<OBJID_CSHIP>
 		virtual void OnRemoved (SDestroyCtx &Ctx) override;
 		virtual void OnSetEventFlags (void) override;
 		virtual void OnSetSovereign (CSovereign *pSovereign) override { m_pSovereign = pSovereign; }
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnUpdatePlayer (SUpdateCtx &Ctx) override { m_pController->OnUpdatePlayer(Ctx); }
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 		virtual bool OrientationChanged (void) override;
@@ -1676,7 +1676,7 @@ class CStation : public TSpaceObjectImpl<OBJID_CSTATION>
 		virtual EConditionResult OnRemoveCondition (ECondition iCondition, const SApplyConditionOptions &Options) override;
 		virtual void OnSetEventFlags (void) override;
 		virtual void OnSetSovereign (CSovereign *pSovereign) override { m_pSovereign = pSovereign; }
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnUpdateExtended (const CTimeSpan &ExtraTime) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 

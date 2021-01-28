@@ -80,7 +80,7 @@ class CMission : public TSpaceObjectImpl<OBJID_CMISSION>
 		virtual ICCItemPtr OnFindProperty (CCodeChainCtx &CCX, const CString &sProperty) const override;
 		virtual void OnObjDestroyedNotify (SDestroyCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 
 	private:

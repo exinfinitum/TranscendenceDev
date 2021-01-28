@@ -1132,7 +1132,7 @@ class CSequencerEffect : public TSpaceObjectImpl<OBJID_CSEQUENCEREFFECT>
 		virtual void ObjectDestroyedHook (const SDestroyCtx &Ctx) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void PaintLRSBackground (CG32bitImage &Dest, int x, int y, const ViewportTransform &Trans) override { }
 		virtual void PaintLRSForeground (CG32bitImage &Dest, int x, int y, const ViewportTransform &Trans) override { }
 
