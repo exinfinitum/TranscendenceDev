@@ -501,12 +501,13 @@ void CSystem::CalcViewportCtx (SViewportPaintCtx &Ctx, const RECT &rcView, CSpac
 	{
 	DEBUG_TRY
 	ASSERT(pCenter);
+	Metric scaledKlicksPerPixel = g_KlicksPerPixel * g_ZoomScale;
 
 	Ctx.pCenter = pCenter;
 	Ctx.vCenterPos = pCenter->GetPos();
 	Ctx.rcView = rcView;
-	Ctx.vDiagonal = CVector(g_KlicksPerPixel * (Metric)(RectWidth(rcView)) / 2,
-				g_KlicksPerPixel * (Metric)(RectHeight(rcView)) / 2);
+	Ctx.vDiagonal = CVector(scaledKlicksPerPixel * (Metric)(RectWidth(rcView)) / 2,
+		scaledKlicksPerPixel * (Metric)(RectHeight(rcView)) / 2);
 	Ctx.vUR = Ctx.vCenterPos + Ctx.vDiagonal;
 	Ctx.vLL = Ctx.vCenterPos - Ctx.vDiagonal;
 
@@ -518,7 +519,7 @@ void CSystem::CalcViewportCtx (SViewportPaintCtx &Ctx, const RECT &rcView, CSpac
 
 	Ctx.xCenter = rcView.left + RectWidth(rcView) / 2;
 	Ctx.yCenter = rcView.top + RectHeight(rcView) / 2;
-	Ctx.XForm = ViewportTransform(Ctx.vCenterPos, g_KlicksPerPixel, Ctx.xCenter, Ctx.yCenter);
+	Ctx.XForm = ViewportTransform(Ctx.vCenterPos, scaledKlicksPerPixel, Ctx.xCenter, Ctx.yCenter);
 	Ctx.XFormRel = Ctx.XForm;
 
 	//	Figure out the extended boundaries. This is used for enhanced display.
@@ -561,6 +562,7 @@ void CSystem::CalcViewportCtx (SViewportPaintCtx &Ctx, const RECT &rcView, CSpac
 		}
 
 	Ctx.pThreadPool = m_pThreadPool;
+	Ctx.fZoomScale = g_ZoomScale;
 
 	DEBUG_CATCH
 	}
@@ -3373,12 +3375,12 @@ void CSystem::PaintViewportObject (CG32bitImage &Dest, const RECT &rcView, CSpac
 
 	{
 	//	Figure out the boundary of the viewport in system coordinates
-
+	Metric scaledKlicksPerPixel = g_KlicksPerPixel * g_ZoomScale;
 	int xCenter = rcView.left + RectWidth(rcView) / 2;
 	int yCenter = rcView.top + RectHeight(rcView) / 2;
 
-	CVector vDiagonal(g_KlicksPerPixel * (Metric)(RectWidth(rcView) + 256) / 2,
-				g_KlicksPerPixel * (Metric)(RectHeight(rcView) + 256) / 2);
+	CVector vDiagonal(scaledKlicksPerPixel * (Metric)(RectWidth(rcView) + 256) / 2,
+				scaledKlicksPerPixel * (Metric)(RectHeight(rcView) + 256) / 2);
 	CVector vUR = pCenter->GetPos() + vDiagonal;
 	CVector vLL = pCenter->GetPos() - vDiagonal;
 
@@ -3387,7 +3389,7 @@ void CSystem::PaintViewportObject (CG32bitImage &Dest, const RECT &rcView, CSpac
 	SViewportPaintCtx Ctx;
 	Ctx.pCenter = pCenter;
 	Ctx.rgbStarshineColor = CalcStarshineColor(pCenter);
-	Ctx.XForm = ViewportTransform(pCenter->GetPos(), g_KlicksPerPixel, xCenter, yCenter);
+	Ctx.XForm = ViewportTransform(pCenter->GetPos(), scaledKlicksPerPixel, xCenter, yCenter);
 	Ctx.XFormRel = Ctx.XForm;
 
 	//	Paint object

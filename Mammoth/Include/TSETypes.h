@@ -221,6 +221,7 @@ static constexpr DWORD OBJID_NULL =						0xFFFFFFFF;
 extern Metric g_KlicksPerPixel;
 extern Metric g_TimeScale;
 extern Metric g_SecondsPerUpdate;
+extern Metric g_ZoomScale;
 
 //	Damage Types ---------------------------------------------------------------
 
