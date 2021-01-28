@@ -404,7 +404,7 @@ class CObjectEffectList
 		void Move (CSpaceObject *pObj, const CVector &vOldPos, bool *retbBoundsChanged = NULL);
 		void Paint (SViewportPaintCtx &Ctx, const CObjectEffectDesc &Desc, DWORD dwEffects, CG32bitImage &Dest, int x, int y);
 		void PaintAll (SViewportPaintCtx &Ctx, const CObjectEffectDesc &Desc, CG32bitImage &Dest, int x, int y);
-		void Update (CSpaceObject *pObj, const CObjectEffectDesc &Desc, int iRotation, DWORD dwEffects);
+		void Update (CSpaceObject *pObj, const CObjectEffectDesc &Desc, int iRotation, DWORD dwEffects, Metric rZoomScale);
 
 	private:
 		struct SFixedEffect

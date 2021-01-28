@@ -176,7 +176,7 @@ void CParallaxPaintList::Paint (CG32bitImage &Dest, SViewportPaintCtx &Ctx) cons
 
 		//	Adjust the transform to deal with parallax
 		auto parallaxDelta = pObj->GetParallaxDist() - 1.0;
-		Ctx.XForm = ViewportTransform(Ctx.vCenterPos, (1.0 + (parallaxDelta / Ctx.fZoomScale)) * g_KlicksPerPixel * Ctx.fZoomScale, Ctx.xCenter, Ctx.yCenter);
+		Ctx.XForm = ViewportTransform(Ctx.vCenterPos, (1.0 + (parallaxDelta / Ctx.rZoomScale)) * g_KlicksPerPixel * Ctx.rZoomScale, Ctx.xCenter, Ctx.yCenter);
 		Ctx.XFormRel = Ctx.XForm;
 
 		//	Figure out the position of the object in pixels

@@ -651,7 +651,7 @@ void CContinuousBeam::OnReadFromStream (SLoadCtx &Ctx)
 		}
 	}
 
-void CContinuousBeam::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CContinuousBeam::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

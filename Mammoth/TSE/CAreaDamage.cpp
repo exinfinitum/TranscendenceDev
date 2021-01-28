@@ -245,7 +245,7 @@ void CAreaDamage::OnSystemLoaded (void)
 	{
 	}
 
-void CAreaDamage::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CAreaDamage::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

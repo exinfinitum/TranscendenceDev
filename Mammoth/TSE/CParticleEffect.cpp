@@ -645,7 +645,7 @@ void CParticleEffect::OnReadFromStream (SLoadCtx &Ctx)
 		}
 	}
 
-void CParticleEffect::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CParticleEffect::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

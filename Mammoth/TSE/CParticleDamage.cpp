@@ -497,7 +497,7 @@ void CParticleDamage::OnReadFromStream (SLoadCtx &Ctx)
 	m_fPainterFade =	((dwFlags & 0x00000010) ? true : false);
 	}
 
-void CParticleDamage::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CParticleDamage::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

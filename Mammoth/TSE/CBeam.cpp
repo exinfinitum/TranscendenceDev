@@ -219,7 +219,7 @@ void CBeam::OnReadFromStream (SLoadCtx &Ctx)
 	ComputeOffsets();
 	}
 
-void CBeam::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CBeam::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

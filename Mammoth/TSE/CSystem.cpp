@@ -562,7 +562,7 @@ void CSystem::CalcViewportCtx (SViewportPaintCtx &Ctx, const RECT &rcView, CSpac
 		}
 
 	Ctx.pThreadPool = m_pThreadPool;
-	Ctx.fZoomScale = g_ZoomScale;
+	Ctx.rZoomScale = g_ZoomScale;
 
 	DEBUG_CATCH
 	}

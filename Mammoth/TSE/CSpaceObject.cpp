@@ -7555,7 +7555,7 @@ void CSpaceObject::Update (SUpdateCtx &Ctx)
 
 		//	Update the specific object subclass.
 
-		OnUpdate(Ctx, g_SecondsPerUpdate);
+		OnUpdate(Ctx, g_SecondsPerUpdate, g_ZoomScale);
 		if (IsDestroyed())
 			return;
 		}

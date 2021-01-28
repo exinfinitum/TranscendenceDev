@@ -139,13 +139,15 @@ void CObjectEffectList::Paint (SViewportPaintCtx &Ctx, const CObjectEffectDesc &
 
 		int xPainter, yPainter;
 		EffectDesc.PosCalc.GetCoordFromDir(Ctx.iVariant, &xPainter, &yPainter);
+		xPainter = static_cast<int>(round(static_cast<Metric>(xPainter) / Ctx.rZoomScale));
+		yPainter = static_cast<int>(round(static_cast<Metric>(yPainter) / Ctx.rZoomScale));
 
 		//	Compute the rotation (180 for thruster effects)
 
 		Ctx.iRotation = AngleMod(iObjRotation + EffectDesc.iRotation + 180);
 
 		//	Paint
-
+		//	TODO(heliogenesis): Scale according to zoom level
 		if (dwEffects & EffectDesc.iType)
 			m_FixedEffects[i].pPainter->Paint(Dest,
 					x + xPainter,
@@ -186,7 +188,7 @@ void CObjectEffectList::PaintAll (SViewportPaintCtx &Ctx, const CObjectEffectDes
 	Ctx.iTick = iOldTick;
 	}
 
-void CObjectEffectList::Update (CSpaceObject *pObj, const CObjectEffectDesc &Desc, int iRotation, DWORD dwEffects)
+void CObjectEffectList::Update (CSpaceObject *pObj, const CObjectEffectDesc &Desc, int iRotation, DWORD dwEffects, Metric rZoomScale)
 
 //	Update
 //
@@ -215,7 +217,7 @@ void CObjectEffectList::Update (CSpaceObject *pObj, const CObjectEffectDesc &Des
 			int xEmit;
 			int yEmit;
 			Desc.GetEffectDesc(i).PosCalc.GetCoord(iRotation, &xEmit, &yEmit);
-			PainterCtx.vEmitPos = CVector(xEmit * g_KlicksPerPixel, -yEmit * g_KlicksPerPixel);
+			PainterCtx.vEmitPos = CVector(xEmit * g_KlicksPerPixel / rZoomScale, -yEmit * g_KlicksPerPixel / rZoomScale);
 
 			//	Compute the rotation (180 for thruster effects)
 

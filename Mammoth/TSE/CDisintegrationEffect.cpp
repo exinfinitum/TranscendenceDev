@@ -220,7 +220,7 @@ void CDisintegrationEffect::OnReadFromStream (SLoadCtx &Ctx)
 		}
 	}
 
-void CDisintegrationEffect::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CDisintegrationEffect::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //
