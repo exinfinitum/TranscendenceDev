@@ -252,12 +252,9 @@ class CObjectImageArray
 		void PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite = false, float OpenGLRotationInDegrees = 0) const;
 		void PaintImageScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotationFacing, float rotationInDegrees = 0) const;
 		void PaintImageGlowUsingOpenGL (CG32bitImage& Dest, int x, int y, int iTick, int iRotation, CG32bitPixel rgbGlowColor, float glowStrength, int glowRadius,
-			float glowAlpha, float glowNoise, CGDraw::EBlendModes blendMode, glm::ivec4 integerGlowDecay) const;
+			float glowAlpha, float glowNoise, CGDraw::EBlendModes blendMode, glm::ivec4 integerGlowDecay, float rotationInDegrees = 0, float xScaleDest = 1.0, float yScaleDest = 1.0) const;
 		void PaintImageSizedWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, int xSize, int ySize, int iTick, int iRotationFacing, float rotationInDegrees = 0) const;
 		void PaintGrayedImageScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotationFacing, float rotationInDegrees = 0) const;
-		void PaintImageGlowScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest,
- float yScaleDest,
-			float glowR, float glowG, float glowB, float glowA, int iTick, int iRotation, int glowRadius) const;
 		void PaintImageGrayed (CG32bitImage &Dest, int x, int y, int iTick, int iRotation) const;
 		void PaintImageShimmering (CG32bitImage &Dest,
 								   int x,
