@@ -607,7 +607,7 @@ void CParticleSystemEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SVie
 		//	to object-relative coordinates.
 
 		if (m_bUseObjectCenter)
-			vPos = CVector((x - xPaint) * g_KlicksPerPixel, (yPaint - y) * g_KlicksPerPixel);
+			vPos = CVector((x - xPaint) * g_KlicksPerPixel / g_ZoomScale, (yPaint - y) * g_KlicksPerPixel / g_ZoomScale);
 
 		//	Initialize last emit position
 

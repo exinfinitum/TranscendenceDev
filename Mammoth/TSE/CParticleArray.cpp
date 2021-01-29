@@ -1570,8 +1570,8 @@ void CParticleArray::PosToXY (const CVector &xy, int *retx, int *rety)
 //	Convert from system coordinates to particle coordinates
 
 	{
-	*retx = (int)(FIXED_POINT * xy.GetX() / g_KlicksPerPixel);
-	*rety = -(int)(FIXED_POINT * xy.GetY() / g_KlicksPerPixel);
+	*retx = (int)(FIXED_POINT * xy.GetX() / (g_KlicksPerPixel * g_ZoomScale));
+	*rety = -(int)(FIXED_POINT * xy.GetY() / (g_KlicksPerPixel * g_ZoomScale));
 	}
 
 void CParticleArray::ReadFromStream (SLoadCtx &Ctx)
@@ -2606,5 +2606,5 @@ CVector CParticleArray::XYToPos (int x, int y)
 //	Converts from particle coordinates to screen coordinates
 
 	{
-	return CVector((x * g_KlicksPerPixel / FIXED_POINT), -(y * g_KlicksPerPixel / FIXED_POINT));
+	return CVector((x * g_KlicksPerPixel / FIXED_POINT) * g_ZoomScale, -(y * g_KlicksPerPixel / FIXED_POINT) * g_ZoomScale);
 	}
