@@ -1260,8 +1260,9 @@ void COrbEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaintC
 		int iRadiusFlicker = m_FlareDesc[iTick % m_FlareDesc.GetCount()].iLength / FLARE_MULITPLE;
 		int iRadius = m_iAnimation == animateFlicker ? iRadiusFlicker : m_iRadius;
 		float fFlickerMultiplier = m_iAnimation == animateFlicker ? float(iRadiusFlicker) / float(m_iRadius) : 1.0f;
+		iRadius = int(iRadius * 2.0 / Ctx.rZoomScale);
 		pRenderQueue->addOrbToEffectRenderQueue(
-			x, y, iRadius * 2, iRadius * 2, Dest.GetWidth(), Dest.GetHeight(),
+			x, y, iRadius, iRadius, Dest.GetWidth(), Dest.GetHeight(),
 			0.0,
 			float(m_iIntensity) * fFlickerMultiplier,
 			float(m_byOpacity / 255.0),
@@ -1439,7 +1440,7 @@ void COrbEffectPainter::PaintFlares (CG32bitImage &Dest, int xCenter, int yCente
 	int iAngle = 360 / iFlareCount;
 
 	for (i = 0; i < iFlareCount; i++)
-		PaintFlareRay(Dest, xCenter, yCenter, FlareDesc.iLength, FlareDesc.iWidth, AngleMod(FLARE_ANGLE + (iAngle * i)), m_iIntensity, Ctx);
+		PaintFlareRay(Dest, xCenter, yCenter, int(FlareDesc.iLength / Ctx.rZoomScale), int(FlareDesc.iWidth / Ctx.rZoomScale), AngleMod(FLARE_ANGLE + (iAngle * i)), m_iIntensity, Ctx);
 	}
 
 void COrbEffectPainter::PaintLightning (CG32bitImage &Dest, int xCenter, int yCenter, const SFlareDesc &FlareDesc, SViewportPaintCtx &Ctx)
@@ -1461,7 +1462,7 @@ void COrbEffectPainter::PaintLightning (CG32bitImage &Dest, int xCenter, int yCe
 	for (i = 0; i < iFlareCount; i++)
 		{
 		int xDest, yDest;
-		IntPolarToVector(iAngle, FlareDesc.iLength, &xDest, &yDest);
+		IntPolarToVector(iAngle, int(FlareDesc.iLength / Ctx.rZoomScale), &xDest, &yDest);
 		DrawLightning(Dest,
 			xCenter, yCenter,
 			xCenter + xDest, yCenter + yDest,

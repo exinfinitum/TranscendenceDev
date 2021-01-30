@@ -83,7 +83,7 @@ void CLightningBundlePainter::Draw (CG32bitImage &Dest, int x1, int y1, int x2, 
 	DEBUG_CATCH
     }
 
-void CLightningBundlePainter::DrawWithOpenGL(CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iRotDegrees, bool& bSuccess, OpenGLRenderLayer::blendMode blendMode)
+void CLightningBundlePainter::DrawWithOpenGL(CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iRotDegrees, bool& bSuccess, OpenGLRenderLayer::blendMode blendMode, int iWidth, float fScale)
 	{
 	// We handle drawing lightning in the DrawLightning function.
 	return;

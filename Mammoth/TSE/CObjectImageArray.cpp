@@ -1498,7 +1498,7 @@ void CObjectImageArray::PaintGrayedImageScaledWithOpenGL(CG32bitImage& Dest, int
 		}
 	}
 
-void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite, float OpenGLRotationInDegrees) const
+void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite, float OpenGLRotationInDegrees, float scale) const
 
 //	PaintImage
 //
@@ -1522,7 +1522,7 @@ void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick,
 
 		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
 			{
-			PaintImageScaledWithOpenGL(Dest, x, y, 1.0, 1.0, iTick, iRotation, OpenGLRotationInDegrees);
+			PaintImageScaledWithOpenGL(Dest, x, y, scale, scale, iTick, iRotation, OpenGLRotationInDegrees);
 			return;
 			}
 
@@ -1566,7 +1566,7 @@ void CObjectImageArray::PaintImage (CG32bitImage &Dest, int x, int y, int iTick,
 		}
 	}
 
-void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, DWORD byOpacity, float OpenGLRotationInDegrees) const
+void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, DWORD byOpacity, float OpenGLRotationInDegrees, float scale) const
 
 //	PaintImageShimmering
 //
@@ -1602,7 +1602,8 @@ void CObjectImageArray::PaintImageShimmering (CG32bitImage &Dest, int x, int y, 
 			int iTexQuadWidth = RectWidth(m_rcImage);
 			int iTexQuadHeight = RectHeight(m_rcImage);
 			auto[iNumRows, iNumCols] = GetNumColsAndRows();
-			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight, x - (iQuadWidth / 2), y - (iQuadHeight / 2), OpenGLRotationInDegrees,
+			pRenderQueue->addImageToRenderQueue(xSrc, ySrc, int(scale * float(iQuadWidth)), int(scale * float(iQuadHeight)),
+				x - int((scale * float(iQuadWidth)) / 2), y - int((scale * float(iQuadHeight)) / 2), OpenGLRotationInDegrees,
 				pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iTexQuadWidth, iTexQuadHeight, iNumCols, iNumRows, m_rcImage.left, m_rcImage.top,
 			(byOpacity == 0 ? 1.0f : (float)(static_cast<int>(byOpacity) / 255.0f)), false, OpenGLRenderLayer::textureRenderCategory::normal, OpenGLRenderLayer::blendNormal,
 			1.0f); // TODO (heliogenesis): Experiment with depth testing on cloaked ships
@@ -1747,7 +1748,8 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 											int iRotation,
 											CG32bitPixel rgbGlowColor,
 											bool drawImageOnly,
-											float OpenGLRotationInDegrees) const
+											float OpenGLRotationInDegrees,
+											float scale) const
 
 //	PaintImageWithGlow
 //
@@ -1779,13 +1781,13 @@ void CObjectImageArray::PaintImageWithGlow (CG32bitImage &Dest,
 		float fStrength = iStrength / 255.0f;
 		PaintImageGlowUsingOpenGL(Dest, x, y, iTick, iRotation, rgbGlowColor,
 			fStrength, glowRadius, 1.0, 0.0, CGDraw::EBlendModes::blendNormal, glm::vec4(-1, -1, -1, -1),
-			OpenGLRotationInDegrees);
+			OpenGLRotationInDegrees, scale, scale);
 		if (!drawImageOnly) {
-			PaintImageScaledWithOpenGL(Dest, x, y, 1.0, 1.0, iTick, iRotation, OpenGLRotationInDegrees);
+			PaintImageScaledWithOpenGL(Dest, x, y, scale, scale, iTick, iRotation, OpenGLRotationInDegrees);
 		}
 		PaintImageGlowUsingOpenGL(Dest, x, y, iTick, iRotation, rgbGlowColor,
 			fStrength / 4.5f, glowRadius, 1.0, 0.0, CGDraw::EBlendModes::blendNormal, glm::vec4(-1, -1, -1, -1),
-			OpenGLRotationInDegrees);
+			OpenGLRotationInDegrees, scale, scale);
 		return;
 	}
 
