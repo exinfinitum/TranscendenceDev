@@ -5444,11 +5444,11 @@ void CShip::OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx)
 
 	//	Paint the body of the ship
 	if (byShimmer)
-		Image.PaintImageShimmering(Dest, x, y, Ctx.iTick, m_Rotation.GetFrameIndex(), byShimmer);
+		Image.PaintImageShimmering(Dest, x, y, Ctx.iTick, m_Rotation.GetFrameIndex(), byShimmer, 0.0f, float(1.0f / Ctx.rZoomScale));
 	else if (IsRadioactive())
-		Image.PaintImageWithGlow(Dest, x, y, Ctx.iTick, m_Rotation.GetFrameIndex(), CG32bitPixel(0, 255, 0));
+		Image.PaintImageWithGlow(Dest, x, y, Ctx.iTick, m_Rotation.GetFrameIndex(), CG32bitPixel(0, 255, 0), false, 0.0f, float(1.0f / Ctx.rZoomScale));
 	else
-		Image.PaintImage(Dest, x, y, Ctx.iTick, m_Rotation.GetFrameIndex());
+		Image.PaintImage(Dest, x, y, Ctx.iTick, m_Rotation.GetFrameIndex(), false, 0.0f, float(1.0f / Ctx.rZoomScale));
 
 	//	Paint effects in front of the ship.
 

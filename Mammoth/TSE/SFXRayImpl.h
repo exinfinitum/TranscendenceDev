@@ -183,7 +183,7 @@ template <class BLENDER> class CRayRasterizer : public TLinePainter32<CRayRaster
                 m_byOpacity = byValue;
             }
 
-		virtual void DrawWithOpenGL (CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iRotDegrees, bool& bSuccess, OpenGLRenderLayer::blendMode blendMode) override
+		virtual void DrawWithOpenGL (CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iRotDegrees, bool& bSuccess, OpenGLRenderLayer::blendMode blendMode, int iWidth, float fScale) override
 			{
 			OpenGLMasterRenderQueue *pRenderQueue = Dest.GetMasterRenderQueue();
 			if (!(pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas())))
@@ -191,19 +191,25 @@ template <class BLENDER> class CRayRasterizer : public TLinePainter32<CRayRaster
 				bSuccess = false;
 				return;
 				}
-
-			int iDistX = x1 - x2;
-			int iDistY = y1 - y2;
+			if (iWidth != m_iWidthCount) {
+				//crash
+				int* crash = 0x0;
+				*crash = 1234;
+			}
+			float iDistX = (x1 - x2) * fScale;
+			float iDistY = (y1 - y2) * fScale;
 			int iCanvasHeight = Dest.GetHeight();
 			int iCanvasWidth = Dest.GetWidth();
+			int iCanvasCenterX = iCanvasHeight / 2;
+			int iCanvasCenterY = iCanvasWidth / 2;
 
-			float iDist = sqrt(float(iDistX * iDistX) + float(iDistY * iDistY));
-			int iPosX = x1 - ((iDistX) / 2);
-			int iPosY = y1 - ((iDistY) / 2);
+			float iDist = sqrt(iDistX * iDistX + iDistY * iDistY);
+			int iPosX = x1 - int(roundf(iDistX / 2));
+			int iPosY = y1 - int(roundf(iDistY / 2));
 			std::tuple<int, int, int> primaryColor (int(m_primaryColor.GetRed()), int(m_primaryColor.GetGreen()), int(m_primaryColor.GetBlue()));
 			std::tuple<int, int, int> secondaryColor (int(m_secondaryColor.GetRed()), int(m_secondaryColor.GetGreen()), int(m_secondaryColor.GetBlue()));
 
-			pRenderQueue->addRayToEffectRenderQueue(iPosX, iPosY, int(iDist) * 2, m_iWidthCount * 2, iCanvasWidth, iCanvasHeight, float(iRotDegrees) * (float(PI) / 180.0f), m_iColorType, m_iOpacityType, m_iWidthAdjType, m_iReshape, m_iTexture,
+			pRenderQueue->addRayToEffectRenderQueue(iPosX, iPosY, int(iDist * 2.0 * fScale), int(iWidth * 2 * fScale), iCanvasWidth, iCanvasHeight, float(iRotDegrees) * (float(PI) / 180.0f), m_iColorType, m_iOpacityType, m_iWidthAdjType, m_iReshape, m_iTexture,
 				primaryColor, secondaryColor, m_iIntensity, float(m_rCyclePos), m_byOpacity, blendMode);
 
 			bSuccess = true;
@@ -361,7 +367,7 @@ class CLightningBundlePainter : public ILinePainter
 			CRayEffectPainter::EWidthAdjTypes iWidthAdjType, CRayEffectPainter::EWidthAdjTypes iReshape);
 
         virtual void Draw (CG32bitImage &Dest, int x1, int y1, int x2, int y2, int iWidth) override;
-		virtual void DrawWithOpenGL(CG32bitImage & Dest, int x1, int y1, int x2, int y2, int iRotDegrees, bool & bSuccess, OpenGLRenderLayer::blendMode blendMode) override;
+		virtual void DrawWithOpenGL(CG32bitImage & Dest, int x1, int y1, int x2, int y2, int iRotDegrees, bool & bSuccess, OpenGLRenderLayer::blendMode blendMode, int iWidth, float fScale) override;
 
     private:
         int m_iBoltCount;

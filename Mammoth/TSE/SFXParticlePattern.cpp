@@ -465,8 +465,8 @@ bool CParticlePatternEffectPainter::GetPaintInfo (int iParticle, int xPos, int y
 
 	CVector vPos = m_Points[iAge];
 	vPos = CVector(
-			vPos.GetX() * pParticle->vScale.GetY(),
-			vPos.GetY() * pParticle->vScale.GetX()
+			vPos.GetX() * pParticle->vScale.GetY() / g_ZoomScale,
+			vPos.GetY() * pParticle->vScale.GetX() / g_ZoomScale
 			);
 
 	vPos = vPos.Rotate(Ctx.iRotation + 180 + pParticle->iRotationAdj);
@@ -645,7 +645,7 @@ void CParticlePatternEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SVi
 					xParticle,
 					yParticle,
 					rgbColor,
-					iParticleSize,
+					int(iParticleSize / Ctx.rZoomScale),
 					dwOpacity);
 			}
 		}
@@ -671,7 +671,7 @@ void CParticlePatternEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SVi
 					xParticle,
 					yParticle,
 					m_rgbPrimaryColor,
-					iParticleSize,
+					int(iParticleSize / Ctx.rZoomScale),
 					dwOpacity);
 			}
 		}
@@ -808,7 +808,7 @@ void CParticlePatternEffectPainter::PaintGaseous (CG32bitImage &Dest, int xPos, 
 	{
 	int i;
 
-	CGaseousPainter Painter(GetMaxAge(), Desc.iMinWidth, Desc.iMaxWidth, Desc.rgbPrimaryColor, Desc.rgbSecondaryColor);
+	CGaseousPainter Painter(GetMaxAge(), int(Desc.iMinWidth / Ctx.rZoomScale), int(Desc.iMaxWidth / Ctx.rZoomScale), Desc.rgbPrimaryColor, Desc.rgbSecondaryColor);
 
 	for (i = 0; i < m_Particles.GetCount(); i++)
 		{
@@ -835,7 +835,7 @@ void CParticlePatternEffectPainter::PaintGlitter (CG32bitImage &Dest, int xPos, 
 	{
 	int i;
 
-	CGlitterPainter Painter(Desc.iMaxWidth, Desc.rgbPrimaryColor, Desc.rgbSecondaryColor);
+	CGlitterPainter Painter(int(Desc.iMaxWidth / Ctx.rZoomScale), Desc.rgbPrimaryColor, Desc.rgbSecondaryColor);
 
 	for (i = 0; i < m_Particles.GetCount(); i++)
 		{

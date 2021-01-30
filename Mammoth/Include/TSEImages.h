@@ -249,7 +249,7 @@ class CObjectImageArray
 		bool IsLoaded (void) const { return (m_pImage != NULL); }
         bool IsMarked (void) const { return (m_pImage && m_pImage->IsMarked()); }
 		void MarkImage (void) const;
-		void PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite = false, float OpenGLRotationInDegrees = 0) const;
+		void PaintImage (CG32bitImage &Dest, int x, int y, int iTick, int iRotation, bool bComposite = false, float OpenGLRotationInDegrees = 0, float scale = 1.0) const;
 		void PaintImageScaledWithOpenGL (CG32bitImage& Dest, int xDest, int yDest, float xScaleDest, float yScaleDest, int iTick, int iRotationFacing, float rotationInDegrees = 0) const;
 		void PaintImageGlowUsingOpenGL (CG32bitImage& Dest, int x, int y, int iTick, int iRotation, CG32bitPixel rgbGlowColor, float glowStrength, int glowRadius,
 			float glowAlpha, float glowNoise, CGDraw::EBlendModes blendMode, glm::ivec4 integerGlowDecay, float rotationInDegrees = 0, float xScaleDest = 1.0, float yScaleDest = 1.0) const;
@@ -262,7 +262,8 @@ class CObjectImageArray
 								   int iTick,
 								   int iRotation,
 								   DWORD byOpacity,
-								   float OpenGLRotationInDegrees = 0) const;
+								   float OpenGLRotationInDegrees = 0,
+								   float scale = 0) const;
 		void PaintImageUL (CG32bitImage &Dest, int x, int y, int iTick, int iRotation) const;
 		void PaintImageWithGlow (CG32bitImage &Dest,
 								 int x,
@@ -271,7 +272,8 @@ class CObjectImageArray
 								 int iRotation,
 								 CG32bitPixel rgbGlowColor,
 								 bool drawGlowOnly = false,
-								 float OpenGLRotationInDegrees = 0) const;
+								 float OpenGLRotationInDegrees = 0,
+								 float scale = 1.0) const;
 		void PaintRotatedImage (CG32bitImage &Dest,
 								int x,
 								int y,

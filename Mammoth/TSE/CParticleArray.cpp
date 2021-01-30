@@ -1011,8 +1011,8 @@ void CParticleArray::Paint (CG32bitImage &Dest,
 					xPos, yPos, 
 					Ctx, 
 					Desc.iMaxLifetime,
-					Desc.iMinWidth,
-					Desc.iMaxWidth, 
+					int(Desc.iMinWidth / g_ZoomScale),
+					int(Desc.iMaxWidth / g_ZoomScale),
 					iCore, 
 					iFlame, 
 					iSmoke, 
@@ -1023,7 +1023,7 @@ void CParticleArray::Paint (CG32bitImage &Dest,
 
 		case paintGlitter:
 			{
-			PaintGlitter(Dest, xPos, yPos, Ctx, Desc.iMaxWidth, Desc.rgbPrimaryColor, Desc.rgbSecondaryColor);
+			PaintGlitter(Dest, xPos, yPos, Ctx, int(Desc.iMaxWidth / g_ZoomScale), Desc.rgbPrimaryColor, Desc.rgbSecondaryColor);
 			break;
 			}
 
@@ -1032,7 +1032,7 @@ void CParticleArray::Paint (CG32bitImage &Dest,
 			break;
 
 		case paintLine:
-			PaintLine(Dest, xPos, yPos, Ctx, DEFAULT_LINE_LENGTH, Desc.rgbPrimaryColor, Desc.rgbSecondaryColor);
+			PaintLine(Dest, xPos, yPos, Ctx, int(DEFAULT_LINE_LENGTH / g_ZoomScale), Desc.rgbPrimaryColor, Desc.rgbSecondaryColor);
 			break;
 
 		case paintSmoke:
@@ -1046,8 +1046,8 @@ void CParticleArray::Paint (CG32bitImage &Dest,
 					xPos, yPos, 
 					Ctx, 
 					Desc.iMaxLifetime,
-					Desc.iMinWidth,
-					Desc.iMaxWidth, 
+					int(Desc.iMinWidth / g_ZoomScale),
+					int(Desc.iMaxWidth / g_ZoomScale),
 					iCore, 
 					iFlame, 
 					iSmoke, 
@@ -1061,8 +1061,8 @@ void CParticleArray::Paint (CG32bitImage &Dest,
 					xPos, yPos,
 					Ctx,
 					Desc.iMaxLifetime,
-					Desc.iMinWidth,
-					Desc.iMaxWidth,
+					int(Desc.iMinWidth / g_ZoomScale),
+					int(Desc.iMaxWidth / g_ZoomScale),
 					Desc.rgbPrimaryColor,
 					Desc.rgbSecondaryColor);
 			break;
@@ -1505,7 +1505,7 @@ void CParticleArray::PaintImage (CG32bitImage &Dest, int xPos, int yPos, SViewpo
 
 			//	Paint the particle
 
-			Desc.pImage->PaintImage(Dest, x, y, iTick, iFrame);
+			Desc.pImage->PaintImage(Dest, x, y, iTick, iFrame, 0.0f, static_cast<float>(1.0 / g_ZoomScale));
 			}
 
 		//	Next
