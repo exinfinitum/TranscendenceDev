@@ -3466,13 +3466,13 @@ void CStation::OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx
 	float fOpenGLRotation = HasStarlightImage() ? float(Ctx.iRotation) : 0;
 
 	if (byShimmer)
-		Image.PaintImageShimmering(Dest, x, y, iTick, iVariant, byShimmer, fOpenGLRotation);
+		Image.PaintImageShimmering(Dest, x, y, iTick, iVariant, byShimmer, fOpenGLRotation, float(1.0f / Ctx.rZoomScale));
 
 	else if (m_fRadioactive)
-		Image.PaintImageWithGlow(Dest, x, y, iTick, iVariant, CG32bitPixel(0, 255, 0), false, fOpenGLRotation);
+		Image.PaintImageWithGlow(Dest, x, y, iTick, iVariant, CG32bitPixel(0, 255, 0), false, fOpenGLRotation, float(1.0f / Ctx.rZoomScale));
 
 	else
-		Image.PaintImage(Dest, x, y, iTick, iVariant, false, fOpenGLRotation);
+		Image.PaintImage(Dest, x, y, iTick, iVariant, false, fOpenGLRotation, float(1.0f / Ctx.rZoomScale));
 
 	//  Paint satellites in front of the station.
 
