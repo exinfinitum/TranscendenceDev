@@ -238,9 +238,9 @@ void CImageEffectCreator::Paint (CG32bitImage &Dest, int x, int y, SViewportPain
 		int iFrame = (m_bDirectional ? Angle2Direction(Ctx.iRotation, m_iVariants) : (Ctx.iVariant % m_iVariants));
 
 		if (Ctx.byShimmer)
-			Image.PaintImageShimmering(Dest, x, y, iTick, iFrame, Ctx.byShimmer);
+			Image.PaintImageShimmering(Dest, x, y, iTick, iFrame, Ctx.byShimmer, 0.0f, float(1.0 / g_ZoomScale));
 		else
-			Image.PaintImage(Dest, x, y, iTick, iFrame);
+			Image.PaintImage(Dest, x, y, iTick, iFrame, false, 0.0f, float(1.0 / g_ZoomScale));
 		}
 	}
 
