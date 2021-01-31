@@ -366,7 +366,7 @@ int CRayEffectPainter::CalcLength (SViewportPaintCtx &Ctx) const
 
 	//  Adjust for maximum
 
-	return (Ctx.iMaxLength != -1 ? Min(Ctx.iMaxLength, iLength) : iLength);
+	return int((Ctx.iMaxLength != -1 ? Min(Ctx.iMaxLength, iLength) : iLength) / Ctx.rZoomScale);
 	}
 
 void CRayEffectPainter::CalcOval (TArray<Metric> &AdjArray)

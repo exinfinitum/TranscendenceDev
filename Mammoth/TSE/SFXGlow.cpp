@@ -577,9 +577,10 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 		}
 		int relativeHitX = hitX - x;
 		int relativeHitY = hitY - y;
+		float scale = float(1.0 / Ctx.rZoomScale);
 		pSource->GetImage().PaintImageGlowUsingOpenGL(Dest, x, y, Ctx.iTick, pSource->GetRotationFrameIndex(), m_rgbPrimaryColor,
-			(float(byOpacity) / 255.0f) * (float(m_iOpacity) / 255.0f), m_iRadius, (float(byOpacity) / 255.0f) * (float(m_iOpacity) / 255.0f), 0.0, m_iBlendMode,
-			glm::ivec4(relativeHitX, relativeHitY, maxRadiusAroundImpact, minRadiusAroundImpact));
+			(float(byOpacity) / 255.0f) * (float(m_iOpacity) / 255.0f), int(m_iRadius * scale), (float(byOpacity) / 255.0f) * (float(m_iOpacity) / 255.0f), 0.0, m_iBlendMode,
+			glm::ivec4(relativeHitX, relativeHitY, maxRadiusAroundImpact, minRadiusAroundImpact), 0.0f, scale, scale);
 		return;
 	}
 
