@@ -55,6 +55,7 @@ For special effects that use textures (such as glow), what we can do is use a se
 #include <thread>
 #include <mutex>
 //#define OPENGL_FPS_COUNTER_ENABLE // Uncomment this line to enable the OpenGL FPS counter (which specifically notes how much time is spent in graphics)
+//#define OPENGL_OBJ_COUNTER_ENABLE // Uncomment this line to enable the OpenGL quad counter
 
 /*
 class OpenGLMasterRenderQueue {
@@ -368,6 +369,8 @@ public:
 	void setPointerToCanvas(void* canvas) { m_pCanvas = canvas; }
 	void *getPointerToCanvas() { return m_pCanvas; }
 	void setActiveRenderLayer(int iRenderLayer) { m_pActiveRenderLayer = &m_renderLayers[iRenderLayer]; }
+	void renderQueueByLayerNumberIndex(int index);
+	void deleteUnusedTextures(void);
 #if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)
 	CG16bitFont& getOpenGLIndicatorFont() {
 		return *(m_pOpenGLIndicatorFont.get());
