@@ -236,19 +236,29 @@ void OpenGLMasterRenderQueue::addParticleToEffectRenderQueue(int posPixelX, int 
 	m_bPrevObjAddedIsParticle = true;
 	}
 
-void OpenGLMasterRenderQueue::renderAllQueues(void)
+void OpenGLMasterRenderQueue::renderQueueByLayerNumberIndex(int index)
 {
-	for (OpenGLRenderLayer &renderLayer : m_renderLayers) {
-		renderLayer.renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight),
+	m_renderLayers[index].renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight),
 		m_pObjectTextureShader.get(), m_pRayShader.get(), m_pGlowmapShader.get(), m_pOrbShader.get(), fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
-		m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
-	}
+	m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
+}
+
+void OpenGLMasterRenderQueue::deleteUnusedTextures(void)
+{
 	std::unique_lock<std::mutex> lck(m_deleteTextureMutex);
 	for (auto& texture : m_texturesForDeletion) {
 		::kernelDebugLogPattern("[OpenGL] Preparing to delete texture at addr: %x", int(texture.get()));
 	}
 	if (m_texturesForDeletion.size() > 0) ::kernelDebugLogPattern("[OpenGL] Deleting %d textures using thread %d.", m_texturesForDeletion.size(), GetCurrentThreadId());
 	m_texturesForDeletion.clear();
+}
+
+void OpenGLMasterRenderQueue::renderAllQueues(void)
+{
+	for (size_t i = 0; i < m_renderLayers.size(); i++) {
+		renderQueueByLayerNumberIndex(i);
+	}
+	deleteUnusedTextures();
 }
 void OpenGLMasterRenderQueue::renderToGlowmaps(void)
 {

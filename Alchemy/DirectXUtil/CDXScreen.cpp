@@ -700,6 +700,7 @@ void CDXScreen::Render (void)
 			Layer.BackBuffer.GetMasterRenderQueue()->setPointerToCanvas(&Layer.BackBuffer);
 			Layer.BackBuffer.GetMasterRenderQueue()->setCanvasDimensions(Layer.BackBuffer.GetWidth(), Layer.BackBuffer.GetHeight());
 			Layer.BackBuffer.GetMasterRenderQueue()->renderAllQueues();
+			Layer.BackBuffer.GetMasterRenderQueue()->deleteUnusedTextures();
 			m_pOGLContext->renderCanvasBackgroundFromTexture(m_pOpenGLTextureFG, 0.000001f);
 			Layer.BackBuffer.GetMasterRenderQueue()->renderToGlowmaps();
 			Layer.FrontBuffer.Set(CG32bitPixel(0, 0, 0, 0)); // TODO: Replace once we get the proper method from George
