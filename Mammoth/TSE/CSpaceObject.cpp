@@ -4783,7 +4783,7 @@ void CSpaceObject::HighlightAppend (const CString &sText)
 CSpaceObject *CSpaceObject::HitTest (const CVector &vStart, 
 									 const DamageDesc &Damage, 
 									 CVector *retvHitPos, 
-									 int *retiHitDir)
+									 int *retiHitDir) const
 
 //	HitTest
 //
@@ -4835,6 +4835,7 @@ CSpaceObject *CSpaceObject::HitTest (const CVector &vStart,
 		pObj = GetSystem()->EnumObjectsInBoxGetNext(i);
 
 		//	Skip objects that we cannot hit
+		//	TODO(heliogenesis): Add simple convex hull test (bounding elliptical area)
 
 		if (!CanHit(pObj)
 				|| !pObj->CanBeHitBy(Damage)
@@ -4927,7 +4928,7 @@ CSpaceObject *CSpaceObject::HitTestProximity (const CVector &vStart,
 											  const DamageDesc &Damage, 
 											  const CSpaceObject *pTarget,
 											  CVector *retvHitPos, 
-											  int *retiHitDir)
+											  int *retiHitDir) const
 
 //	HitTest
 //
