@@ -31,7 +31,7 @@ struct SExtensionSaveDesc
 #define STR_G_PLAYER_SHIP					CONSTLIT("gPlayerShip")
 
 const DWORD UNIVERSE_VERSION_MARKER =					0xffffffff;
-const Metric SCALE_SIZE = 6.0;
+const Metric SCALE_SIZE = 1.0;
 
 CUniverse *g_pUniverse = NULL;
 Metric g_KlicksPerPixel = KLICKS_PER_PIXEL;
