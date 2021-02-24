@@ -102,6 +102,7 @@ const Metric g_rMaxCommsRange2 =				(g_rMaxCommsRange * g_rMaxCommsRange);
 #define SPECIAL_IS_PLANET						CONSTLIT("isPlanet:")
 #define SPECIAL_LOCATION						CONSTLIT("location:")
 #define SPECIAL_PROPERTY						CONSTLIT("property:")
+#define SPECIAL_SERVICE							CONSTLIT("service:")
 #define SPECIAL_UNID							CONSTLIT("unid:")
 
 #define SPECIAL_VALUE_TRUE						CONSTLIT("true")
@@ -1012,12 +1013,18 @@ EConditionResult CSpaceObject::CanRemoveCondition (ECondition iCondition, const 
 	//	If we don't need to check for cases in which we cannot remove the
 	//	condition, then just return.
 
-	if (Options.bNoImmunityCheck)
+	else if (Options.bNoImmunityCheck)
+		return EConditionResult::ok;
+
+	//	For fouling, we know how to remove it.
+
+	else if (iCondition == ECondition::fouled)
 		return EConditionResult::ok;
 
 	//	Let our descendants handle it.
 
-	return OnCanRemoveCondition(iCondition, Options);
+	else
+		return OnCanRemoveCondition(iCondition, Options);
 	}
 
 void CSpaceObject::CommsMessageFrom (CSpaceObject *pSender, int iIndex)
@@ -3696,7 +3703,7 @@ void CSpaceObject::FireOnUpdate (void)
 		}
 	}
 
-void CSpaceObject::GetBoundingRect (CVector *retvUR, CVector *retvLL)
+void CSpaceObject::GetBoundingRect (CVector *retvUR, CVector *retvLL) const
 
 //	GetBoundingRect
 //
@@ -4744,6 +4751,16 @@ bool CSpaceObject::HasSpecialAttribute (const CString &sAttrib) const
 		ICCItemPtr pValue = GetProperty(CCX, Compare.GetProperty());
 		return Compare.Eval(pValue);
 		}
+	else if (strStartsWith(sAttrib, SPECIAL_SERVICE))
+		{
+		CString sValue = strSubString(sAttrib, SPECIAL_SERVICE.GetLength());
+		ETradeServiceTypes iService = CTradingDesc::ParseService(sValue);
+		if (iService == serviceNone)
+			return false;
+
+		CTradingServices Services(*this);
+		return Services.HasService(iService);
+		}
 	else
 		{
 		CDesignType *pType = GetType();
@@ -4939,6 +4956,8 @@ CSpaceObject *CSpaceObject::HitTestProximity (const CVector &vStart,
 	{
 	DEBUG_TRY_OBJ_LOOP
 
+	CUsePerformanceCounter Counter(GetUniverse(), CONSTLIT("update.hitTestProximity"));
+
 	const Metric OBJ_RADIUS_ADJ = 0.25;
 
 	//	Get the list of objects that intersect the object
@@ -4950,6 +4969,7 @@ CSpaceObject *CSpaceObject::HitTestProximity (const CVector &vStart,
 
 	int iSteps = 0;
 	CVector vStep;
+	bool bIsStatic = GetVel().IsNull();
 
 	//	We need some variables to track the closest object
 
@@ -4987,7 +5007,7 @@ CSpaceObject *CSpaceObject::HitTestProximity (const CVector &vStart,
 		//	Prepare for point in object calculations
 
 		SPointInObjectCtx PiOCtx;
-		pObj->PointInObjectInit(PiOCtx);
+		bool bInitNeeded = true;
 
 		//	Do we need to calculate proximity detonation for this object?
 
@@ -5009,17 +5029,26 @@ CSpaceObject *CSpaceObject::HitTestProximity (const CVector &vStart,
 			{
 			//	If we hit this object then we're done.
 
-			if (pObj->PointInObject(PiOCtx, pObj->GetPos(), vTest))
+			if (pObj->PointInBounds(vTest))
 				{
-				if (retvHitPos)
-					*retvHitPos = vTest;
+				if (bInitNeeded)
+					{
+					pObj->PointInObjectInit(PiOCtx);
+					bInitNeeded = false;
+					}
 
-				//	Figure out the direction that the hit came from
+				if (pObj->PointInObject(PiOCtx, pObj->GetPos(), vTest))
+					{
+					if (retvHitPos)
+						*retvHitPos = vTest;
 
-				if (retiHitDir)
-					*retiHitDir = VectorToPolar(-vStep, NULL);
+					//	Figure out the direction that the hit came from
 
-				return pObj;
+					if (retiHitDir)
+						*retiHitDir = VectorToPolar(-vStep, NULL);
+
+					return pObj;
+					}
 				}
 
 			//	Otherwise, if we're calculating proximity, calculate
@@ -5047,16 +5076,29 @@ CSpaceObject *CSpaceObject::HitTestProximity (const CVector &vStart,
 		//
 		//	NOTE that in this case we do this for all objects (including asteroids, etc.).
 
-		CVector vNextPos = GetPos() + (GetVel() * g_SecondsPerUpdate);
-		if (pObj->PointInObject(PiOCtx, pObj->GetPos(), vNextPos))
+		if (!bIsStatic)
 			{
-			if (retvHitPos)
-				*retvHitPos = GetPos();
+			CVector vNextPos = GetPos() + (GetVel() * g_SecondsPerUpdate);
 
-			if (retiHitDir)
-				*retiHitDir = -1;
+			if (pObj->PointInBounds(vNextPos))
+				{
+				if (bInitNeeded)
+					{
+					pObj->PointInObjectInit(PiOCtx);
+					bInitNeeded = false;
+					}
 
-			return pObj;
+				if (pObj->PointInObject(PiOCtx, pObj->GetPos(), vNextPos))
+					{
+					if (retvHitPos)
+						*retvHitPos = GetPos();
+
+					if (retiHitDir)
+						*retiHitDir = -1;
+
+					return pObj;
+					}
+				}
 			}
 		}
 
@@ -6063,6 +6105,10 @@ bool CSpaceObject::MatchesCriteria (CSpaceObjectCriteria::SCtx &Ctx, const CSpac
 	if (Crit.MatchesPerceivableOnly() && rObjDist2 > GetDetectionRange2(Ctx.iSourcePerception))
 		return false;
 
+	if (Crit.MatchesCanPerceiveSourceOnly() 
+			&& rObjDist2 > CPerceptionCalc::GetRange2(CPerceptionCalc::GetRangeIndex(Ctx.iSourceStealth, GetPerception())))
+		return false;
+
 	//	Angle
 	//
 	//	Only bother checking if rDist > 0 (we always intersect with an
@@ -7046,6 +7092,12 @@ EConditionResult CSpaceObject::RemoveCondition (ECondition iCondition, const SAp
 
 	switch (iCondition)
 		{
+		case ECondition::fouled:
+			{
+			ScrapeOverlays();
+			break;
+			}
+
 		case ECondition::timeStopped:
 			{
 			RestartTime();
@@ -7165,7 +7217,7 @@ bool CSpaceObject::RequestGate (CSpaceObject *pObj)
 	return true;
 	}
 
-void CSpaceObject::ScrapeOverlays (void)
+void CSpaceObject::ScrapeOverlays ()
 
 //	ScrapeOverlays
 //

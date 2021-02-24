@@ -98,6 +98,7 @@
 	
 	<!ENTITY evStdMiningBehavior		"0x00010050">
 	<!ENTITY evStdWanderBehavior		"0x00010051">
+	<!ENTITY evStdResupplyBehavior		"0x00010052">
 	
 	<!-- 0070-008F DOCK SCREENS -->
 
@@ -139,6 +140,7 @@
 
 	<!ENTITY dsRPGShipClassViewer		"0x00010120">
 	<!ENTITY dsRPGUseItemOnShields		"0x00010121">
+	<!ENTITY dsRPGConfiscate			"0x00010122">
 
 	<!-- 0140-015F MINING -->
 
@@ -157,6 +159,12 @@
 	<!ENTITY baRetrieveFromStationMission		"0x00010184">
 	<!ENTITY baEscortMission			"0x00010185">
 	<!ENTITY baAssaultStationMission	"0x00010186">
+
+	<!-- 01C0-01FF CRIME -->
+
+	<!ENTITY baRPGCriminalRecord		"0x000101C0">
+	<!ENTITY dsRPGCriminalArrest		"0x000101C1">
+	<!ENTITY unidTestCriminalRecord		"0x000101C2">
 	]>
 	
 <CoreLibrary
@@ -180,6 +188,7 @@
 	<Module filename="RPGCommonText.xml"/>
 	<Module filename="RPGCompatibility.xml"/>
 	<Module filename="RPGComponents.xml"/>
+	<Module filename="RPGCrime.xml"/>
 	<Module filename="RPGDeviceDockScreens.xml"/>
 	<Module filename="RPGDialog.xml"/>
 	<Module filename="RPGDockManagement.xml"/>

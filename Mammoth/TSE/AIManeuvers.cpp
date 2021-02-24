@@ -1835,7 +1835,7 @@ void CAIBehaviorCtx::ImplementFormationManeuver (CShip *pShip, const CVector vDe
 
 		//	If we don't need to turn, engage thrust
 
-		if (GetManeuver() == NoRotation)
+		if (GetManeuver() == EManeuver::None)
 			SetThrustDir(CAIShipControls::constAlwaysThrust);
 		}
 
@@ -1948,7 +1948,7 @@ void CAIBehaviorCtx::ImplementHold (CShip *pShip, bool *retbInPlace)
 
 		//	If we don't need to turn, engage thrust
 
-		if (GetManeuver() == NoRotation)
+		if (GetManeuver() == EManeuver::None)
 			SetThrustDir(CAIShipControls::constAlwaysThrust);
 
 		bInPlace = false;
@@ -2019,15 +2019,15 @@ void CAIBehaviorCtx::ImplementManeuver (CShip *pShip, int iDir, bool bThrust, bo
 		//	If we're within a few degrees of where we want to be, then
 		//	don't bother changing
 
-		EManeuverTypes iNewManeuver = pShip->GetManeuverToFace(iDir);
-		if (iNewManeuver != NoRotation)
+		EManeuver iNewManeuver = pShip->GetManeuverToFace(iDir);
+		if (iNewManeuver != EManeuver::None)
 			{
 			SetManeuver(iNewManeuver);
 
 			//	If we're turning in a new direction now, then reset
 			//	our counter
 
-			if (GetManeuver() != NoRotation)
+			if (GetManeuver() != EManeuver::None)
 				{
 				if (GetManeuver() != m_iLastTurn)
 					{
@@ -2044,10 +2044,10 @@ void CAIBehaviorCtx::ImplementManeuver (CShip *pShip, int iDir, bool bThrust, bo
 
 					if (m_iLastTurnCount > m_iMaxTurnCount)
 						{
-						if (GetManeuver() == RotateRight)
-							SetManeuver(RotateLeft);
+						if (GetManeuver() == EManeuver::RotateRight)
+							SetManeuver(EManeuver::RotateLeft);
 						else
-							SetManeuver(RotateRight);
+							SetManeuver(EManeuver::RotateRight);
 #ifdef DEBUG_SHIP
 						if (bDebug)
 							pShip->GetUniverse().DebugOutput("Reverse direction");
@@ -2059,8 +2059,8 @@ void CAIBehaviorCtx::ImplementManeuver (CShip *pShip, int iDir, bool bThrust, bo
 #ifdef DEBUG_SHIP
 			if (bDebug)
 				pShip->GetUniverse().DebugOutput("Turn: %s (%d -> %d)",
-						(GetManeuver() == RotateRight ? "right" : 
-							(GetManeuver() == RotateLeft ? "left" : "none")),
+						(GetManeuver() == EManeuver::RotateRight ? "right" : 
+							(GetManeuver() == EManeuver::RotateLeft ? "left" : "none")),
 						iCurrentDir,
 						iDir);
 #endif
@@ -2096,6 +2096,29 @@ void CAIBehaviorCtx::ImplementManeuver (CShip *pShip, int iDir, bool bThrust, bo
 			pShip->GetUniverse().DebugOutput("Turn: none");
 #endif
 		}
+	}
+
+bool CAIBehaviorCtx::ImplementResupplyCheck (CShip &Ship, CSpaceObject &BaseObj)
+
+//	ImplementResupplyCheck
+//
+//	Checks to see if the ship needs to (and can be) resupplied from the given 
+//	base. If so, it adds orders to implement resupply and returns TRUE. 
+//	Otherwise, we return FALSE.
+
+	{
+	CSpaceObject::SRefitObjCtx RefitCtx(BaseObj.CalcRefitObjCtx(0, 0));
+
+	if (!BaseObj.CanRefitObj(Ship, RefitCtx, 50))
+		return false;
+
+	//	Add orders to dock and resupply.
+
+	Ship.AddOrder(COrderDesc(IShipController::orderResupply), true);
+	Ship.AddOrder(COrderDesc(IShipController::orderWait, NULL, mathRandom(5, 10)), true);
+	Ship.AddOrder(COrderDesc(IShipController::orderDock, &BaseObj), true);
+
+	return true;
 	}
 
 void CAIBehaviorCtx::ImplementSpiralIn (CShip *pShip, const CVector &vTarget)

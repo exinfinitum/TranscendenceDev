@@ -666,6 +666,8 @@ class CPerceptionCalc
 		bool IsVisibleInLRS (CSpaceObject *pSource, CSpaceObject *pTarget) const;
 		void SetPerception (int iPerception) { m_iPerception = iPerception; }
 
+		static int AdjPerception (int iValue, int iAdj);
+		static int AdjStealth (int iValue, int iAdj);
 		static Metric GetMaxDist (int iPerception);
 		static Metric GetRange (int iIndex) { return (iIndex < 0 ? g_InfiniteDistance : (iIndex >= RANGE_ARRAY_SIZE ? 0.0 : m_rRange[iIndex])); }
 		static Metric GetRange2 (int iIndex) { return (iIndex < 0 ? g_InfiniteDistance : (iIndex >= RANGE_ARRAY_SIZE ? 0.0 : m_rRange2[iIndex])); }
@@ -806,7 +808,7 @@ class CSpaceObjectList
 		void SetAllocSize (int iNewCount);
 		void SetObj (int iIndex, CSpaceObject *pObj) { m_List[iIndex] = pObj; }
 		void Subtract (const CSpaceObjectList &List);
-		void WriteToStream (IWriteStream *pStream);
+		void WriteToStream (IWriteStream *pStream) const;
 
 	private:
 		static void ResolveObjProc (void *pCtx, DWORD dwObjID, CSpaceObject *pObj);
@@ -1153,7 +1155,7 @@ template <class TYPE> class TSEListNode
 class CRegenDesc
 	{
 	public:
-		CRegenDesc (void) : m_bEmpty(true), m_iHPPerCycle(0), m_iHPPerEraRemainder(0), m_iCyclesPerBurst(1) { }
+		CRegenDesc (void) { }
 		CRegenDesc (int iHPPerEra);
 
 		void Add (const CRegenDesc &Desc);
@@ -1176,13 +1178,15 @@ class CRegenDesc
 							 int iTicksPerCycle = 1);
 		bool IsEmpty (void) const { return m_bEmpty; }
 
+		static const CRegenDesc Null;
+
 	private:
-		int m_iHPPerCycle;					//	HP gained per cycle
-		int m_iHPPerEraRemainder;			//	Extra HP to gain per era (1 era = 360 cycles)
+		int m_iHPPerCycle = 0;					//	HP gained per cycle
+		int m_iHPPerEraRemainder = 0;			//	Extra HP to gain per era (1 era = 360 cycles)
 
-		int m_iCyclesPerBurst;				//	Regen in bursts; each burst is this many cycles
+		int m_iCyclesPerBurst = 1;				//	Regen in bursts; each burst is this many cycles
 
-		bool m_bEmpty;						//	If TRUE, no regen
+		bool m_bEmpty = true;					//	If TRUE, no regen
 	};
 
 //	CZoneGrid ------------------------------------------------------------------
