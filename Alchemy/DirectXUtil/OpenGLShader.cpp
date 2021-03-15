@@ -20,10 +20,10 @@ OpenGLShader::OpenGLShader () {
 }
 
 OpenGLShader::OpenGLShader (const char *vsFile, const char *fsFile) {
-	init(vsFile, fsFile);
+	Init(vsFile, fsFile);
 }
 
-void OpenGLShader::init (const char *vsFile, const char *fsFile) {
+void OpenGLShader::Init (const char *vsFile, const char *fsFile) {
 	char err_log[512];
 	shader_vp = glCreateShader(GL_VERTEX_SHADER);
 	shader_fp = glCreateShader(GL_FRAGMENT_SHADER);
@@ -81,15 +81,15 @@ OpenGLShader::~OpenGLShader () {
 	glDeleteProgram(shader_id);
 }
 
-unsigned int OpenGLShader::id () const {
+unsigned int OpenGLShader::Id () const {
 	return shader_id;
 }
 
-void OpenGLShader::bind () const {
+void OpenGLShader::Bind () const {
 	glUseProgram(shader_id);
 }
 
-void OpenGLShader::unbind () const {
+void OpenGLShader::Unbind () const {
 	glUseProgram(0);
 }
 

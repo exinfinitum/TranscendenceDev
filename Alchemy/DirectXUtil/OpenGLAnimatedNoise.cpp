@@ -88,13 +88,13 @@ void OpenGLAnimatedNoise::populateTexture3D(unsigned int fbo, OpenGLVAO* vao, Op
 			glViewport(0, 0, m_iWidth, m_iHeight); // Set the viewport size to fill the window
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			shader->bind();
+			shader->Bind();
 			glm::mat4 rotationMatrix = glm::mat4(glm::vec4(1.0, 0.0, 0.0, 0.0), glm::vec4(0.0, 1.0, 0.0, 0.0), glm::vec4(0.0, 0.0, 1.0, 0.0), glm::vec4(0.0, 0.0, 0.0, 1.0));
-			int rotationMatrixLocation = glGetUniformLocation(shader->id(), "rotationMatrix");
+			int rotationMatrixLocation = glGetUniformLocation(shader->Id(), "rotationMatrix");
 
 
 			glUniformMatrix4fv(rotationMatrixLocation, 1, GL_FALSE, &rotationMatrix[0][0]);
-			glUniform1f(glGetUniformLocation(shader->id(), "time"), currTime);
+			glUniform1f(glGetUniformLocation(shader->Id(), "time"), currTime);
 
 			//this->bindTexture3D(GL_TEXTURE0);
 			glBindVertexArray((vao->getVAO())[0]);
@@ -103,7 +103,7 @@ void OpenGLAnimatedNoise::populateTexture3D(unsigned int fbo, OpenGLVAO* vao, Op
 			// Clean up
 			glBindVertexArray(0); // Unbind our Vertex Array Object
 			//this->unbindTexture3D();
-			shader->unbind(); // Unbind our shader
+			shader->Unbind(); // Unbind our shader
 			// Unbind the frame buffer and delete our rbo
 			glDeleteRenderbuffers(1, &rbo);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);

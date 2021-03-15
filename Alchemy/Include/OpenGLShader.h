@@ -14,12 +14,12 @@ public:
 	OpenGLShader (const char *vsFile, const char *fsFile);
 	~OpenGLShader ();
 
-	void init (const char *vsFile, const char *fsFile);
+	void Init (const char *vsFile, const char *fsFile);
 
-	void bind () const;
-	void unbind () const;
+	void Bind () const;
+	void Unbind () const;
 
-	unsigned int id () const;
+	unsigned int Id () const;
 
 
 private:

@@ -317,7 +317,7 @@ public:
 		glBindVertexArray(iVAOID);
 		glBindBuffer(GL_ARRAY_BUFFER, instancedVBO[0]);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(shaderRenderRequest) * numItemsToRender, &m_renderRequests.at(firstItemToRender), GL_STATIC_DRAW);
-		shader->bind();
+		shader->Bind();
 		//set uniforms
 		m_iNumTexturesBound = 0;
 		std::apply
@@ -328,7 +328,7 @@ public:
 		}, m_uniformValues
 		);
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, numItemsToRender);
-		shader->unbind();
+		shader->Unbind();
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}
@@ -341,7 +341,7 @@ public:
 			unsigned int *instancedVBO = vao.getinstancedVBO();
 			glBindVertexArray(iVAOID);
 			glBindBuffer(GL_ARRAY_BUFFER, instancedVBO[0]);
-			shader->bind();
+			shader->Bind();
 			//set uniforms
 			m_iNumTexturesBound = 0;
 			std::apply
@@ -358,7 +358,7 @@ public:
 				glBufferData(GL_ARRAY_BUFFER, sizeof(shaderRenderRequest), &m_renderRequests[i], GL_STATIC_DRAW);
 				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			}
-			shader->unbind();
+			shader->Unbind();
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
 		}
@@ -397,23 +397,23 @@ private:
 	template<typename firstUniformArg> void setGLUniformValues(const OpenGLShader* shader, int uniformArgIndex, firstUniformArg firstUniformValue) {
 		setGLUniformValue(shader, uniformArgIndex, firstUniformValue);
 	}
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const int tupleArg) { glUniform1i(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::ivec1 tupleArg) { glUniform1i(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0]); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::ivec2 tupleArg) { glUniform2i(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1]); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::ivec3 tupleArg) { glUniform3i(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1], tupleArg[2]); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::ivec4 tupleArg) { glUniform4i(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1], tupleArg[2], tupleArg[3]); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const float tupleArg) { glUniform1f(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::vec1 tupleArg) { glUniform1f(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0]); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::vec2 tupleArg) { glUniform2f(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1]); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::vec3 tupleArg) { glUniform3f(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1], tupleArg[2]); }
-	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::vec4 tupleArg) { glUniform4f(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1], tupleArg[2], tupleArg[3]); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const int tupleArg) { glUniform1i(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::ivec1 tupleArg) { glUniform1i(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0]); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::ivec2 tupleArg) { glUniform2i(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1]); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::ivec3 tupleArg) { glUniform3i(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1], tupleArg[2]); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::ivec4 tupleArg) { glUniform4i(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1], tupleArg[2], tupleArg[3]); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const float tupleArg) { glUniform1f(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::vec1 tupleArg) { glUniform1f(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0]); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::vec2 tupleArg) { glUniform2f(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1]); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::vec3 tupleArg) { glUniform3f(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1], tupleArg[2]); }
+	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const glm::vec4 tupleArg) { glUniform4f(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), tupleArg[0], tupleArg[1], tupleArg[2], tupleArg[3]); }
 	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const OpenGLTexture* tupleArg) {
-		glUniform1i(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), m_iNumTexturesBound);
+		glUniform1i(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), m_iNumTexturesBound);
 		tupleArg->bindTexture2D(GL_TEXTURE0 + m_iNumTexturesBound);
 		m_iNumTexturesBound += 1;
 	}
 	void setGLUniformValue(const OpenGLShader* shader, int uniformArgIndex, const OpenGLAnimatedNoise* tupleArg) {
-		glUniform1i(glGetUniformLocation(shader->id(), m_uniformNames[uniformArgIndex].c_str()), m_iNumTexturesBound);
+		glUniform1i(glGetUniformLocation(shader->Id(), m_uniformNames[uniformArgIndex].c_str()), m_iNumTexturesBound);
 		tupleArg->bindTexture3D(GL_TEXTURE0 + m_iNumTexturesBound);
 		m_iNumTexturesBound += 1;
 	}

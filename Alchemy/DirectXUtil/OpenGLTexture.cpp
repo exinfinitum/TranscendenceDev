@@ -203,21 +203,21 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		glViewport(0, 0, iOutputWidth, iOutputHeight); // Set the viewport size to fill the window
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		shader->bind();
+		shader->Bind();
 		glm::mat4 rotationMatrix = glm::mat4(glm::vec4(1.0, 0.0, 0.0, 0.0), glm::vec4(0.0, 1.0, 0.0, 0.0), glm::vec4(0.0, 0.0, 1.0, 0.0), glm::vec4(0.0, 0.0, 0.0, 1.0));
-		int rotationMatrixLocation = glGetUniformLocation(shader->id(), "rotationMatrix");
+		int rotationMatrixLocation = glGetUniformLocation(shader->Id(), "rotationMatrix");
 
 		glUniformMatrix4fv(rotationMatrixLocation, 1, GL_FALSE, &rotationMatrix[0][0]);
-		glUniform1i(glGetUniformLocation(shader->id(), "ourTexture"), 0);
-		glUniform1i(glGetUniformLocation(shader->id(), "pixel_decimal_place_per_channel_for_linear_glowmap"), PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP);
-		glUniform2f(glGetUniformLocation(shader->id(), "aTexStartPoint"), texStartPoint_x, texStartPoint_y);
-		glUniform2f(glGetUniformLocation(shader->id(), "aTexQuadSizes"), texQuadSize_x, texQuadSize_y);
-		glUniform2f(glGetUniformLocation(shader->id(), "gridSquareSize"), texGridSize_x, texGridSize_y);
-		glUniform1i(glGetUniformLocation(shader->id(), "pad_pixels_per_grid_square"), iPadPixels);
-		glUniform2i(glGetUniformLocation(shader->id(), "num_grid_squares"), numFramesPerRow, numFramesPerCol);
-		glUniform1i(glGetUniformLocation(shader->id(), "kernelSize"), iGlowSize);
-		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_TRUE);
-		glUniform1i(glGetUniformLocation(shader->id(), "second_pass"), GL_FALSE);
+		glUniform1i(glGetUniformLocation(shader->Id(), "ourTexture"), 0);
+		glUniform1i(glGetUniformLocation(shader->Id(), "pixel_decimal_place_per_channel_for_linear_glowmap"), PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP);
+		glUniform2f(glGetUniformLocation(shader->Id(), "aTexStartPoint"), texStartPoint_x, texStartPoint_y);
+		glUniform2f(glGetUniformLocation(shader->Id(), "aTexQuadSizes"), texQuadSize_x, texQuadSize_y);
+		glUniform2f(glGetUniformLocation(shader->Id(), "gridSquareSize"), texGridSize_x, texGridSize_y);
+		glUniform1i(glGetUniformLocation(shader->Id(), "pad_pixels_per_grid_square"), iPadPixels);
+		glUniform2i(glGetUniformLocation(shader->Id(), "num_grid_squares"), numFramesPerRow, numFramesPerCol);
+		glUniform1i(glGetUniformLocation(shader->Id(), "kernelSize"), iGlowSize);
+		glUniform1i(glGetUniformLocation(shader->Id(), "use_x_axis"), GL_TRUE);
+		glUniform1i(glGetUniformLocation(shader->Id(), "second_pass"), GL_FALSE);
 
 		this->bindTexture2D(GL_TEXTURE0);
 		glBindVertexArray((vao->getVAO())[0]);
@@ -230,12 +230,12 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		// Render to the new texture
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glUniform2f(glGetUniformLocation(shader->id(), "aTexStartPoint"), 0.0f, 0.0f);
-		glUniform2f(glGetUniformLocation(shader->id(), "aTexQuadSizes"), 1.0f, 1.0f);
-		glUniform2f(glGetUniformLocation(shader->id(), "gridSquareSize"), 1.0f / float(numFramesPerRow), 1.0f / float(numFramesPerCol));
-		glUniform1i(glGetUniformLocation(shader->id(), "use_x_axis"), GL_FALSE);
-		glUniform1i(glGetUniformLocation(shader->id(), "second_pass"), GL_TRUE);
-		glUniform1i(glGetUniformLocation(shader->id(), "pad_pixels_per_grid_square"), 0);
+		glUniform2f(glGetUniformLocation(shader->Id(), "aTexStartPoint"), 0.0f, 0.0f);
+		glUniform2f(glGetUniformLocation(shader->Id(), "aTexQuadSizes"), 1.0f, 1.0f);
+		glUniform2f(glGetUniformLocation(shader->Id(), "gridSquareSize"), 1.0f / float(numFramesPerRow), 1.0f / float(numFramesPerCol));
+		glUniform1i(glGetUniformLocation(shader->Id(), "use_x_axis"), GL_FALSE);
+		glUniform1i(glGetUniformLocation(shader->Id(), "second_pass"), GL_TRUE);
+		glUniform1i(glGetUniformLocation(shader->Id(), "pad_pixels_per_grid_square"), 0);
 
 		pTempTexture.bindTexture2D(GL_TEXTURE0);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -243,7 +243,7 @@ std::unique_ptr<OpenGLTextureGlowmapRGBA32> OpenGLTextureRGBA32::GenerateGlowMap
 		// Clean up
 		glBindVertexArray(0); // Unbind our Vertex Array Object
 		this->unbindTexture2D();
-		shader->unbind(); // Unbind our shader
+		shader->Unbind(); // Unbind our shader
 		// Unbind the frame buffer and delete our rbo
 		glDeleteRenderbuffers(1, &rbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
