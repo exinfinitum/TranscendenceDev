@@ -107,7 +107,6 @@
     <ClCompile Include="OpenGLShader.cpp" />
     <ClCompile Include="OpenGLTexture.cpp" />
     <ClCompile Include="OpenGLVAO.cpp" />
-    <ClCompile Include="OpenGLShaderCode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\DirectXUtil.h" />
@@ -139,6 +138,5 @@
     <ClInclude Include="PixelMacros.h" />
     <ClInclude Include="PreComp.h" />
     <ClInclude Include="RasterizerImpl.h" />
-    <ClInclude Include="..\Include\OpenGLShaderCode.h" />
   </ItemGroup>
 </Project>
