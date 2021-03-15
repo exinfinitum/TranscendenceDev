@@ -26,8 +26,9 @@ enum ETradeServiceTypes
 	serviceConsume =					15,	//	Object consumes items (and thus makes them more expensive)
 	serviceProduce =					16,	//	Object produces items (and thus makes them cheaper)
 	serviceTrade =						17,	//	Object balance trade (consumption/production)
+	serviceDecontaminate =				18,	//	Object balance trade (consumption/production)
 
-	serviceCount =						18,
+	serviceCount =						19,
 	};
 
 struct STradeServiceCtx
@@ -39,13 +40,17 @@ struct STradeServiceCtx
 
 	int iCount = 0;									//	Number of items
 	const CItem *pItem = NULL;						//	For item-based services
-	CDesignType *pType = NULL;						//	For type-based services (e.g., serviceSellShip)
-	CSpaceObject *pObj = NULL;						//	For obj-based services (e.g., serviceSellShip)
+	const CDesignType *pType = NULL;				//	For type-based services (e.g., serviceSellShip)
+	const CSpaceObject *pObj = NULL;				//	For obj-based services (e.g., serviceSellShip)
 	};
 
 class CTradingDesc
 	{
 	public:
+		//	Equivalent HP of repair to decontaminate armor segment.
+
+		static constexpr int DECON_COST_FACTOR =	20;
+
 		enum Flags
 			{
 			FLAG_NO_INVENTORY_CHECK =	0x00000001,	//	Do not check to see if item exists
@@ -98,15 +103,15 @@ class CTradingDesc
 		bool BuysShip (CSpaceObject *pObj, CSpaceObject *pShip, DWORD dwFlags, int *retiPrice = NULL);
 		int Charge (CSpaceObject *pObj, int iCharge);
 		bool ComposeDescription (CUniverse &Universe, CString *retsDesc) const;
-		bool GetArmorInstallPrice (const CSpaceObject &Obj, const CItem &Item, DWORD dwFlags, int *retiPrice, CString *retsReason = NULL) const;
-		bool GetArmorRepairPrice (const CSpaceObject &Obj, CSpaceObject *pSource, const CItem &Item, int iHPToRepair, DWORD dwFlags, int *retiPrice) const;
-		bool GetDeviceInstallPrice (const CSpaceObject &Obj, const CItem &Item, DWORD dwFlags, int *retiPrice, CString *retsReason = NULL, DWORD *retdwPriceFlags = NULL) const;
-		bool GetDeviceRemovePrice (const CSpaceObject &Obj, const CItem &Item, DWORD dwFlags, int *retiPrice, DWORD *retdwPriceFlags = NULL) const;
+		bool GetArmorInstallPrice (const CSpaceObject *pProvider, const CItem &Item, DWORD dwFlags, int *retiPrice, CString *retsReason = NULL) const;
+		bool GetArmorRepairPrice (const CSpaceObject *pProvider, CSpaceObject *pSource, const CItem &Item, int iHPToRepair, DWORD dwFlags, int *retiPrice) const;
+		bool GetDeviceInstallPrice (const CSpaceObject *pProvider, const CItem &Item, DWORD dwFlags, int *retiPrice, CString *retsReason = NULL, DWORD *retdwPriceFlags = NULL) const;
+		bool GetDeviceRemovePrice (const CSpaceObject *pProvider, const CItem &Item, DWORD dwFlags, int *retiPrice, DWORD *retdwPriceFlags = NULL) const;
 		const CEconomyType *GetEconomyType (void) const { return m_pCurrency; }
 		CurrencyValue GetMaxBalance (CSpaceObject *pObj) const { return CalcMaxBalance(pObj); }
 		CurrencyValue GetMaxBalance (int iLevel) const { return (m_iMaxCurrency ? m_iMaxCurrency : CalcMaxBalance(iLevel, m_pCurrency)); }
 		int GetMaxLevelMatched (CUniverse &Universe, ETradeServiceTypes iService, bool bDescriptionOnly = false) const;
-		bool GetRefuelItemAndPrice (const CSpaceObject &Obj, CSpaceObject *pObjToRefuel, DWORD dwFlags, CItemType **retpItemType, int *retiPrice) const;
+		bool GetRefuelItemAndPrice (const CSpaceObject *pProvider, CSpaceObject *pObjToRefuel, DWORD dwFlags, CItemType **retpItemType, int *retiPrice) const;
 		int GetReplenishCurrency (void) { return m_iReplenishCurrency; }
 		int GetServiceCount (void) const { return m_List.GetCount(); }
 		void GetServiceInfo (int iIndex, SServiceInfo &Result) const;
@@ -115,6 +120,8 @@ class CTradingDesc
 		bool HasServiceUpgradeOnly (ETradeServiceTypes iService) const;
 		bool HasServices (void) const { return (m_List.GetCount() > 0); }
 		void Init (const CTradingDesc &Src);
+		bool RemovesCondition (const CSpaceObject *pProvider, const CShipClass &Class, ECondition iCondition, DWORD dwFlags, int *retiPrice = NULL) const;
+		bool RemovesCondition (const CSpaceObject *pProvider, const CSpaceObject &Ship, ECondition iCondition, DWORD dwFlags, int *retiPrice = NULL) const;
 		bool Sells (CSpaceObject *pObj, const CItem &Item, DWORD dwFlags, int *retiPrice = NULL);
 		bool SellsShip (CSpaceObject *pObj, CShipClass *pClass, DWORD dwFlags, int *retiPrice = NULL);
 		bool SellsShip (CSpaceObject *pObj, CSpaceObject *pShip, DWORD dwFlags, int *retiPrice = NULL);
@@ -182,15 +189,16 @@ class CTradingDesc
 		void AddOrder (CItemType *pItemType, const CString &sCriteria, int iPriceAdj, DWORD dwFlags);
 		CString ComputeID (ETradeServiceTypes iService, DWORD dwUNID, const CString &sCriteria, DWORD dwFlags);
 		CurrencyValue CalcMaxBalance (CSpaceObject *pObj, CurrencyValue *retReplenish = NULL) const;
-		int ComputePrice (STradeServiceCtx &Ctx, DWORD dwFlags);
+		int ComputePrice (STradeServiceCtx &Ctx, DWORD dwFlags) const;
+		static CCurrencyAndValue ComputeDecontaminationBasePrice (STradeServiceCtx &Ctx);
 		bool FindByID (const CString &sID, int *retiIndex = NULL) const;
-		bool FindService (ETradeServiceTypes iService, const CItem &Item, const SServiceDesc **retpDesc);
-		bool FindService (ETradeServiceTypes iService, CDesignType *pType, const SServiceDesc **retpDesc);
+		bool FindService (ETradeServiceTypes iService, const CItem &Item, const SServiceDesc **retpDesc) const;
+		bool FindService (ETradeServiceTypes iService, const CDesignType *pType, const SServiceDesc **retpDesc) const;
 		bool FindServiceToOverride (const SServiceDesc &NewService, int *retiIndex = NULL) const;
 		bool GetServiceTypeInfo (CUniverse &Universe, ETradeServiceTypes iService, SServiceTypeInfo &Info) const;
 		bool HasServiceDescription (ETradeServiceTypes iService) const;
 		bool Matches (const CItem &Item, const SServiceDesc &Commodity) const;
-		bool Matches (CDesignType *pType, const SServiceDesc &Commodity) const;
+		bool Matches (const CDesignType *pType, const SServiceDesc &Commodity) const;
 		bool MatchesHasServiceOptions (CUniverse &Universe, const SHasServiceOptions &Options, const SServiceDesc &Service) const;
 		void ReadServiceFromFlags (DWORD dwFlags, ETradeServiceTypes *retiService, DWORD *retdwFlags);
 		bool SetInventoryCount (CSpaceObject *pObj, SServiceDesc &Desc, CItemType *pItemType);
@@ -264,4 +272,39 @@ class CTradingComputer
 		static void GetItemEstimatedPriceList (const CUniverse &Universe, CItemType *pItemType, DWORD dwFlags, TSortMap<int, TArray<const CTopologyNode *>> &NodesAtPrice);
 
 		static int GetItemBuyPrice (const CUniverse &Universe, const CTopologyNode *pNode, const CDesignTypeCriteria &Criteria, const CItem &Item, DWORD *retdwObjID = NULL);
+	};
+
+class CTradingServices
+	{
+	public:
+		static constexpr int DEFAULT_REPAIR_CYCLE =			30;
+		static constexpr Metric REPAIR_PER_LEVEL_EXP =		1.3;
+		static constexpr int REPAIR_HP_AT_LEVEL_1 =			10;
+
+		CTradingServices () { }
+		CTradingServices (const CSpaceObject &Source);
+		CTradingServices (const CDesignType &Type);
+		
+		bool GetArmorInstallPrice (CArmorItem ArmorItem, DWORD dwFlags, int *retiPrice = NULL, CString *retsReason = NULL) const;
+		bool GetArmorRepairPrice (CArmorItem ArmorItem, int iHPToRepair, DWORD dwFlags, int *retiPrice = NULL) const;
+		CRegenDesc GetArmorRepairRate (DWORD dwFlags, const CRegenDesc &Default = CRegenDesc()) const;
+		bool GetDeviceInstallPrice (CDeviceItem DeviceItem, DWORD dwFlags, int *retiPrice = NULL, CString *retsReason = NULL, DWORD *retdwPriceFlags = NULL) const;
+		bool GetDeviceRemovePrice (CDeviceItem DeviceItem, DWORD dwFlags, int *retiPrice = NULL, DWORD *retdwPriceFlags = NULL) const;
+		bool GetItemInstallPrice (const CItem &Item, DWORD dwFlags, int *retiPrice = NULL, CString *retsReason = NULL, DWORD *retdwPriceFlags = NULL) const;
+		bool GetItemRemovePrice (const CItem &Item, DWORD dwFlags, int *retiPrice = NULL, DWORD *retdwPriceFlags = NULL) const;
+		int GetMaxLevel (ETradeServiceTypes iService) const;
+		bool GetRemoveConditionPrice (const CShipClass &Class, ECondition iCondition, DWORD dwFlags, int *retiPrice = NULL) const;
+		bool GetRemoveConditionPrice (const CSpaceObject &Ship, ECondition iCondition, DWORD dwFlags, int *retiPrice = NULL) const;
+		bool HasService (ETradeServiceTypes iService, const CTradingDesc::SHasServiceOptions &Options = CTradingDesc::SHasServiceOptions()) const;
+		bool IsEmpty () const { return (!m_pOverride && !m_pDesc); }
+
+	private:
+		int GetLevel () const;
+		int GetMaxLevelMatched (ETradeServiceTypes iService) const;
+		CUniverse &GetUniverse () const;
+
+		const CDesignType *m_pType = NULL;
+		const CSpaceObject *m_pProvider = NULL;
+		const CTradingDesc *m_pOverride = NULL;
+		const CTradingDesc *m_pDesc = NULL;
 	};

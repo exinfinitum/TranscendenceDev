@@ -326,8 +326,6 @@ void CShip::CalcArmorBonus (void)
 
 	//	Loop over all armor segments and compute some values.
 
-	m_iStealthFromArmor = stealthMax;
-
 	for (i = 0; i < SegmentsByType.GetCount(); i++)
 		{
 		for (j = 0; j < SegmentsByType[i].GetCount(); j++)
@@ -368,11 +366,6 @@ void CShip::CalcArmorBonus (void)
 			//	Set the enhancement stack
 
 			pArmor->SetEnhancements(this, pEnhancements);
-
-			//	Compute stealth
-
-			if (pArmor->GetClass()->GetStealth() < m_iStealthFromArmor)
-				m_iStealthFromArmor = pArmor->GetClass()->GetStealth();
 			}
 		}
 
@@ -802,11 +795,11 @@ DWORD CShip::CalcEffectsMask (void)
 	
 	switch (m_Rotation.GetLastManeuver())
 		{
-		case RotateLeft:
+		case EManeuver::RotateLeft:
 			dwEffects |= CObjectEffectDesc::effectThrustLeft;
 			break;
 
-		case RotateRight:
+		case EManeuver::RotateRight:
 			dwEffects |= CObjectEffectDesc::effectThrustRight;
 			break;
 		}
@@ -2633,6 +2626,16 @@ CCurrencyBlock *CShip::GetCurrencyBlock (bool bCreate)
 	return m_pMoney;
 	}
 
+int CShip::GetCyberDefenseLevel (void) const 
+
+//	GetCyberDefenseLevel
+//
+//	Returns cyber defense level.
+
+	{
+	return CProgramDesc::CalcLevel(m_pClass->GetCyberDefenseLevel(), m_Perf.GetCyberDefenseAdj());
+	}
+
 int CShip::GetDamageEffectiveness (CSpaceObject *pAttacker, CInstalledDevice *pWeapon)
 
 //	GetDamageEffectiveness
@@ -3031,9 +3034,9 @@ int CShip::GetPerception (void) const
 	{
 	//	calculate perception
 
-	int iPerception = m_pClass->GetAISettings().GetPerception();
+	int iPerception = m_pClass->GetAISettings().GetPerception() + m_Perf.GetPerceptionAdj();
 
-	return Max((int)perceptMin, iPerception);
+	return Max((int)perceptMin, Min(iPerception, (int)perceptMax));
 	}
 
 int CShip::GetPowerConsumption (void) const
@@ -3424,7 +3427,7 @@ int CShip::GetStealth (void) const
 //	Returns the stealth of the ship
 
 	{
-	int iStealth = m_iStealthFromArmor;
+	int iStealth = m_Perf.GetStealth();
 
 	//	+6 stealth if in nebula, which decreases detection range by about 3.
 
@@ -3535,7 +3538,7 @@ CCurrencyAndValue CShip::GetTradePrice (const CSpaceObject *pProvider) const
 	return Value;
 	}
 
-int CShip::GetVisibleDamage (void)
+int CShip::GetVisibleDamage (void) const
 
 //	GetVisibleDamage
 //
@@ -3560,12 +3563,12 @@ int CShip::GetVisibleDamage (void)
 
 		for (i = 0; i < GetArmorSectionCount(); i++)
 			{
-			CInstalledArmor *pArmor = GetArmorSection(i);
+			const CInstalledArmor &Armor = GetArmorSection(i);
 
-			int iMaxHP = pArmor->GetMaxHP(this);
+			int iMaxHP = Armor.GetMaxHP(this);
 			iTotalMaxArmor += iMaxHP;
 
-			int iLeft = pArmor->GetHitPoints();
+			int iLeft = Armor.GetHitPoints();
 			iTotalArmorLeft += iLeft;
 
 			int iDamage = (iMaxHP > 0 ? 100 - (iLeft * 100 / iMaxHP) : 100);
@@ -3600,10 +3603,10 @@ int CShip::GetVisibleDamage (void)
 
 		for (i = 0; i < GetArmorSectionCount(); i++)
 			{
-			CInstalledArmor *pArmor = GetArmorSection(i);
+			const CInstalledArmor &Armor = GetArmorSection(i);
 
-			int iMaxHP = pArmor->GetMaxHP(this);
-			int iDamage = (iMaxHP > 0 ? 100 - (pArmor->GetHitPoints() * 100 / iMaxHP) : 100);
+			int iMaxHP = Armor.GetMaxHP(this);
+			int iDamage = (iMaxHP > 0 ? 100 - (Armor.GetHitPoints() * 100 / iMaxHP) : 100);
 			if (iDamage > iMaxPercent)
 				iMaxPercent = iDamage;
 			}
@@ -3953,8 +3956,11 @@ bool CShip::IsArmorDamaged (int iSect)
 //	Returns TRUE if the given armor section is damaged
 
 	{
-	CInstalledArmor *pSect = GetArmorSection(iSect);
-	return (pSect->GetHitPoints() < pSect->GetMaxHP(this));
+	const CInstalledArmor *pSect = GetArmorSection(iSect);
+	if (!pSect)
+		throw CException(ERR_FAIL);
+
+	return pSect->IsDamaged();
 	}
 
 bool CShip::IsDeviceSlotAvailable (ItemCategories iItemCat, int *retiSlot)
@@ -5685,6 +5691,7 @@ void CShip::OnReadFromStream (SLoadCtx &Ctx)
 //	DWORD		m_pSovereign (CSovereign ref)
 //	CString		m_sName;
 //	DWORD		m_dwNameFlags
+//	CSquadronID	m_SquadronID
 //	CIntegralRotation	m_Rotation
 //	DWORD		low = unused; hi = m_iContaminationTimer
 //	DWORD		low = m_iBlindnessTimer; hi = m_iParalysisTimer
@@ -5701,7 +5708,6 @@ void CShip::OnReadFromStream (SLoadCtx &Ctx)
 //	CArmorSystem m_Armor
 //
 //	CAbilitySet	m_Ability
-//	DWORD		m_iStealthFromArmor
 //
 //	CPowerConsumption	m_pPowerUse (if tracking fuel)
 //
@@ -5791,6 +5797,11 @@ void CShip::OnReadFromStream (SLoadCtx &Ctx)
 		else
 			m_dwNameFlags = 0;
 		}
+
+	//	Squadron ID
+
+	if (Ctx.dwVersion >= 199)
+		m_SquadronID.ReadFromStream(Ctx);
 
 	//	Load rotation
 
@@ -5946,10 +5957,11 @@ void CShip::OnReadFromStream (SLoadCtx &Ctx)
 
 	//	Stealth
 
-	if (Ctx.dwVersion >= 5)
-		Ctx.pStream->Read(m_iStealthFromArmor);
-	else
-		m_iStealthFromArmor = stealthNormal;
+	if (Ctx.dwVersion >= 5 && Ctx.dwVersion < 198)
+		{
+		int iDummy;
+		Ctx.pStream->Read(iDummy);
+		}
 
 	//	Fuel consumption
 
@@ -6282,7 +6294,7 @@ void CShip::OnSystemCreated (SSystemCreateCtx &CreateCtx)
 	FinishCreation(m_pDeferredOrders, &CreateCtx);
 	}
 
-void CShip::OnSystemLoaded (void)
+void CShip::OnSystemLoaded (SLoadCtx &Ctx)
 
 //	OnSystemLoaded
 //
@@ -6302,6 +6314,7 @@ void CShip::OnWriteToStream (IWriteStream *pStream)
 //	DWORD		m_pSovereign (CSovereign ref)
 //	CString		m_sName
 //	DWORD		m_dwNameFlags
+//	CSquadronID	m_SquadronID
 //	CIntegralRotation m_Rotation
 //	DWORD		low = unused; hi = m_iContaminationTimer
 //	DWORD		low = m_iBlindnessTimer; hi = m_iParalysisTimer
@@ -6318,7 +6331,6 @@ void CShip::OnWriteToStream (IWriteStream *pStream)
 //  CArmorSystem m_Armor
 //
 //	CAbilitySet	m_Ability
-//	DWORD		m_iStealthFromArmor
 //
 //	CPowerConsumption	m_pPowerUse (if tracking fuel)
 //
@@ -6362,6 +6374,7 @@ void CShip::OnWriteToStream (IWriteStream *pStream)
 	m_sName.WriteToStream(pStream);
 	pStream->Write(m_dwNameFlags);
 
+	m_SquadronID.WriteToStream(*pStream);
 	m_Rotation.WriteToStream(pStream);
 
 	dwSave = MAKELONG(0, m_iContaminationTimer);
@@ -6419,10 +6432,6 @@ void CShip::OnWriteToStream (IWriteStream *pStream)
 	//	Abilities
 
 	m_Abilities.WriteToStream(pStream);
-
-	//	Stealth
-
-	pStream->Write(m_iStealthFromArmor);
 
 	//	Fuel consumption
 
@@ -6749,6 +6758,7 @@ void CShip::ProgramDamage (CSpaceObject *pHacker, const ProgramDesc &Program)
 				//	The chance of success is 50% plus 10% for every level
 				//	that the program is greater than the shields
 
+				int iTargetLevel = pShields->GetDeviceItem().GetCyberDefenseLevel();
 				int iSuccess = 50 + 10 * (Program.iAILevel - pShields->GetLevel());
 				if (mathRandom(1, 100) <= iSuccess)
 					pShields->Deplete(this);
@@ -6763,9 +6773,9 @@ void CShip::ProgramDamage (CSpaceObject *pHacker, const ProgramDesc &Program)
 			CInstalledDevice *pWeapon;
 
 			if (pWeapon = GetNamedDevice(devPrimaryWeapon))
-				iTargetLevel = pWeapon->GetLevel();
+				iTargetLevel = pWeapon->GetDeviceItem().GetCyberDefenseLevel();
 			else if (pWeapon = GetNamedDevice(devMissileWeapon))
-				iTargetLevel = pWeapon->GetLevel();
+				iTargetLevel = pWeapon->GetDeviceItem().GetCyberDefenseLevel();
 			else
 				iTargetLevel = GetCyberDefenseLevel();
 
@@ -7044,6 +7054,39 @@ void CShip::RemoveOverlay (DWORD dwID)
 	//	is not actually removed until Update (at which point we recalc).
 	}
 
+void CShip::RepairAllDamage ()
+
+//	RepairAllDamage
+//
+//	Repairs all damage, including armor and compartment damage.
+
+	{
+	bool bNotify = false;
+
+	int iHP;
+	int iMaxHP;
+	m_Interior.GetHitPoints(*this, m_pClass->GetInteriorDesc(), &iHP, &iMaxHP);
+	if (iHP < iMaxHP)
+		{
+		m_Interior.SetHitPoints(this, m_pClass->GetInteriorDesc(), iMaxHP);
+		bNotify = true;
+		}
+
+	//	See if we need to repair armor
+
+	iHP = GetTotalArmorHP(&iMaxHP);
+	if (iHP < iMaxHP)
+		{
+		SetTotalArmorHP(iMaxHP);
+		bNotify = true;
+		}
+
+	//	Notify UI (if necessary)
+
+	if (bNotify)
+		m_pController->OnShipStatus(IShipController::statusArmorRepaired, -1);
+	}
+
 void CShip::RepairArmor (int iSect, int iHitPoints, int *retiHPRepaired)
 
 //	RepairArmor
@@ -7063,39 +7106,35 @@ void CShip::RepairDamage (int iHPToRepair)
 //	across all segments and sections.
 
 	{
-	int iHP;
-	int iMaxHP;
+	//	A negative number means repair all damage
 
-	//	If we've got internal damage, repair that first.
+	if (iHPToRepair < 0)
+		RepairAllDamage();
 
-	m_Interior.GetHitPoints(*this, m_pClass->GetInteriorDesc(), &iHP, &iMaxHP);
-	if (iHP < iMaxHP)
+	else if (iHPToRepair > 0)
 		{
-		//	Negative HP means we repair all
+		//	If we've got internal damage, repair that first.
 
-		if (iHPToRepair < 0)
-			m_Interior.SetHitPoints(this, m_pClass->GetInteriorDesc(), iMaxHP);
-		else
-			m_Interior.SetHitPoints(this, m_pClass->GetInteriorDesc(), Min(iHP + iHPToRepair, iMaxHP));
-		}
+		int iHP;
+		int iMaxHP;
 
-	//	Otherwise, repair armor damage
-
-	else
-		{
-		iHP = GetTotalArmorHP(&iMaxHP);
+		m_Interior.GetHitPoints(*this, m_pClass->GetInteriorDesc(), &iHP, &iMaxHP);
 		if (iHP < iMaxHP)
 			{
-			//	Negative HP means we repair all
-
-			if (iHPToRepair < 0)
-				SetTotalArmorHP(iMaxHP);
-			else
-				SetTotalArmorHP(Min(iHP + iHPToRepair, iMaxHP));
-
-			//	Notify UI (if necessary)
-
+			m_Interior.SetHitPoints(this, m_pClass->GetInteriorDesc(), Min(iHP + iHPToRepair, iMaxHP));
 			m_pController->OnShipStatus(IShipController::statusArmorRepaired, -1);
+			}
+
+		//	See if we need to repair armor
+
+		else
+			{
+			iHP = GetTotalArmorHP(&iMaxHP);
+			if (iHP < iMaxHP)
+				{
+				SetTotalArmorHP(Min(iHP + iHPToRepair, iMaxHP));
+				m_pController->OnShipStatus(IShipController::statusArmorRepaired, -1);
+				}
 			}
 		}
 	}
