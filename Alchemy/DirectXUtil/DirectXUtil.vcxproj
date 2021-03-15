@@ -277,6 +277,7 @@
     <ClInclude Include="..\Include\DXScreenMgr3D.h" />
     <ClInclude Include="..\Include\DXSparseMask.h" />
     <ClInclude Include="..\Include\DXUI.h" />
+    <ClInclude Include="..\Include\OpenGLShaderCode.h" />
     <ClInclude Include="..\Include\Reanimator.h" />
     <ClInclude Include="..\Include\TBlt.h" />
     <ClInclude Include="..\Include\TCirclePainter.h" />
@@ -541,6 +542,7 @@
     <ClCompile Include="OpenGLMasterRenderQueue.cpp" />
     <ClCompile Include="OpenGLRenderLayer.cpp" />
     <ClCompile Include="OpenGLShader.cpp" />
+    <ClCompile Include="OpenGLShaderCode.cpp" />
     <ClCompile Include="OpenGLTexture.cpp" />
     <ClCompile Include="OpenGLVAO.cpp" />
     <ClCompile Include="Polygon.cpp" />

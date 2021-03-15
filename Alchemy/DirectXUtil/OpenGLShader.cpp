@@ -19,11 +19,53 @@ OpenGLShader::OpenGLShader () {
 
 }
 
-OpenGLShader::OpenGLShader (const char *vsFile, const char *fsFile) {
-	Init(vsFile, fsFile);
+OpenGLShader::OpenGLShader(const std::string vertexCode, const std::string fragmentCode) {
+	Init(vertexCode, fragmentCode);
 }
 
-void OpenGLShader::Init (const char *vsFile, const char *fsFile) {
+OpenGLShader::OpenGLShader (const char *vsFile, const char *fsFile) {
+	InitFromFile(vsFile, fsFile);
+}
+
+void OpenGLShader::Init(const std::string vertexCode, const std::string fragmentCode) {
+	char err_log[512];
+	shader_vp = glCreateShader(GL_VERTEX_SHADER);
+	shader_fp = glCreateShader(GL_FRAGMENT_SHADER);
+	const char* vsText = vertexCode.c_str();
+	const char* fsText = fragmentCode.c_str();
+
+	glShaderSource(shader_vp, 1, &vsText, 0);
+	glShaderSource(shader_fp, 1, &fsText, 0);
+
+	int success;
+	glCompileShader(shader_vp);
+	glGetShaderiv(shader_vp, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(shader_vp, 512, NULL, err_log);
+		string error_msg = ("Vertex shader failed to compile!\n" + string(err_log));
+		::kernelDebugLogPattern(CString(error_msg.c_str()));
+		throw(runtime_error(error_msg));
+	};
+	glCompileShader(shader_fp);
+	glGetShaderiv(shader_fp, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(shader_fp, 512, NULL, err_log);
+		string error_msg = ("Fragment shader failed to compile!\n" + string(err_log));
+		::kernelDebugLogPattern(CString(error_msg.c_str()));
+		throw(runtime_error(error_msg));
+	};
+
+	shader_id = glCreateProgram();
+	glBindAttribLocation(shader_id, 0, "in_Position"); // Bind a constant attribute location for positions of vertices
+	glBindAttribLocation(shader_id, 1, "in_Color"); // Bind another constant attribute location, this time for color
+	glAttachShader(shader_id, shader_fp);
+	glAttachShader(shader_id, shader_vp);
+	glLinkProgram(shader_id);
+}
+
+void OpenGLShader::InitFromFile (const char *vsFile, const char *fsFile) {
 	char err_log[512];
 	shader_vp = glCreateShader(GL_VERTEX_SHADER);
 	shader_fp = glCreateShader(GL_FRAGMENT_SHADER);

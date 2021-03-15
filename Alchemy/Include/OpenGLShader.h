@@ -12,9 +12,11 @@ class OpenGLShader {
 public:
 	OpenGLShader ();
 	OpenGLShader (const char *vsFile, const char *fsFile);
+	OpenGLShader (const std::string vertexCode, const std::string fragmentCode);
 	~OpenGLShader ();
 
-	void Init (const char *vsFile, const char *fsFile);
+	void Init (const std::string vertexCode, const std::string fragmentCode);
+	void InitFromFile (const char *vsFile, const char *fsFile);
 
 	void Bind () const;
 	void Unbind () const;

@@ -1,4 +1,5 @@
 #include "OpenGL.h"
+#include "OpenGLShaderCode.h"
 #include "PreComp.h"
 #define OPENGL_COLOR_BITS 32;
 #define OPENGL_DEPTH_BITS 32;
@@ -116,7 +117,7 @@ void OpenGLContext::prepSquareCanvas ()
 {
 	// Prepare the background canvas.
 	//OpenGLShader* pTestShader = new OpenGLShader("./shaders/test_vertex_shader.glsl", "./shaders/test_fragment_shader.glsl");
-	m_pCanvasShader = std::make_unique<OpenGLShader>("./shaders/texture_vertex_shader.glsl", "./shaders/texture_fragment_shader.glsl");
+	m_pCanvasShader = std::make_unique<OpenGLShader>(VCanvasShader, FCanvasShader);
 	float fSize = 1.0f;
 	float posZ = 0.999999f;
 
