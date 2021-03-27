@@ -2570,7 +2570,6 @@ bool CWeaponClass::FireWeapon (CInstalledDevice &Device,
 					return false;
 				}
 
-			// TODO(heliogenesis): Change to CreateChargeEffect. We will need to call SetFireRepeat in this function, else it is similar to CreateFireEffect.
 			if (Result.bFireEffect)
 				ShotDesc.CreateChargeEffect(Source.GetSystem(), &Source, Shots[i].vPos, CVector(), Shots[i].iDir, ActivateCtx.iChargeFrame);
 
@@ -5572,10 +5571,12 @@ void CWeaponClass::Update (CInstalledDevice *pDevice, CSpaceObject *pSource, SDe
 
 			if ((dwContinuous % iContinuousDelay) == 0 || (int(dwContinuous) > iBurstLengthInFrames))
 				{
-				if (ActivateCtx.GetTargetList().IsEmpty()) {
-					auto targetList = pSource->GetTargetList();
-					ActivateCtx.SetTargetList(targetList);
-				}
+				CTargetList pSourceTargetList;
+				if (ActivateCtx.GetTargetList().IsEmpty())
+					{
+					pSourceTargetList = pSource->GetTargetList();
+					ActivateCtx.SetTargetList(pSourceTargetList);
+					}
 
 				ActivateCtx.iRepeatingCount = 1 + iContinuous - min(int(dwContinuous) / iContinuousDelay, iContinuous + 1);
 				ActivateCtx.iChargeFrame = 1 + iChargeTime - min(int(dwContinuous) - iBurstLengthInFrames, iChargeTime + 1);
