@@ -3971,6 +3971,16 @@ int CWeaponClass::GetWeaponEffectiveness (const CDeviceItem &DeviceItem, CSpaceO
 			return -100;
 		}
 
+	//	If we have a weapon target definition, the target must fit this definition.
+	if (pTarget && DeviceItem.GetInstalledDevice())
+		{
+		auto pWeaponTargetDefinition = DeviceItem.GetInstalledDevice()->GetWeaponTargetDefinition();
+		if ((pWeaponTargetDefinition && !pWeaponTargetDefinition->MatchesTarget(pSource, pTarget)))
+			{
+			return -100;
+			}
+		}
+
 	//	Check our state
 
 	if (const CInstalledDevice *pDevice = DeviceItem.GetInstalledDevice())
@@ -4589,7 +4599,7 @@ bool CWeaponClass::IsStdDamageType (DamageTypes iDamageType, int iLevel)
 	return (iLevel >= iTierLevel && iLevel < iTierLevel + 3);
 	}
 
-bool CWeaponClass::IsTargetReachable (const CInstalledDevice &Device, CSpaceObject &Target, int iDefaultFireAngle, int *retiFireAngle) const
+bool CWeaponClass::IsTargetReachable (const CInstalledDevice &Device, CSpaceObject &Target, int iDefaultFireAngle, int *retiFireAngle, int *retiAimAngle) const
 
 //	IsTargetReachable
 //
@@ -4614,6 +4624,9 @@ bool CWeaponClass::IsTargetReachable (const CInstalledDevice &Device, CSpaceObje
 	int iAim;
 	Metric rDist;
 	bool bNoFireSolution = !CalcFireSolution(Device, Target, &iAim, &rDist);
+	if (retiAimAngle)
+		//	iAim is initialized, even if we can't get a fire solution
+		*retiAimAngle = iAim;
 
 	//	Figure out how close we can get
 
@@ -4621,16 +4634,10 @@ bool CWeaponClass::IsTargetReachable (const CInstalledDevice &Device, CSpaceObje
 	if (retiFireAngle)
 		*retiFireAngle = iFireAngle;
 
-	//	Area weapons are always aligned (we try even if we don't have a
-	//	firing solution).
-
-	if (pShotDesc->GetType() == CWeaponFireDesc::ftArea)
-		return true;
-
 	//	If we get this far and we don't have a firing solution, then we cannot
 	//	reach the target.
 
-	else if (bNoFireSolution)
+	if (bNoFireSolution)
 		return false;
 
 	//	Omnidirectional weapons are always aligned.
@@ -4648,6 +4655,11 @@ bool CWeaponClass::IsTargetReachable (const CInstalledDevice &Device, CSpaceObje
 	else
 		{
 		int iAimTolerance = GetConfiguration(*pShotDesc).GetAimTolerance(GetFireDelay(*pShotDesc));
+
+		//	Area weapons have 60 degree aim tolerance
+
+		if (pShotDesc->GetType() == CWeaponFireDesc::ftArea)
+			iAimTolerance = Max(iAimTolerance, 60);
 
 		//	Compute the angular size of the target
 
@@ -4718,134 +4730,10 @@ bool CWeaponClass::IsWeaponAligned (CSpaceObject *pShip,
 //	Note: If the weapon is invalid, we return an aim angle of -1
 
 	{
-	CItemCtx Ctx(pShip, pDevice);
-	const CDeviceItem DeviceItem = Ctx.GetDeviceItem();
+	if (!pDevice || !pTarget)
+		throw CException(ERR_FAIL);
 
-	const CWeaponFireDesc *pShot = GetWeaponFireDesc(DeviceItem);
-	if (pShot == NULL || pShip == NULL || pDevice == NULL)
-		{
-		if (retiAimAngle) *retiAimAngle = -1;
-		if (retiFireAngle) *retiFireAngle = -1;
-		return false;
-		}
-
-	ASSERT(pTarget);
-	if (!pTarget)
-		return false;
-
-	//	Get rotation info
-
-	int iMinFireArc, iMaxFireArc;
-	CDeviceRotationDesc::ETypes iType = GetRotationType(DeviceItem, &iMinFireArc, &iMaxFireArc);
-
-	int iFacingAngle = AngleMod(pShip->GetRotation() + AngleMiddle(iMinFireArc, iMaxFireArc));
-
-	//	Compute the fire solution
-
-	int iAim;
-	Metric rDist;
-	if (!CalcFireSolution(*pDevice, *pTarget, &iAim, &rDist))
-		{
-		if (retiAimAngle) *retiAimAngle = iAim;
-		if (retiFireAngle) *retiFireAngle = iFacingAngle;
-		return false;
-		}
-
-	if (retiAimAngle)
-		*retiAimAngle = iAim;
-
-	//	Omnidirectional weapons are always aligned
-
-	if (iType == CDeviceRotationDesc::rotOmnidirectional)
-		{
-		if (retiFireAngle)
-			*retiFireAngle = iAim;
-		return true;
-		}
-
-	//	Area weapons are always aligned
-
-	if (pShot->GetType() == CWeaponFireDesc::ftArea)
-		{
-		if (retiFireAngle)
-			*retiFireAngle = iFacingAngle;
-		return true;
-		}
-
-	//	Figure out our aim tolerance
-
-	int iAimTolerance = GetConfiguration(*pShot).GetAimTolerance(GetFireDelay(*pShot));
-
-	//	Tracking weapons behave like directional weapons with 120 degree field
-
-	if (iType != CDeviceRotationDesc::rotSwivel && IsTracking(DeviceItem, pShot))
-		{
-		int iDeviceAngle = AngleMiddle(iMinFireArc, iMaxFireArc);
-		iMinFireArc = AngleMod(iDeviceAngle - 60);
-		iMaxFireArc = AngleMod(iDeviceAngle + 60);
-		iType = CDeviceRotationDesc::rotSwivel;
-		}
-
-	if (iType == CDeviceRotationDesc::rotSwivel)
-		{
-		int iMin = AngleMod(pShip->GetRotation() + iMinFireArc - iAimTolerance);
-		int iMax = AngleMod(pShip->GetRotation() + iMaxFireArc + iAimTolerance);
-
-		//	Are we in the fire arc?
-
-		bool bInArc;
-		if (iMin < iMax)
-			{
-			//	e.g., iMin == 0; iMax == 180
-
-			bInArc = (iAim >= iMin && iAim <= iMax);
-			}
-		else
-			{
-			//	e.g., iMin == 315; iMax == 45
-
-			bInArc = (iAim >= iMin || iAim <= iMax);
-			}
-
-		//	Compute the fire direction
-
-		if (retiFireAngle)
-			{
-			if (bInArc)
-				*retiFireAngle = iAim;
-			else if (AngleOffset(iAim, iMin) < AngleOffset(iAim, iMax))
-				*retiFireAngle = iMin;
-			else
-				*retiFireAngle = iMax;
-			}
-
-		return bInArc;
-		}
-
-	//	Fire angle
-
-	if (retiFireAngle)
-		*retiFireAngle = iFacingAngle;
-
-	//	Compute the angular size of the target
-
-	int iHalfAngularSize = (int)(20.0 * pTarget->GetHitSize() / Max(1.0, rDist));
-
-	//	Figure out how far off we are from the direction that we
-	//	want to fire in.
-
-	int iAimOffset = AngleOffset(iFacingAngle, iAim);
-
-	//	If we're facing in the direction that we want to fire, 
-	//	then we're aligned...
-
-	if (iAimOffset <= Max(iAimTolerance, iHalfAngularSize))
-		return true;
-
-	//	Otherwise, we're not and we need to return the aim direction
-
-	else
-		return false;
+	return IsTargetReachable(*pDevice, *pTarget, -1, retiFireAngle, retiAimAngle);
 	}
 
 bool CWeaponClass::IsWeaponVariantValid (const CDeviceItem &DeviceItem, int iVariant) const
@@ -5459,6 +5347,22 @@ void CWeaponClass::Update (CInstalledDevice *pDevice, CSpaceObject *pSource, SDe
 	if (!pDevice->IsEnabled())
 		return;
 
+	if (pDevice->GetWeaponTargetDefinition() && pSource->IsPlayer() && pDevice->IsSecondaryWeapon())
+		{
+		//  If the weapon is not ready, do not autofire.
+		//	If the ship is disarmed or paralyzed, then we also do not autofire.
+
+		if (!(!pDevice->IsReady() || pSource->GetCondition(ECondition::paralyzed)
+			|| pSource->GetCondition(ECondition::disarmed)))
+			{
+			bool bActivateResult = pDevice->GetWeaponTargetDefinition()->AimAndFire(this, pDevice, pSource, Ctx);
+			if (bActivateResult)
+				{
+				pDevice->SetTimeUntilReady(CalcActivateDelay(ItemCtx));
+				}
+			}
+		}
+
 	//	See if we continue to fire
 
 	DWORD dwContinuous = GetContinuousFire(pDevice);
@@ -5524,7 +5428,6 @@ void CWeaponClass::Update (CInstalledDevice *pDevice, CSpaceObject *pSource, SDe
 	else if (pDevice->HasLastShots()
 			&& (!pDevice->IsTriggered() || pDevice->GetTimeUntilReady() > 1))
 		pDevice->SetLastShotCount(0);
-
 	DEBUG_CATCH
 	}
 

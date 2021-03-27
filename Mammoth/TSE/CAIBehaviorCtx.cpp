@@ -170,7 +170,8 @@ void CAIBehaviorCtx::CalcBestWeapon (CShip *pShip, CSpaceObject *pTarget, Metric
 //	m_rBestWeaponRange
 
 	{
-	ASSERT(pShip);
+	if (!pShip)
+		throw CException(ERR_FAIL);
 
 	//	NOTE: We skip this if the ship is in the middle of firing a repeating
 	//	weapon because this function selects each missile to determine its 
@@ -180,7 +181,7 @@ void CAIBehaviorCtx::CalcBestWeapon (CShip *pShip, CSpaceObject *pTarget, Metric
 	//	inquire about each missile.
 
 	if (!m_fRecalcBestWeapon
-			|| pShip->IsWeaponRepeating(devMissileWeapon))
+			|| pShip->IsWeaponRepeating())
 		return;
 
 	//	Recompute everything
@@ -234,7 +235,17 @@ void CAIBehaviorCtx::CalcBestWeapon (CShip *pShip, CSpaceObject *pTarget, Metric
 		//	Skip linked-fire weapons
 
 		else if (Weapon.IsLinkedFire())
-			continue;
+			{
+			if (UsesAllPrimaryWeapons())
+				{
+				auto linkedFireOptions = Weapon.GetItem()->AsDeviceItemOrThrow().GetLinkedFireOptions();
+				if (!(linkedFireOptions & CDeviceClass::LinkedFireOptions::lkfSelected)
+					&& !(linkedFireOptions & CDeviceClass::LinkedFireOptions::lkfSelectedVariant))
+					continue;
+				}
+			else
+				continue;
+			}
 
 		//	Otherwise, this is a primary weapon or launcher
 
@@ -611,7 +622,8 @@ bool CAIBehaviorCtx::CalcNavPath (CShip *pShip, CSpaceObject *pTo)
 	int i;
 	CSystem *pSystem = pShip->GetSystem();
 
-	ASSERT(pTo);
+	if (!pTo)
+		throw CException(ERR_FAIL);
 
 	//	If the destination moves (e.g., is a ship) then we place a nav path to
 	//	where it is currenly and allow the code to recalc nav paths as
@@ -694,7 +706,8 @@ void CAIBehaviorCtx::CalcNavPath (CShip *pShip, CNavigationPath *pPath, bool bOw
 	{
 	int i;
 
-	ASSERT(pPath);
+	if (!pPath)
+		throw CException(ERR_FAIL);
 
 	//	Figure out which nav position we are closest to
 
@@ -767,7 +780,7 @@ void CAIBehaviorCtx::CalcShieldState (CShip *pShip)
 		}
 	}
 
-int CAIBehaviorCtx::CalcWeaponScore (CShip *pShip, CSpaceObject *pTarget, CInstalledDevice *pWeapon, Metric rTargetDist2)
+int CAIBehaviorCtx::CalcWeaponScore (CShip *pShip, CSpaceObject *pTarget, CInstalledDevice *pWeapon, Metric rTargetDist2, bool avoidAnyNonReadyWeapons)
 
 //	CalcWeaponScore
 //
@@ -799,7 +812,7 @@ int CAIBehaviorCtx::CalcWeaponScore (CShip *pShip, CSpaceObject *pTarget, CInsta
 	//	If this weapon will take a while to get ready, then 
 	//	lower the score.
 
-	if (pWeapon->GetTimeUntilReady() >= 15)
+	if (pWeapon->GetTimeUntilReady() >= (avoidAnyNonReadyWeapons ? 1 : 15))
 		return 1;
 
 	//	Get the item for the selected variant (either the weapon

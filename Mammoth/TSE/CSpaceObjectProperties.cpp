@@ -14,11 +14,17 @@
 #define CATEGORY_STATION						CONSTLIT("station")
 
 #define FIELD_ARMOR_INTEGRITY					CONSTLIT("armorIntegrity")
+#define FIELD_DESC								CONSTLIT("desc")
+#define FIELD_DESC_ID							CONSTLIT("descID")
+#define FIELD_CAN_INSTALL						CONSTLIT("canInstall")
+#define FIELD_CAN_REMOVE						CONSTLIT("canRemove")
 #define FIELD_HULL_INTEGRITY					CONSTLIT("hullIntegrity")
 #define FIELD_OBJ_ID							CONSTLIT("objID")
 #define FIELD_POS								CONSTLIT("pos")
+#define FIELD_PRICE								CONSTLIT("price")
 #define FIELD_SHIELD_LEVEL						CONSTLIT("shieldLevel")
 #define FIELD_STATUS							CONSTLIT("status")
+#define FIELD_UPGRADE_INSTALL_ONLY				CONSTLIT("upgradeInstallOnly")
 
 #define PROPERTY_ASCENDED						CONSTLIT("ascended")
 #define PROPERTY_CAN_ATTACK						CONSTLIT("canAttack")
@@ -55,7 +61,6 @@
 #define PROPERTY_SIZE_PIXELS					CONSTLIT("sizePixels")
 #define PROPERTY_SOVEREIGN						CONSTLIT("sovereign")
 #define PROPERTY_SQUADRON_ID					CONSTLIT("squadronID")
-#define PROPERTY_STEALTH						CONSTLIT("stealth")
 #define PROPERTY_SUSPENDED						CONSTLIT("suspended")
 #define PROPERTY_TYPE							CONSTLIT("type")
 #define PROPERTY_UNDER_ATTACK					CONSTLIT("underAttack")
@@ -66,7 +71,7 @@
 #define SCALE_SHIP								CONSTLIT("ship")
 #define SCALE_FLOTSAM							CONSTLIT("flotsam")
 
-TPropertyHandler<CSpaceObject> CSpaceObject::m_BasePropertyTable = std::array<TPropertyHandler<CSpaceObject>::SPropertyDef, 8> {{
+TPropertyHandler<CSpaceObject> CSpaceObject::m_BasePropertyTable = std::array<TPropertyHandler<CSpaceObject>::SPropertyDef, 17> {{
 		{
 		"ascended",		"True|Nil",
 		[](const CSpaceObject &Obj, const CString &sProperty) { return ICCItemPtr(Obj.IsAscended()); },
@@ -104,8 +109,67 @@ TPropertyHandler<CSpaceObject> CSpaceObject::m_BasePropertyTable = std::array<TP
 		},
 		
 		{
+		"detectRange",		"Max range at which normal perception can detect us (light-seconds)",
+		[](const CSpaceObject &Obj, const CString &sProperty) 
+			{
+			Metric rRange = CPerceptionCalc::GetRange(CPerceptionCalc::GetRangeIndex(Obj.GetStealth(), perceptNormal));
+			return ICCItemPtr(mathRound(rRange / LIGHT_SECOND));
+			},
+		NULL,
+		},
+		
+		{
 		"escortingPlayer",	"True|Nil",
 		[](const CSpaceObject &Obj, const CString &sProperty) { return ICCItemPtr(Obj.IsPlayerEscort()); },
+		NULL,
+		},
+		
+		{
+		"hudColor",		"Color value",
+		[](const CSpaceObject &Obj, const CString &sProperty) { return ICCItemPtr(Obj.GetSymbolColor().AsHTMLColor()); },
+		NULL,
+		},
+		
+		{
+		"installArmorStatus",		"Returns ability to install armor",
+		[](const CSpaceObject &Obj, const CString &sProperty) 
+			{
+			CTradingServices Services(Obj);
+
+			CTradingDesc::SServiceStatus Status;
+			bool bOK = Services.GetServiceStatus(serviceReplaceArmor, Status);
+
+			return CTradingDesc::AsCCItem(Status);
+			},
+		NULL,
+		},
+		
+		{
+		"installDeviceStatus",		"Returns ability to install devices",
+		[](const CSpaceObject &Obj, const CString &sProperty) 
+			{
+			CTradingServices Services(Obj);
+
+			CTradingDesc::SServiceStatus Status;
+			bool bOK = Services.GetServiceStatus(serviceInstallDevice, Status);
+
+			return CTradingDesc::AsCCItem(Status);
+			},
+		NULL,
+		},
+		
+		{
+		"questTarget",			"True|Nil",
+		[](const CSpaceObject &Obj, const CString &sProperty) { return ICCItemPtr(Obj.m_fQuestTarget || Obj.HasAttribute(CONSTLIT("questTarget"))); },
+		[](CSpaceObject &Obj, const CString &sProperty, const ICCItem &Value, CString *retsError) { Obj.m_fQuestTarget = !Value.IsNil(); return true; },
+		},
+		
+		{
+		"stealth",			"Returns object stealth level.",
+		[](const CSpaceObject &Obj, const CString &sProperty) 
+			{
+			return ICCItemPtr(Obj.GetStealth());
+			},
 		NULL,
 		},
 		
@@ -134,7 +198,42 @@ TPropertyHandler<CSpaceObject> CSpaceObject::m_BasePropertyTable = std::array<TP
 				}
 			},
 		NULL,
-		}
+		},
+		
+		{
+		"visibleDamage",		"0-100: 0 = no damage.",
+		[](const CSpaceObject &Obj, const CString &sProperty) { return ICCItemPtr(Obj.GetVisibleDamage()); },
+		NULL,
+		},
+		
+		{
+		"visibleDamageColor",	"Green if <50; Yellow if 50-74; Red if >= 75",
+		[](const CSpaceObject &Obj, const CString &sProperty)
+			{
+			int iVisibleDamage = Obj.GetVisibleDamage();
+			if (iVisibleDamage >= 75)
+				return ICCItemPtr(CG32bitPixel(255, 80, 80).AsHTMLColor());
+			else if (iVisibleDamage >= 50)
+				return ICCItemPtr(CG32bitPixel(255, 255, 80).AsHTMLColor());
+			else
+				return ICCItemPtr(CG32bitPixel(80, 255, 80).AsHTMLColor());
+			},
+		NULL,
+		},
+		
+		{
+		"visibleToPlayer",		"True if object is in visual range of player",
+		[](const CSpaceObject &Obj, const CString &sProperty) 
+			{
+			const CSpaceObject *pPlayer = Obj.GetPlayerShip();
+			if (!pPlayer)
+				return ICCItemPtr::Nil();
+
+			CPerceptionCalc Perception(pPlayer->GetPerception());
+			return ICCItemPtr(Perception.CanVisuallyScan(Obj, pPlayer->GetDistance2(&Obj)));
+			},
+		NULL,
+		},
 		
 		}};
 
@@ -520,9 +619,6 @@ ICCItem *CSpaceObject::GetPropertyCompatible (CCodeChainCtx &Ctx, const CString 
 			return pResult->Reference();
 			}
 		}
-
-	else if (strEquals(sName, PROPERTY_STEALTH))
-		return CC.CreateInteger(GetStealth());
 
 	else if (strEquals(sName, PROPERTY_SUSPENDED))
 		return CC.CreateBool(IsSuspended());
