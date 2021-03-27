@@ -4729,17 +4729,13 @@ void CSystem::Update (SSystemUpdateCtx &SystemCtx, SViewportAnnotations *pAnnota
 
 	SUpdateCtx Ctx;
 	Ctx.pSystem = this;
-	Ctx.pPlayer = GetPlayerShip();
 	Ctx.pAnnotations = pAnnotations;
 
 	//	Initialize the player weapon context so that we can select the auto-
 	//	target.
 
-	if (Ctx.pPlayer)
-		{
-		Ctx.AutoMining.Init(*Ctx.pPlayer);
-		Ctx.AutoTarget.Init(*Ctx.pPlayer);
-		}
+	if (CSpaceObject *pPlayerShip = GetPlayerShip())
+		Ctx.SetPlayerShip(*pPlayerShip);
 
 	//	Add all objects to the grid so that we can do faster
 	//	hit tests
@@ -4824,7 +4820,7 @@ void CSystem::Update (SSystemUpdateCtx &SystemCtx, SViewportAnnotations *pAnnota
 					&& pSovereign->GetUNID() == g_PlayerSovereignUNID
 					&& (pObj->GetCategory() == CSpaceObject::catShip
 							|| pObj->GetCategory() == CSpaceObject::catStation))
-				Ctx.PlayerObjs.Insert(pObj);
+				Ctx.AddPlayerObj(*pObj);
 			}
 		}
 
@@ -5111,7 +5107,7 @@ void CSystem::UpdateGravity (SUpdateCtx &Ctx, CSpaceObject *pGravityObj)
 
 		//	If this is the player, then gravity warning
 
-		if (pObj == Ctx.pPlayer && rAccel > GRAVITY_WARNING_THRESHOLD)
+		if (pObj == Ctx.GetPlayerShip() && rAccel > GRAVITY_WARNING_THRESHOLD)
 			Ctx.bGravityWarning = true;
 		}
 	}
