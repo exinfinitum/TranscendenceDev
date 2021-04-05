@@ -124,7 +124,7 @@ void OpenGLRenderLayer::addParticleToEffectRenderQueue(glm::vec4 sizeAndPosition
 	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
 }
 
-void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPairList &batchesToRender, const int maxDrawCallsWithProperOrder) {
+int OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPairList &batchesToRender, const int maxDrawCallsWithProperOrder) {
 	int iDeepestBatchIndex = -1;
 	int iSecondDeepestBatchIndex = -1;
 	float fDeepestBatchLastElementDepth = 0.0;
@@ -132,6 +132,7 @@ void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPai
 	int iNumProperOrderDrawCallsLeft = maxDrawCallsWithProperOrder;
 
 	blendMode prevBlendMode = blendMode::blendNormal;
+	int iNumDrawCalls = 0;
 	while (true) {
 		// Phase 0: Reset tracking vars
 		iDeepestBatchIndex = -1;
@@ -191,12 +192,13 @@ void OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPai
 						setBlendModeNormal();
 			}
 		}
-
 		batchToRender->RenderUpToGivenDepth(batchToRenderShader, fSecondDeepestBatchLastElementDepth);
+		iNumDrawCalls++;
 	}
+	return iNumDrawCalls;
 }
 
-void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchShaderPairList& textureBatchesToRender, OpenGLBatchShaderPairList& nonTextureBatchesToRender) {
+int OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchShaderPairList& textureBatchesToRender, OpenGLBatchShaderPairList& nonTextureBatchesToRender) {
 	// This render mode uses depth testing for textured objects only.
 	glEnable(GL_DEPTH_TEST);
 
@@ -206,6 +208,7 @@ void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchSh
 	blendMode prevBlendMode = blendMode::blendNormal;
 	// First, render textured batches while setting depth buffer.
 	glDepthMask(GL_TRUE);
+	int iNumDrawCalls = 0;
 	while (true) {
 		// Phase 0: Reset tracking vars
 		iDeepestBatchIndex = -1;
@@ -250,9 +253,8 @@ void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchSh
 						setBlendModeNormal();
 			}
 		}
-
 		batchToRender->RenderUpToGivenDepth(batchToRenderShader, -1.0);
-
+		iNumDrawCalls++;
 	}
 	glDepthMask(GL_FALSE);
 	// Render non-texture (procedural) effects. Do not update depth buffer while doing so.
@@ -303,12 +305,12 @@ void OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchSh
 		}
 
 		batchToRender->RenderUpToGivenDepth(batchToRenderShader, -1.0);
-
+		iNumDrawCalls++;
 	}
 	glDepthMask(GL_TRUE);
 
 	glDisable(GL_DEPTH_TEST);
-
+	return iNumDrawCalls;
 }
 
 void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
@@ -336,7 +338,7 @@ void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
 	}
 }
 
-void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
+int OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
 {
 	// For each render queue in the ships render queue, render that render queue. We need to set the texture and do a glBindTexture before doing so.
 
@@ -388,18 +390,19 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 
 	blendMode prevBlendMode = blendMode::blendNormal;
 
+	int iNumDrawCalls;
 	switch (m_renderOrder) {
 	case renderOrder::renderOrderProper:
-		renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
+		iNumDrawCalls = renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	case renderOrder::renderOrderSimplified:
-		renderAllQueuesWithSimplifiedRenderOrder(nonDepthTestBatchesToRender);
+		iNumDrawCalls = renderAllQueuesWithSimplifiedRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	case renderOrder::renderOrderTextureFirst:
-		renderAllQueuesWithTextureFirstRenderOrder(depthTestBatchesToRender, nonDepthTestBatchesToRender);
+		iNumDrawCalls = renderAllQueuesWithTextureFirstRenderOrder(depthTestBatchesToRender, nonDepthTestBatchesToRender);
 		break;
 	default:
-		renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
+		iNumDrawCalls = renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	}
 
@@ -426,6 +429,7 @@ void OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int
 	m_texRenderBatchesNoDepthTestingBlendNormal.clear();
 	m_texRenderBatchesNoDepthTestingBlendScreen.clear();
 	setBlendModeNormal();
+	return iNumDrawCalls;
 }
 
 void OpenGLRenderLayer::GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader) {

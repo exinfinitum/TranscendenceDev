@@ -56,6 +56,7 @@ For special effects that use textures (such as glow), what we can do is use a se
 #include <mutex>
 //#define OPENGL_FPS_COUNTER_ENABLE // Uncomment this line to enable the OpenGL FPS counter (which specifically notes how much time is spent in graphics)
 //#define OPENGL_OBJ_COUNTER_ENABLE // Uncomment this line to enable the OpenGL quad counter
+#define OPENGL_DC_COUNTER_ENABLE
 
 /*
 class OpenGLMasterRenderQueue {
@@ -185,7 +186,7 @@ public:
 		glm::vec3 secondaryColor,
 		float startingDepth,
 		OpenGLRenderLayer::blendMode blendMode);
-	void renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions,
+	int renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions,
  OpenGLShader *objectTextureShader,
 		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
 	void GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader);
@@ -210,14 +211,14 @@ public:
 		return numObjs;
 	}
 private:
-	void renderAllQueuesWithProperRenderOrder(OpenGLBatchShaderPairList &batchesToRender) {
-		renderAllQueuesWithBasicRenderOrder(batchesToRender, 1000);
+	int renderAllQueuesWithProperRenderOrder(OpenGLBatchShaderPairList &batchesToRender) {
+		return renderAllQueuesWithBasicRenderOrder(batchesToRender, 1000);
 	};
-	void renderAllQueuesWithSimplifiedRenderOrder(OpenGLBatchShaderPairList &batchesToRender) {
-		renderAllQueuesWithBasicRenderOrder(batchesToRender, m_iMaxProperRenderOrderDrawCalls);
+	int renderAllQueuesWithSimplifiedRenderOrder(OpenGLBatchShaderPairList &batchesToRender) {
+		return renderAllQueuesWithBasicRenderOrder(batchesToRender, m_iMaxProperRenderOrderDrawCalls);
 	};
-	void renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPairList &batchesToRender, const int maxDrawCallsWithProperOrder);
-	void renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchShaderPairList& textureBatchesToRender, OpenGLBatchShaderPairList& nonTextureBatchesToRender);
+	int renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPairList &batchesToRender, const int maxDrawCallsWithProperOrder);
+	int renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchShaderPairList& textureBatchesToRender, OpenGLBatchShaderPairList& nonTextureBatchesToRender);
 	void PrepareTextureRenderBatchesForRendering(
 		OpenGLInstancedTextureBatchMapping& batchesToRender,
 		OpenGLBatchShaderPairList& texRenderBatchesForDepthTesting,
@@ -307,7 +308,7 @@ public:
 	};
 	OpenGLMasterRenderQueue (void);
 	~OpenGLMasterRenderQueue (void);
-	void renderAllQueues (void);
+	int renderAllQueues (void);
 	void renderToGlowmaps (void);
 	void addImageToRenderQueue(int startPixelX, int startPixelY, int sizePixelX,
 		int sizePixelY, int posPixelX, int posPixelY, float rotationInDegrees, OpenGLTexture* image, int texWidth, int texHeight,
@@ -369,9 +370,9 @@ public:
 	void setPointerToCanvas(void* canvas) { m_pCanvas = canvas; }
 	void *getPointerToCanvas() { return m_pCanvas; }
 	void setActiveRenderLayer(int iRenderLayer) { m_pActiveRenderLayer = &m_renderLayers[iRenderLayer]; }
-	void renderQueueByLayerNumberIndex(int index);
+	int renderQueueByLayerNumberIndex(int index);
 	void deleteUnusedTextures(void);
-#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)
+#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE) || defined(OPENGL_DC_COUNTER_ENABLE)
 	CG16bitFont& getOpenGLIndicatorFont() {
 		return *(m_pOpenGLIndicatorFont.get());
 	}
@@ -418,7 +419,7 @@ private:
 	std::mutex m_deleteTextureMutex;
 	void* m_pCanvas;
 	bool m_bPrevObjAddedIsParticle = false;
-#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)
+#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE) || defined(OPENGL_DC_COUNTER_ENABLE)
 	std::unique_ptr<CG16bitFont> m_pOpenGLIndicatorFont;
 
 	//OpenGLInstancedBatchRay m_FPSCounterRayRenderQueue;
