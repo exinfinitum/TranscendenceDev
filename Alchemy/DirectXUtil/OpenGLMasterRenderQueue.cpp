@@ -37,7 +37,7 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_renderLayers[layerOverhang + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
 	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setMaxProperRenderOrderDrawCalls(30);
 	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
-#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE)
+#if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE) || defined(OPENGL_DC_COUNTER_ENABLE)
 	m_pOpenGLIndicatorFont = std::make_unique<CG16bitFont>();
 	m_pOpenGLIndicatorFont->Create(CONSTLIT("Arial"), -16);
 #endif
@@ -236,11 +236,12 @@ void OpenGLMasterRenderQueue::addParticleToEffectRenderQueue(int posPixelX, int 
 	m_bPrevObjAddedIsParticle = true;
 	}
 
-void OpenGLMasterRenderQueue::renderQueueByLayerNumberIndex(int index)
+int OpenGLMasterRenderQueue::renderQueueByLayerNumberIndex(int index)
 {
-	m_renderLayers[index].renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight),
+	int iNumDrawCalls = m_renderLayers[index].renderAllQueues(m_fDepthLevel, m_fDepthDelta, m_iCurrentTick, glm::ivec2(m_iCanvasWidth, m_iCanvasHeight),
 		m_pObjectTextureShader.get(), m_pRayShader.get(), m_pGlowmapShader.get(), m_pOrbShader.get(), fbo, m_pCanvasVAO, m_pPerlinNoiseTexture.get());
 	m_fDepthLevel = m_fDepthStart - m_fDepthDelta;
+	return iNumDrawCalls;
 }
 
 void OpenGLMasterRenderQueue::deleteUnusedTextures(void)
@@ -253,12 +254,14 @@ void OpenGLMasterRenderQueue::deleteUnusedTextures(void)
 	m_texturesForDeletion.clear();
 }
 
-void OpenGLMasterRenderQueue::renderAllQueues(void)
+int OpenGLMasterRenderQueue::renderAllQueues(void)
 {
+	int iNumDrawCalls = 0;
 	for (size_t i = 0; i < m_renderLayers.size(); i++) {
-		renderQueueByLayerNumberIndex(i);
+		iNumDrawCalls += renderQueueByLayerNumberIndex(i);
 	}
 	deleteUnusedTextures();
+	return iNumDrawCalls;
 }
 void OpenGLMasterRenderQueue::renderToGlowmaps(void)
 {

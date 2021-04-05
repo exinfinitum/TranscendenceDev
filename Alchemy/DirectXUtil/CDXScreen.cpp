@@ -699,7 +699,7 @@ void CDXScreen::Render (void)
 			// Set a pointer to the canvas in the Master Render Queue, so we only render textures if we are rendering with that as the DEST
 			Layer.BackBuffer.GetMasterRenderQueue()->setPointerToCanvas(&Layer.BackBuffer);
 			Layer.BackBuffer.GetMasterRenderQueue()->setCanvasDimensions(Layer.BackBuffer.GetWidth(), Layer.BackBuffer.GetHeight());
-			Layer.BackBuffer.GetMasterRenderQueue()->renderAllQueues();
+			int iNumDrawCalls = Layer.BackBuffer.GetMasterRenderQueue()->renderAllQueues();
 			Layer.BackBuffer.GetMasterRenderQueue()->deleteUnusedTextures();
 			m_pOGLContext->renderCanvasBackgroundFromTexture(m_pOpenGLTextureFG, 0.000001f);
 			Layer.BackBuffer.GetMasterRenderQueue()->renderToGlowmaps();
@@ -707,6 +707,11 @@ void CDXScreen::Render (void)
 			//Layer.BackBuffer.GetInstancedRenderQueue()->Render(Layer.BackBuffer.GetInstancedRenderQueue()->getShader(), Layer.BackBuffer.GetInstancedRenderQueue()->getVAO());
 			//delete m_pOpenGLTexture;
 			//m_pOpenGLTexture = NULL;
+#ifdef OPENGL_DC_COUNTER_ENABLE
+			char szDrawCalls[256];
+			int iLenObjs = wsprintf(szDrawCalls, "%d draw calls", iNumDrawCalls);
+					Layer.FrontBuffer.DrawText(300, 40, Layer.BackBuffer.GetMasterRenderQueue()->getOpenGLIndicatorFont(), CG32bitPixel(180, 180, 180), CString(szDrawCalls, iLenObjs));
+#endif
 			}
 		else {
 			m_pOGLContext->renderCanvasBackground();
