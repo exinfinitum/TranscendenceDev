@@ -55,7 +55,7 @@ For special effects that use textures (such as glow), what we can do is use a se
 #include <thread>
 #include <mutex>
 //#define OPENGL_FPS_COUNTER_ENABLE // Uncomment this line to enable the OpenGL FPS counter (which specifically notes how much time is spent in graphics)
-//#define OPENGL_OBJ_COUNTER_ENABLE // Uncomment this line to enable the OpenGL quad counter
+#define OPENGL_OBJ_COUNTER_ENABLE // Uncomment this line to enable the OpenGL quad counter
 #define OPENGL_DC_COUNTER_ENABLE
 
 /*
@@ -165,6 +165,10 @@ public:
 	OpenGLRenderLayer(void) {
 		m_rayRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
 		m_rayRenderBatchBlendScreen.setBlendMode(blendMode::blendScreen);
+		m_orbRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
+		m_orbRenderBatchBlendScreen.setBlendMode(blendMode::blendScreen);
+		m_particleRenderBatchBlendNormal.setBlendMode(blendMode::blendNormal);
+		m_particleRenderBatchBlendScreen.setBlendMode(blendMode::blendScreen);
 	};
 	~OpenGLRenderLayer(void);
 	void addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions, float rotationInDegrees,
@@ -188,7 +192,7 @@ public:
 		OpenGLRenderLayer::blendMode blendMode);
 	int renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions,
  OpenGLShader *objectTextureShader,
-		OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
+		OpenGLShader *proceduralEffectShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise);
 	void GenerateGlowmaps(unsigned int fbo, OpenGLVAO *canvasVAO, OpenGLShader* glowmapShader);
 	void setRenderOrder(renderOrder iRenderOrder) {
 		m_renderOrder = iRenderOrder;
@@ -208,9 +212,24 @@ public:
 		}
 		numObjs = numObjs + m_rayRenderBatchBlendNormal.getNumObjectsToRender();
 		numObjs = numObjs + m_rayRenderBatchBlendScreen.getNumObjectsToRender();
+		numObjs = numObjs + m_orbRenderBatchBlendNormal.getNumObjectsToRender();
+		numObjs = numObjs + m_orbRenderBatchBlendScreen.getNumObjectsToRender();
+		numObjs = numObjs + m_particleRenderBatchBlendNormal.getNumObjectsToRender();
+		numObjs = numObjs + m_particleRenderBatchBlendScreen.getNumObjectsToRender();
 		return numObjs;
 	}
 private:
+	enum effectType
+	{
+		effectTypeRay = 0,
+		effectTypeLightning = 1,
+		effectTypeOrb = 2,
+		effectTypeFlare = 3,
+		effectTypeParticle = 4,
+
+		effectTypeCount = 5
+	};
+
 	int renderAllQueuesWithProperRenderOrder(OpenGLBatchShaderPairList &batchesToRender) {
 		return renderAllQueuesWithBasicRenderOrder(batchesToRender, 1000);
 	};
@@ -225,17 +244,29 @@ private:
 		OpenGLBatchShaderPairList& texRenderBatchesForNoDepthTesting,
 		OpenGLShader* objectTextureShader,
 		OpenGLRenderLayer::blendMode blendMode, int currentTick, const OpenGLAnimatedNoise* perlinNoise, bool noDepthTesting, glm::ivec2 canvasDimensions);
-	void addProceduralEffectToProperRenderQueue(OpenGLInstancedBatchRenderRequestRay renderRequest, OpenGLRenderLayer::blendMode blendMode) {
+	void addProceduralEffectToProperRenderQueue(OpenGLInstancedBatchRenderRequestRay renderRequest, OpenGLRenderLayer::blendMode blendMode, OpenGLRenderLayer::effectType effectType) {
 		OpenGLInstancedBatchRay& rayRenderBatch = m_rayRenderBatchBlendNormal;
-		switch (blendMode) {
-		case OpenGLRenderLayer::blendMode::blendNormal:
-			m_rayRenderBatchBlendNormal.addObjToRender(renderRequest);
+		switch (effectType) {
+		case OpenGLRenderLayer::effectType::effectTypeRay:
+			if (blendMode == OpenGLRenderLayer::blendMode::blendScreen) {
+				m_rayRenderBatchBlendScreen.addObjToRender(renderRequest);
+			} else {
+				m_rayRenderBatchBlendNormal.addObjToRender(renderRequest);
+			}
 			break;
-		case OpenGLRenderLayer::blendMode::blendScreen:
-			m_rayRenderBatchBlendScreen.addObjToRender(renderRequest);
+		case OpenGLRenderLayer::effectType::effectTypeParticle:
+			if (blendMode == OpenGLRenderLayer::blendMode::blendScreen) {
+				m_particleRenderBatchBlendScreen.addObjToRender(renderRequest);
+			} else {
+				m_particleRenderBatchBlendNormal.addObjToRender(renderRequest);
+			}
 			break;
-		default:
-			m_rayRenderBatchBlendNormal.addObjToRender(renderRequest);
+		case OpenGLRenderLayer::effectType::effectTypeOrb:
+			if (blendMode == OpenGLRenderLayer::blendMode::blendScreen) {
+				m_orbRenderBatchBlendScreen.addObjToRender(renderRequest);
+			} else {
+				m_orbRenderBatchBlendNormal.addObjToRender(renderRequest);
+			}
 			break;
 		}
 	}
@@ -262,26 +293,19 @@ private:
 	void setBlendModeNormal() { glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); };
 	void setBlendModeScreen() { glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR); };
 	void clear();
-	enum effectType
-	{
-		effectTypeRay = 0,
-		effectTypeLightning = 1,
-		effectTypeOrb = 2,
-		effectTypeFlare = 3,
-		effectTypeParticle = 4,
 
-		effectTypeCount = 5
-	};
 	OpenGLInstancedTextureBatchMapping m_texRenderBatchesBlendNormal;
 	OpenGLInstancedTextureBatchMapping m_texRenderBatchesBlendScreen;
 	OpenGLInstancedTextureBatchMapping m_texRenderBatchesNoDepthTestingBlendNormal;
 	OpenGLInstancedTextureBatchMapping m_texRenderBatchesNoDepthTestingBlendScreen;
+
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendNormal;
 	OpenGLInstancedBatchRay m_rayRenderBatchBlendScreen;
-	OpenGLInstancedBatchParticle m_particleRenderBatchBlendNormal;
-	OpenGLInstancedBatchParticle m_particleRenderBatchBlendScreen;
-	OpenGLInstancedBatchRay m_rayRenderBatch;
-	OpenGLInstancedBatchOrb m_orbRenderBatch;
+	OpenGLInstancedBatchRay m_particleRenderBatchBlendNormal;
+	OpenGLInstancedBatchRay m_particleRenderBatchBlendScreen;
+	OpenGLInstancedBatchRay m_orbRenderBatchBlendNormal;
+	OpenGLInstancedBatchRay m_orbRenderBatchBlendScreen;
+
 	std::mutex m_texRenderQueueAddMutex;
 	std::vector<OpenGLTexture*> m_texturesNeedingGlowmaps;
 	renderOrder m_renderOrder = renderOrder::renderOrderProper;
