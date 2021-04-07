@@ -66,7 +66,7 @@ void OpenGLRenderLayer::addRayToEffectRenderQueue(glm::vec3 vPrimaryColor, glm::
 	glm::vec4 intensityAndCyclesV4(intensitiesAndCycles[0], secondaryOpacity, intensitiesAndCycles[2], intensitiesAndCycles[1]);
 	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, intensityAndCyclesV4, vPrimaryColor, vSecondaryColor, 0, OpenGLRenderLayer::effectType::effectTypeRay, blendMode);
 	renderRequest.set_depth(startingDepth);
-	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
+	addProceduralEffectToProperRenderQueue(renderRequest, blendMode, OpenGLRenderLayer::effectType::effectTypeRay);
 }
 
 void OpenGLRenderLayer::addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition,
@@ -96,7 +96,7 @@ void OpenGLRenderLayer::addOrbToEffectRenderQueue(glm::vec4 sizeAndPosition,
 
 	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, floatParams, primaryColor, secondaryColor, float(animationSeed), OpenGLRenderLayer::effectType::effectTypeOrb, blendMode);
 	renderRequest.set_depth(startingDepth);
-	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
+	addProceduralEffectToProperRenderQueue(renderRequest, blendMode, OpenGLRenderLayer::effectType::effectTypeOrb);
 }
 
 void OpenGLRenderLayer::addParticleToEffectRenderQueue(glm::vec4 sizeAndPosition,
@@ -121,7 +121,7 @@ void OpenGLRenderLayer::addParticleToEffectRenderQueue(glm::vec4 sizeAndPosition
 	glm::vec4 floatParams(minRadius, maxRadius, opacity, 0.0);
 	auto renderRequest = OpenGLInstancedBatchRenderRequestRay(sizeAndPosition, rotation, shapes, styles, floatParams, primaryColor, secondaryColor, 0, OpenGLRenderLayer::effectType::effectTypeParticle, blendMode);
 	renderRequest.set_depth(startingDepth);
-	addProceduralEffectToProperRenderQueue(renderRequest, blendMode);
+	addProceduralEffectToProperRenderQueue(renderRequest, blendMode, OpenGLRenderLayer::effectType::effectTypeParticle);
 }
 
 int OpenGLRenderLayer::renderAllQueuesWithBasicRenderOrder(OpenGLBatchShaderPairList &batchesToRender, const int maxDrawCallsWithProperOrder) {
@@ -338,9 +338,10 @@ void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
 	}
 }
 
-int OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *rayShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
+int OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int currentTick, glm::ivec2 canvasDimensions, OpenGLShader *objectTextureShader, OpenGLShader *proceduralEffectShader, OpenGLShader *glowmapShader, OpenGLShader *orbShader, unsigned int fbo, OpenGLVAO* canvasVAO, const OpenGLAnimatedNoise* perlinNoise)
 {
 	// For each render queue in the ships render queue, render that render queue. We need to set the texture and do a glBindTexture before doing so.
+	//	TODO(heliogenesis): Clean up; remove all non-ray shaders and rename where appropriate "ray*" to "proceduralEffect*"
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -375,12 +376,19 @@ int OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int 
 		objectTextureShader, 
 		blendMode::blendScreen, currentTick, perlinNoise, true, canvasDimensions);
 
-	std::array<std::string, 3> rayAndLightningUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise" };
-	std::array<std::string, 1> particleUniformNames = { "aCanvasAdjustedDimensions" };
-	m_rayRenderBatchBlendNormal.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
-	nonDepthTestBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendNormal));
-	m_rayRenderBatchBlendScreen.setUniforms(rayAndLightningUniformNames, float(currentTick), canvasDimensions, perlinNoise);
-	nonDepthTestBatchesToRender.push_back(std::pair(rayShader, &m_rayRenderBatchBlendScreen));
+	std::array<std::string, 4> proceduralEffectUniformNames = { "current_tick", "aCanvasAdjustedDimensions", "perlin_noise", "effect_type"};
+	m_rayRenderBatchBlendNormal.setUniforms(proceduralEffectUniformNames, float(currentTick), canvasDimensions, perlinNoise, OpenGLRenderLayer::effectType::effectTypeRay);
+	nonDepthTestBatchesToRender.push_back(std::pair(proceduralEffectShader, &m_rayRenderBatchBlendNormal));
+	m_rayRenderBatchBlendScreen.setUniforms(proceduralEffectUniformNames, float(currentTick), canvasDimensions, perlinNoise, OpenGLRenderLayer::effectType::effectTypeRay);
+	nonDepthTestBatchesToRender.push_back(std::pair(proceduralEffectShader, &m_rayRenderBatchBlendScreen));
+	m_orbRenderBatchBlendNormal.setUniforms(proceduralEffectUniformNames, float(currentTick), canvasDimensions, perlinNoise, OpenGLRenderLayer::effectType::effectTypeOrb);
+	nonDepthTestBatchesToRender.push_back(std::pair(proceduralEffectShader, &m_orbRenderBatchBlendNormal));
+	m_orbRenderBatchBlendScreen.setUniforms(proceduralEffectUniformNames, float(currentTick), canvasDimensions, perlinNoise, OpenGLRenderLayer::effectType::effectTypeOrb);
+	nonDepthTestBatchesToRender.push_back(std::pair(proceduralEffectShader, &m_orbRenderBatchBlendScreen));
+	m_particleRenderBatchBlendNormal.setUniforms(proceduralEffectUniformNames, float(currentTick), canvasDimensions, perlinNoise, OpenGLRenderLayer::effectType::effectTypeParticle);
+	nonDepthTestBatchesToRender.push_back(std::pair(proceduralEffectShader, &m_particleRenderBatchBlendNormal));
+	m_particleRenderBatchBlendScreen.setUniforms(proceduralEffectUniformNames, float(currentTick), canvasDimensions, perlinNoise, OpenGLRenderLayer::effectType::effectTypeParticle);
+	nonDepthTestBatchesToRender.push_back(std::pair(proceduralEffectShader, &m_particleRenderBatchBlendScreen));
 
 
 	int iDeepestBatchIndex = -1;
@@ -396,7 +404,7 @@ int OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int 
 		iNumDrawCalls = renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	case renderOrder::renderOrderSimplified:
-		iNumDrawCalls = renderAllQueuesWithSimplifiedRenderOrder(nonDepthTestBatchesToRender);
+		iNumDrawCalls = renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	case renderOrder::renderOrderTextureFirst:
 		iNumDrawCalls = renderAllQueuesWithTextureFirstRenderOrder(depthTestBatchesToRender, nonDepthTestBatchesToRender);

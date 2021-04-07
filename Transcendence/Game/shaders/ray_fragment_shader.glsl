@@ -31,6 +31,7 @@ layout (location = 25) flat in float particleMinRadius;
 
 uniform float current_tick;
 uniform sampler3D perlin_noise;
+uniform int effect_type;
 
 out vec4 fragColor;
 
@@ -502,14 +503,8 @@ vec4 calcRayLightningColor(vec2 quadSize, vec2 real_texcoord, float waveCyclePos
 		(swordWidth * float(widthAdjType == widthAdjSword))
     );
 
-	vec4 rayColor = calcRayColor(taperAdjTop, taperAdjBottom, widthAdjTop, widthAdjBottom, ray_center_x, real_texcoord, intensity, distanceFromCenter, grains, opacityAdj, widthCalcPos, secondaryOpacity);
-	vec4 lightningColor = calcLightningColor(taperAdjTop, widthAdjTop, real_texcoord);
+	vec4 finalColor = calcRayColor(taperAdjTop, taperAdjBottom, widthAdjTop, widthAdjBottom, ray_center_x, real_texcoord, intensity, distanceFromCenter, grains, opacityAdj, widthCalcPos, secondaryOpacity);
 
-
-	vec4 finalColor = (
-		rayColor * float(effectType == effectTypeRay) +
-		lightningColor * float(effectType == effectTypeLightning)
-	);
 	finalColor[3] = max(finalColor[3], 0.0); // if finalColor[3] is nan, set it to zero
 	return finalColor;
 }
@@ -1191,11 +1186,14 @@ void main(void)
     float center_point = 0.0; // Remember to remove this in the real shader!!
     vec2 real_texcoord = quadPos;
 
-	vec4 finalColor = (
-		(calcRayLightningColor(quadSize, real_texcoord, rayWaveCyclePos, rayGrainyTexture, rayReshape, rayWidthAdjType, center_point, opacityAdj, orbSecondaryOpacity) * float((effectType == effectTypeRay) || (effectType == effectTypeLightning))) +
-		(calcOrbColor(quadSize) * float(effectType == effectTypeOrb)) +
-		(calcParticleColor(quadSize, particleMinRadius, primaryColor, secondaryColor, opacityAdj, orbLifetime, orbCurrFrame, rotation, orbStyle, particleDestiny) * float(effectType == effectTypeParticle))
-	);
+	vec4 finalColor = vec4(0.0);
+	if (effect_type == effectTypeRay) {
+		finalColor = calcRayLightningColor(quadSize, real_texcoord, rayWaveCyclePos, rayGrainyTexture, rayReshape, rayWidthAdjType, center_point, opacityAdj, orbSecondaryOpacity);
+	} else if (effect_type == effectTypeOrb) {
+		finalColor = calcOrbColor(quadSize);
+	} else if (effect_type == effectTypeParticle) {
+		finalColor = calcParticleColor(quadSize, particleMinRadius, primaryColor, secondaryColor, opacityAdj, orbLifetime, orbCurrFrame, rotation, orbStyle, particleDestiny);
+	}
 
 	bool usePreMultipliedAlpha = (
 		(blendMode == blendScreen)
