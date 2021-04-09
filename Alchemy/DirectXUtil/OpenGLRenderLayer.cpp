@@ -203,7 +203,9 @@ int OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchSha
 	glEnable(GL_DEPTH_TEST);
 
 	int iDeepestBatchIndex = -1;
+	int iSecondDeepestBatchIndex = -1;
 	float fDeepestBatchLastElementDepth = 0.0;
+	float fSecondDeepestBatchLastElementDepth = 0.0;
 
 	blendMode prevBlendMode = blendMode::blendNormal;
 	// First, render textured batches while setting depth buffer.
@@ -262,10 +264,12 @@ int OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchSha
 	while (true) {
 		// Phase 0: Reset tracking vars
 		iDeepestBatchIndex = -1;
+		iSecondDeepestBatchIndex = -1;
 		fDeepestBatchLastElementDepth = -1.0;
+		fSecondDeepestBatchLastElementDepth = -1.0;
 
 		unsigned int iCurrBatchIndex = 0;
-		// Phase 1: Get deepest textured batches
+		// Phase 1: Get deepest and second deepest batches
 		for (const auto& p : nonTextureBatchesToRender) {
 			OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
 			float fBatchDepth = pInstancedRenderBatch->getDepthOfDeepestObject();
@@ -274,6 +278,16 @@ int OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchSha
 				//fSecondDeepestBatchLastElementDepth = fDeepestBatchLastElementDepth;
 				iDeepestBatchIndex = iCurrBatchIndex;
 				fDeepestBatchLastElementDepth = fBatchDepth;
+			}
+			iCurrBatchIndex += 1;
+		}
+		iCurrBatchIndex = 0;
+		for (const auto& p : nonTextureBatchesToRender) {
+			OpenGLInstancedBatchInterface* pInstancedRenderBatch = p.second;
+			float fBatchDepth = pInstancedRenderBatch->getDepthOfDeepestObject();
+			if ((fBatchDepth > fSecondDeepestBatchLastElementDepth) && (iCurrBatchIndex != iDeepestBatchIndex)) {
+				iSecondDeepestBatchIndex = iCurrBatchIndex;
+				fSecondDeepestBatchLastElementDepth = fBatchDepth;
 			}
 			iCurrBatchIndex += 1;
 		}
@@ -304,7 +318,7 @@ int OpenGLRenderLayer::renderAllQueuesWithTextureFirstRenderOrder(OpenGLBatchSha
 			}
 		}
 
-		batchToRender->RenderUpToGivenDepth(batchToRenderShader, -1.0);
+		batchToRender->RenderUpToGivenDepth(batchToRenderShader, fSecondDeepestBatchLastElementDepth);
 		iNumDrawCalls++;
 	}
 	glDepthMask(GL_TRUE);
@@ -404,7 +418,7 @@ int OpenGLRenderLayer::renderAllQueues(float &depthLevel, float depthDelta, int 
 		iNumDrawCalls = renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	case renderOrder::renderOrderSimplified:
-		iNumDrawCalls = renderAllQueuesWithProperRenderOrder(nonDepthTestBatchesToRender);
+		iNumDrawCalls = renderAllQueuesWithSimplifiedRenderOrder(nonDepthTestBatchesToRender);
 		break;
 	case renderOrder::renderOrderTextureFirst:
 		iNumDrawCalls = renderAllQueuesWithTextureFirstRenderOrder(depthTestBatchesToRender, nonDepthTestBatchesToRender);
