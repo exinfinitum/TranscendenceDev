@@ -3,7 +3,7 @@
 #include "PreComp.h"
 #include <mutex>
 
-const int MAX_DEPTH_LEVELS = 100000;
+const int MAX_DEPTH_LEVELS = 10000000;
 const float OpenGLMasterRenderQueue::m_fDepthDelta = float(1.0 / MAX_DEPTH_LEVELS); // Up to 100k different depth levels
 const float OpenGLMasterRenderQueue::m_fDepthStart = 1.0f - float(1.0 / MAX_DEPTH_LEVELS); // Up to 100k different depth levels
 
@@ -31,12 +31,12 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader.get());
 	m_pActiveRenderLayer = &m_renderLayers[0];
 	m_renderLayers[layerStations + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderProper);
-	m_renderLayers[layerFGWeaponFire + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
-	m_renderLayers[layerBGWeaponFire + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
+	m_renderLayers[layerFGWeaponFire + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderProper);
+	m_renderLayers[layerBGWeaponFire + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderProper);
 	m_renderLayers[layerShips + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
 	m_renderLayers[layerOverhang + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderTextureFirst);
 	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setMaxProperRenderOrderDrawCalls(30);
-	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderSimplified);
+	m_renderLayers[layerEffects + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderProper);
 #if defined(OPENGL_FPS_COUNTER_ENABLE) || defined(OPENGL_OBJ_COUNTER_ENABLE) || defined(OPENGL_DC_COUNTER_ENABLE)
 	m_pOpenGLIndicatorFont = std::make_unique<CG16bitFont>();
 	m_pOpenGLIndicatorFont->Create(CONSTLIT("Arial"), -16);
@@ -147,10 +147,10 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 		float(glowDecay[3]) / vCanvasQuadSizes[0]
 	);
 
-	if (m_bPrevObjAddedIsParticle) {
-		m_fDepthLevel -= m_fDepthDelta;
-		m_bPrevObjAddedIsParticle = false;
-	}
+	//if (m_bPrevObjAddedIsParticle) {
+	//	m_fDepthLevel -= m_fDepthDelta;
+	//	m_bPrevObjAddedIsParticle = false;
+	//}
 	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, rotationInDegrees, vTextureQuadSizes, glowColor, alphaStrength,
 		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel, aspectRatio, textureRenderType, blendMode, glowRadius, relativeGlowDecay);
 	m_fDepthLevel -= m_fDepthDelta;
@@ -178,10 +178,11 @@ void OpenGLMasterRenderQueue::addRayToEffectRenderQueue(int posPixelX, int posPi
 	glm::ivec4 shapes(iWidthAdjType, iReshape, 0, 0);
 	glm::vec3 intensitiesAndCycles(float(iIntensity), waveCyclePos, float(opacityAdj) / 255.0f);
 	glm::ivec4 styles(iColorTypes, iOpacityTypes, iTexture, 0);
-	if (m_bPrevObjAddedIsParticle) {
-		m_fDepthLevel -= m_fDepthDelta;
-		m_bPrevObjAddedIsParticle = false;
-	}
+	// TODO(heliogenesis): Handle the case when a ray is part of a particle system.
+	//if (m_bPrevObjAddedIsParticle) {
+	//	m_fDepthLevel -= m_fDepthDelta;
+	//	m_bPrevObjAddedIsParticle = false;
+	//}
 	m_pActiveRenderLayer->addRayToEffectRenderQueue(vPrimaryColor, vSecondaryColor, sizeAndPosition, shapes, intensitiesAndCycles, styles, rotation, m_fDepthLevel, blendMode, secondaryOpacity);
 	m_fDepthLevel -= m_fDepthDelta;
 }
@@ -205,10 +206,11 @@ void OpenGLMasterRenderQueue::addOrbToEffectRenderQueue(
 	{
 	glm::vec4 sizeAndPosition((float)sizePixelX, (float)sizePixelY,
 		(float)posPixelX / (float)canvasSizeX, (float)posPixelY / (float)canvasSizeY);
-	if (m_bPrevObjAddedIsParticle) {
-		m_fDepthLevel -= m_fDepthDelta;
-		m_bPrevObjAddedIsParticle = false;
-	}
+	// TODO(heliogenesis): Handle the case when an orb is part of a particle system.
+	//if (m_bPrevObjAddedIsParticle) {
+	//	m_fDepthLevel -= m_fDepthDelta;
+	//	m_bPrevObjAddedIsParticle = false;
+	//}
 	m_pActiveRenderLayer->addOrbToEffectRenderQueue(sizeAndPosition, rotation, intensity, opacity, animation, style, detail, distortion, animationSeed, lifetime, currFrame, primaryColor, secondaryColor, secondaryOpacity,
 		m_fDepthLevel, blendMode);
 	m_fDepthLevel -= m_fDepthDelta;
@@ -232,8 +234,9 @@ void OpenGLMasterRenderQueue::addParticleToEffectRenderQueue(int posPixelX, int 
 	glm::vec3 vPrimaryColor = glm::vec3(std::get<0>(primaryColor), std::get<1>(primaryColor), std::get<2>(primaryColor)) / float(255.0);
 	glm::vec3 vSecondaryColor = glm::vec3(std::get<0>(secondaryColor), std::get<1>(secondaryColor), std::get<2>(secondaryColor)) / float(255.0);
 	m_pActiveRenderLayer->addParticleToEffectRenderQueue(sizeAndPosition, rotation, opacity, style, lifetime, currFrame, destiny, minRadius * 2.0f, maxRadius * 2.0f, vPrimaryColor, vSecondaryColor, m_fDepthLevel, blendMode);
+	m_fDepthLevel -= m_fDepthDelta;
 	// Note that we do not change the depth level when adding particles.
-	m_bPrevObjAddedIsParticle = true;
+	//m_bPrevObjAddedIsParticle = true;
 	}
 
 int OpenGLMasterRenderQueue::renderQueueByLayerNumberIndex(int index)
