@@ -158,7 +158,7 @@ float getGlowBoundaries(vec2 texture_size, ivec2 num_frames, vec2 texture_uv, ve
 	float distanceFromDecayPoint = length(decayPoint - canvPosition);
 	bool useUniformGlowValue = (decayMaxRadius < 0) && (decayMinRadius < 0);
 	float glowStrengthMultiplierRing = max(0.0, 1.0 - (abs(distanceFromDecayPoint - ((decayMaxRadius + decayMinRadius) / 2.0)) / (float(decayMaxRadius == decayMinRadius) + (decayMaxRadius - decayMinRadius) / 2.0)));
-	float glowStrengthMultiplierPeak = max(0.0, 1.0 - (distanceFromDecayPoint / decayMaxRadius));
+	float glowStrengthMultiplierPeak = max(0.0, 1.0 - (distanceFromDecayPoint / (max(0.000001, decayMaxRadius))));
 	float glowStrengthMultiplierToUse = mix(glowStrengthMultiplierPeak, glowStrengthMultiplierRing, float(decayMinRadius > 0.0));
 	float finalGlowStrengthMultiplier = mix(glowStrengthMultiplierToUse, 1.0, float(useUniformGlowValue));
 	return glowBoundaries * finalGlowStrengthMultiplier;
