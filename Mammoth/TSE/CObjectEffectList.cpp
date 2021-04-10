@@ -217,7 +217,7 @@ void CObjectEffectList::Update (CSpaceObject *pObj, const CObjectEffectDesc &Des
 			int xEmit;
 			int yEmit;
 			Desc.GetEffectDesc(i).PosCalc.GetCoord(iRotation, &xEmit, &yEmit);
-			PainterCtx.vEmitPos = CVector(xEmit * g_KlicksPerPixel / rZoomScale, -yEmit * g_KlicksPerPixel / rZoomScale);
+			PainterCtx.vEmitPos = CVector(xEmit * g_KlicksPerPixel, -yEmit * g_KlicksPerPixel);
 
 			//	Compute the rotation (180 for thruster effects)
 

@@ -658,7 +658,7 @@ void CParticleCloudPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPa
 		//	to object-relative coordinates.
 
 		if (m_bUseObjectCenter)
-			vPos = CVector((x - xPaint) * g_KlicksPerPixel / g_ZoomScale, (yPaint - y) * g_KlicksPerPixel / g_ZoomScale);
+			vPos = CVector((x - xPaint) * g_KlicksPerPixel * g_ZoomScale, (yPaint - y) * g_KlicksPerPixel * g_ZoomScale);
 
 		//	Initialize
 
