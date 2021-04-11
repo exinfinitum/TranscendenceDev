@@ -9,18 +9,16 @@ Transcendence/Game/Previous/
 Transcendence/Game/TDBs/
 Transcendence/Game/TransData/
 Transcendence/Game/Debug.log
-Transcendence/Game/HighScores.xml
 Transcendence/Game/Settings.xml
+Transcendence/Game/HighScores.xml
 Transcendence/Game/Snapshots/
 Transcendence/Game/Storage.xml
 Transcendence/Game/TransData.xml
 Transcendence/Game/[Tt]emp.txt
 Transcendence/Game/[Tt]emp[0-9].txt
 Transcendence/Game/*.dll
-Transcendence/Game/*.exe
-Transcendence/Game/*.exe.manifest
-Transcendence/Game/*.lnk
 Transcendence/Game/*.tdb
+Transcendence/Game/*.exe.manifest
 
 # Don't include Hexarc keys
 

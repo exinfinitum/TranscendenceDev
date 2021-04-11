@@ -55,8 +55,8 @@ For special effects that use textures (such as glow), what we can do is use a se
 #include <thread>
 #include <mutex>
 //#define OPENGL_FPS_COUNTER_ENABLE // Uncomment this line to enable the OpenGL FPS counter (which specifically notes how much time is spent in graphics)
-#define OPENGL_OBJ_COUNTER_ENABLE // Uncomment this line to enable the OpenGL quad counter
-#define OPENGL_DC_COUNTER_ENABLE
+//#define OPENGL_OBJ_COUNTER_ENABLE // Uncomment this line to enable the OpenGL quad counter
+//#define OPENGL_DC_COUNTER_ENABLE // Uncomment this line to enable the OpenGL draw call counter
 
 /*
 class OpenGLMasterRenderQueue {
