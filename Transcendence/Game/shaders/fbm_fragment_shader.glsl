@@ -129,7 +129,7 @@ out vec4 fragColor;
 
 void main(void)
 {
-    vec2 uv = -1. + 2. * TexCoord;
+    vec2 uv = TexCoord;
 	float fbm_tex = (fbm(uv, time * 50, 0.5) + 1.0) / 2.0;
 	float fbm_animated = (fbm_animated(uv, time) + 1.0) / 2.0;
 	float raw_perlin = (cnoise(vec3(uv.x * 20, uv.y * 20, time * 1)) * 0.5) + 0.5;

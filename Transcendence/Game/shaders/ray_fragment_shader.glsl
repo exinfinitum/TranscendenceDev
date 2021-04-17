@@ -513,8 +513,8 @@ vec4 calcRayLightningColor(vec2 quadSize, vec2 real_texcoord, float waveCyclePos
 float pixelsDistanceFromCenter = length(quadPos) * (quadSize[0] / 2);
 
 const float SHELL_EDGE_WIDTH_RATIO = 0.05;
-const float orb_fbm_time_divisor = 160.0;
-const float orb_fbm_space_divisor = 55.0;
+const float ORB_FBM_TIME_DIVISOR = 160.0;
+const float ORB_FBM_SPACE_DIVISOR = 10.0;
 
 // Copy of EAnimationTypes enum from SFXOrb.cpp
 const int animateNone =           0;
@@ -841,7 +841,7 @@ vec4 calcFireblastColor(float fRadius, float fIntensity, vec3 vPrimaryColor, vec
     //float fAdjRadius = pixelsDistanceFromCenter;
     bool useBlack = (fAdjRadius >= fRadius);
 
-    float fNoiseValue = fbmAnimated((fAdjPos + 1.0) / orb_fbm_space_divisor, current_tick / orb_fbm_time_divisor) + 0.5;
+    float fNoiseValue = fbmAnimated((fAdjPos + 1.0) / ORB_FBM_SPACE_DIVISOR, current_tick / ORB_FBM_TIME_DIVISOR) + 0.5;
 
     vec4 fireblastPixelColor = calcFireblastPixelColor(fRadius, fIntensity, fAdjRadius, vPrimaryColor, vSecondaryColor, fOpacity);
     vec4 fireblastRadialColor = calcFireblastRadialColor(fRadius, fIntensity, fAdjRadius, vPrimaryColor, vSecondaryColor, fOpacity);
@@ -1065,8 +1065,8 @@ vec4 calcAnimationColor(float animatedNoise, float scaledNoise, float orbRadius)
 
 vec4 calcOrbColor (vec2 quadSize) {
     float orbRadius = ((quadSize[0] + quadSize[1]) / 2.0) / 2.0;
-    float animatedNoise = fbmAnimated(((quadPos + 1.0) / orb_fbm_space_divisor), current_tick / orb_fbm_time_divisor) + 0.5;
-    float scaledNoise = fbmAnimated((quadPos + 1.0) / (orbRadius / 50), current_tick / orb_fbm_time_divisor) + 0.5;
+    float animatedNoise = fbmAnimated(((quadPos + 1.0) / ORB_FBM_SPACE_DIVISOR), current_tick / ORB_FBM_TIME_DIVISOR) + 0.5;
+    float scaledNoise = fbmAnimated((quadPos + 1.0) / (orbRadius / 50), current_tick / ORB_FBM_TIME_DIVISOR) + 0.5;
     vec4 finalColor = calcAnimationColor(animatedNoise, scaledNoise, orbRadius);
 	finalColor[0] = max(finalColor[0], 0.0); // if finalColor[3] is nan, set it to zero
 	finalColor[1] = max(finalColor[1], 0.0); // if finalColor[3] is nan, set it to zero
