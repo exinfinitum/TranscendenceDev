@@ -8003,7 +8003,7 @@ ICCItem *fnObjGetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData)
 
 	//	Evaluate the arguments and validate them
 
-	if (dwData == FN_OBJ_DISTANCE || dwData == FN_OBJ_NAME || FN_OBJ_INSTALLED_ITEM_DESC || FN_OBJ_ENEMY)
+	if (dwData == FN_OBJ_DISTANCE || dwData == FN_OBJ_NAME || dwData == FN_OBJ_INSTALLED_ITEM_DESC || dwData == FN_OBJ_ENEMY)
 		pArgs = pCC->EvaluateArgs(pEvalCtx, pArguments, CONSTLIT("i*"));
 	else if (dwData == FN_OBJ_ATTRIBUTE)
 		pArgs = pCC->EvaluateArgs(pEvalCtx, pArguments, CONSTLIT("is"));
@@ -8242,9 +8242,8 @@ ICCItem *fnObjSendMessage (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 			if (pObj == NULL)
 				{
-				IPlayerController *pPlayer = pCtx->GetUniverse().GetPlayer();
-				if (pPlayer)
-					pPlayer->OnMessageFromObj(pSender, sMessage);
+				IPlayerController &Player = pCtx->GetUniverse().GetPlayer();
+				Player.OnMessageFromObj(pSender, sMessage);
 				}
 
 			//	Otherwise, send to object (which might send it to the player or
@@ -8294,9 +8293,8 @@ ICCItem *fnObjSendMessage (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 
 			if (pObj == NULL)
 				{
-				IPlayerController *pPlayer = pCtx->GetUniverse().GetPlayer();
-				if (pPlayer)
-					pPlayer->OnMessageFromObj(pSender, sMessage);
+				IPlayerController &Player = pCtx->GetUniverse().GetPlayer();
+				Player.OnMessageFromObj(pSender, sMessage);
 				}
 
 			//	Otherwise, send to object (which might send it to the player or
@@ -11811,7 +11809,7 @@ ICCItem *fnShipSetOld (CEvalContext *pEvalCtx, ICCItem *pArguments, DWORD dwData
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;
@@ -15760,7 +15758,7 @@ ICCItem *fnUniverseGet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			}
 
 		default:
-			ASSERT(FALSE);
+			throw CException(ERR_FAIL);
 		}
 
 	return pResult;

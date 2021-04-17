@@ -840,6 +840,8 @@ int CShip::CalcPowerUsed (SUpdateCtx &Ctx, int *retiPowerGenerated)
 //	reactor sources.
 
 	{
+	DEBUG_TRY
+
 	int iPowerUsed = 0;
 	int iPowerGenerated = 0;
 
@@ -866,6 +868,8 @@ int CShip::CalcPowerUsed (SUpdateCtx &Ctx, int *retiPowerGenerated)
 		*retiPowerGenerated = iPowerGenerated;
 
 	return iPowerUsed;
+
+	DEBUG_CATCH
 	}
 
 bool CShip::CanAttack (void) const
@@ -6878,9 +6882,8 @@ void CShip::SendMessage (const CSpaceObject *pSender, const CString &sMsg) const
 
 	if (IsPlayer())
 		{
-		IPlayerController *pPlayer = GetUniverse().GetPlayer();
-		if (pPlayer)
-			pPlayer->OnMessageFromObj(pSender, sMsg);
+		IPlayerController &Player = GetUniverse().GetPlayer();
+		Player.OnMessageFromObj(pSender, sMsg);
 		}
 	}
 
@@ -6987,6 +6990,17 @@ bool CShip::SetAbility (Abilities iAbility, AbilityModifications iModification, 
 				return false;
 			}
 		}
+	}
+
+void CShip::SetArmorHP (int iSect, int iHP)
+
+//	SetArmorHP
+//
+//	Sets armor hit points.
+
+	{
+	m_Armor.SetSegmentHP(*this, iSect, iHP);
+	m_pController->OnShipStatus(IShipController::statusArmorRepaired, iSect);
 	}
 
 void CShip::SetAsShipSection (CShip *pMain)

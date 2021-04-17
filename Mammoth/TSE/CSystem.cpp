@@ -3785,7 +3785,8 @@ void CSystem::PlaceInGate (CSpaceObject *pObj, CSpaceObject *pGate)
 	{
 	DEBUG_TRY
 
-	ASSERT(pGate);
+	if (!pGate || !pObj)
+		throw CException(ERR_FAIL);
 
 	CShip *pShip = pObj->AsShip();
 	if (pShip == NULL)
@@ -4886,9 +4887,8 @@ void CSystem::Update (SSystemUpdateCtx &SystemCtx, SViewportAnnotations *pAnnota
 
 	//	Update the player controller
 
-	IPlayerController *pPlayerController = m_Universe.GetPlayer();
-	if (pPlayerController)
-		pPlayerController->Update(Ctx);
+	IPlayerController PlayerController = m_Universe.GetPlayer();
+	PlayerController.Update(Ctx);
 
 	//	Give the player ship a chance to do something with data that we've
 	//	accumulated during update. For example, we use this to set the nearest
