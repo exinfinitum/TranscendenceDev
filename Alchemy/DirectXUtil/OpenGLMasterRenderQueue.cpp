@@ -27,7 +27,7 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	m_pRayShader = std::make_unique<OpenGLShader>("./shaders/ray_vertex_shader.glsl", "./shaders/ray_fragment_shader.glsl");
 	m_pOrbShader = std::make_unique<OpenGLShader>("./shaders/orb_vertex_shader.glsl", "./shaders/orb_fragment_shader.glsl");
 	m_pPerlinNoiseShader = std::make_unique<OpenGLShader>("./shaders/fbm_vertex_shader.glsl", "./shaders/fbm_fragment_shader.glsl");
-	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(512, 512, 64);
+	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(1024, 1024, 64);
 	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader.get());
 	m_pActiveRenderLayer = &m_renderLayers[0];
 	m_renderLayers[layerStations + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderProper);
