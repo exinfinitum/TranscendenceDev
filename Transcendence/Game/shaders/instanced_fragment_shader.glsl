@@ -252,7 +252,7 @@ void main(void)
 	float epsilon = 0.01;
 	float alphaNoisePeriodTime = 5;
 	float alphaNoisePeriodXY = 0.2f;
-	float glowNoisePeriodXY = 10.0f;
+	float glowNoisePeriodXY = 1.0f;
 
 	vec4 realColorCartesian = texture(obj_texture, vec2(texture_uv[0], texture_uv[1]));
 	vec4 realColorPolar = sampleCircular(obj_texture);
@@ -262,11 +262,12 @@ void main(void)
 	);
 
 	float alphaNoiseTimeAxis = (float(current_tick) / max(alphaNoisePeriodTime, epsilon));
+	float fbmPerlinNoise = (sampleNoiseFBM(vec3(fragment_pos[0] * glowNoisePeriodXY, fragment_pos[1] * glowNoisePeriodXY, alphaNoiseTimeAxis)) + 0.0f);
 	float perlinNoise = (sampleNoisePerlin(vec3(fragment_pos[0] * alphaNoisePeriodXY, fragment_pos[1] * alphaNoisePeriodXY, alphaNoiseTimeAxis)) + 0.0f);
 	float alphaNoise = (perlinNoise - 0.5) * ((1.0 - (2.0 * abs(alpha_strength - 0.5))) * glow_noise);
 	alphaNoise = (float(alphaNoise < 0) * -1.0) * (sqrt(abs(alphaNoise)) / (2.0 * sqrt(0.5)));
 	
-	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, perlinNoise, texture_start_point, num_frames);
+	vec4 glowColorPerlin = getGlowColor_PerlinNoise(20.0f, alphaNoiseTimeAxis, epsilon, realColor, texture_size, texture_uv, obj_texture, fbmPerlinNoise, texture_start_point, num_frames);
 	vec4 glowColorStatic = getGlowColor_Static(epsilon, realColor, texture_size, texture_uv, obj_texture, texture_start_point, num_frames);
 	vec4 textColor = getTextColor(glow_color, texture_uv);
 	bool useStaticNoise = (glow_noise < epsilon);

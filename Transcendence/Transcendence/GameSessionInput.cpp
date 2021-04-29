@@ -944,6 +944,7 @@ void CGameSession::OnMouseWheel (int iDelta, int x, int y, DWORD dwFlags)
 
 			//	There is some set of commands that we can execute using the 
 			//	scroll wheel. We handle them here.
+			//	TODO(heliogenesis): Allow scroll wheel to be used to handle screen zooming (changing zoomScale)
 
 			else
 				{

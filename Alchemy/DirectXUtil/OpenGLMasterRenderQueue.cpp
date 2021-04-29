@@ -21,13 +21,12 @@ OpenGLMasterRenderQueue::OpenGLMasterRenderQueue(void)
 	// Initialize the FBO.
 	glGenFramebuffers(1, &fbo);
 	glGenRenderbuffers(1, &rbo);
-	// TODO: Replace m_p*Shader with unique_ptrs
 	m_pGlowmapShader = std::make_unique<OpenGLShader>("./shaders/glowmap_vertex_shader.glsl", "./shaders/glowmap_fragment_shader.glsl");
 	m_pObjectTextureShader = std::make_unique<OpenGLShader>("./shaders/instanced_vertex_shader.glsl", "./shaders/instanced_fragment_shader.glsl");
 	m_pRayShader = std::make_unique<OpenGLShader>("./shaders/ray_vertex_shader.glsl", "./shaders/ray_fragment_shader.glsl");
 	m_pOrbShader = std::make_unique<OpenGLShader>("./shaders/orb_vertex_shader.glsl", "./shaders/orb_fragment_shader.glsl");
 	m_pPerlinNoiseShader = std::make_unique<OpenGLShader>("./shaders/fbm_vertex_shader.glsl", "./shaders/fbm_fragment_shader.glsl");
-	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(512, 512, 64);
+	m_pPerlinNoiseTexture = std::make_unique<OpenGLAnimatedNoise>(1024, 1024, 64);
 	m_pPerlinNoiseTexture->populateTexture3D(fbo, m_pCanvasVAO, m_pPerlinNoiseShader.get());
 	m_pActiveRenderLayer = &m_renderLayers[0];
 	m_renderLayers[layerStations + NUM_OPENGL_BACKGROUND_OBJECT_LAYERS].setRenderOrder(OpenGLRenderLayer::renderOrder::renderOrderProper);
@@ -206,11 +205,6 @@ void OpenGLMasterRenderQueue::addOrbToEffectRenderQueue(
 	{
 	glm::vec4 sizeAndPosition((float)sizePixelX, (float)sizePixelY,
 		(float)posPixelX / (float)canvasSizeX, (float)posPixelY / (float)canvasSizeY);
-	// TODO(heliogenesis): Handle the case when an orb is part of a particle system.
-	//if (m_bPrevObjAddedIsParticle) {
-	//	m_fDepthLevel -= m_fDepthDelta;
-	//	m_bPrevObjAddedIsParticle = false;
-	//}
 	m_pActiveRenderLayer->addOrbToEffectRenderQueue(sizeAndPosition, rotation, intensity, opacity, animation, style, detail, distortion, animationSeed, lifetime, currFrame, primaryColor, secondaryColor, secondaryOpacity,
 		m_fDepthLevel, blendMode);
 	m_fDepthLevel -= m_fDepthDelta;

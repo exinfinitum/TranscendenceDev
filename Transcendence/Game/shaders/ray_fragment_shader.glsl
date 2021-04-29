@@ -514,7 +514,7 @@ float pixelsDistanceFromCenter = length(quadPos) * (quadSize[0] / 2);
 
 const float SHELL_EDGE_WIDTH_RATIO = 0.05;
 const float ORB_FBM_TIME_DIVISOR = 160.0;
-const float ORB_FBM_SPACE_DIVISOR = 10.0;
+const float ORB_FBM_SPACE_DIVISOR = 30.0;
 
 // Copy of EAnimationTypes enum from SFXOrb.cpp
 const int animateNone =           0;

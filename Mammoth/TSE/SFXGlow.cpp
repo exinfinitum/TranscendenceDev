@@ -559,9 +559,6 @@ void CGlowEffectPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaint
 					minRadiusAroundImpact = waveFrontPos;
 					break;
 				case styleRippleWave:
-					//int imgHeight = pSource->GetImage().GetImageHeight();
-					//int imgWidth = pSource->GetImage().GetImageWidth();
-					//int waveWidth = 
 					maxRadiusAroundImpact = waveFrontPos + (m_iWaveWidth / 2);
 					minRadiusAroundImpact = waveFrontPos - (m_iWaveWidth / 2);
 					break;
