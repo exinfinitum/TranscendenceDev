@@ -501,7 +501,7 @@ class CMarker : public TSpaceObjectImpl<OBJID_CMARKER>
 		virtual void OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) override;
 		virtual void OnPaintMap (CMapViewportCtx &Ctx, CG32bitImage &Dest, int x, int y) override;
 		virtual void OnReadFromStream (SLoadCtx &Ctx) override;
-		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick) override;
+		virtual void OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale) override;
 		virtual void OnWriteToStream (IWriteStream *pStream) override;
 		virtual void PaintLRSForeground (CG32bitImage &Dest, int x, int y, const ViewportTransform &Trans) override { }
 		void PaintMessage (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx) const;

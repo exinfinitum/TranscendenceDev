@@ -225,7 +225,7 @@ void CMarker::OnReadFromStream (SLoadCtx &Ctx)
         m_pMapOrbit = NULL;
 	}
 
-void CMarker::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick)
+void CMarker::OnUpdate (SUpdateCtx &Ctx, Metric rSecondsPerTick, Metric rZoomScale)
 
 //	OnUpdate
 //

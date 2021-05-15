@@ -357,7 +357,7 @@ void CGameSession::OnAnimate (CG32bitImage &ScreenFG, CG32bitImage &ScreenBG, bo
 					m_HUD.Paint(ScreenFG, g_pUniverse->GetFrameTicks());
 					}
 
-				m_MessageDisplay.Paint(ScreenRG);
+				m_MessageDisplay.Paint(ScreenFG);
 
 				//	Debug information
 
