@@ -1,24 +1,23 @@
 #version 410 core
 layout (location = 0) in vec2 texture_uv;
-layout (location = 1) in vec2 texture_pos;
-layout (location = 2) in vec2 texture_size;
-layout (location = 3) in vec2 fragment_pos;
-layout (location = 4) in vec2 texture_start_point;
-layout (location = 5) flat in ivec2 num_frames;
-layout (location = 6) in float alpha_strength;
-layout (location = 7) in float depth;
-layout (location = 8) in vec4 glow_color;
-layout (location = 9) in float glow_noise;
-layout (location = 10) in vec2 texture_bounds_min;
-layout (location = 11) in vec2 texture_bounds_max;
-layout (location = 12) flat in int render_category;
-layout (location = 13) in vec2 texture_raw_pos;
-layout (location = 14) flat in int glowRadius;
-layout (location = 15) flat in int blendMode;
-layout (location = 16) in vec2 decayPoint;
-layout (location = 17) in float decayMaxRadius;
-layout (location = 18) in float decayMinRadius;
-layout (location = 19) in vec2 canvPosition;
+layout (location = 1) in vec2 texture_size;
+layout (location = 2) in vec2 fragment_pos;
+layout (location = 3) in vec2 texture_start_point;
+layout (location = 4) flat in ivec2 num_frames;
+layout (location = 5) in float alpha_strength;
+layout (location = 6) in float depth;
+layout (location = 7) in vec4 glow_color;
+layout (location = 8) in float glow_noise;
+layout (location = 9) in vec2 texture_bounds_min;
+layout (location = 10) in vec2 texture_bounds_max;
+layout (location = 11) flat in int render_category;
+layout (location = 12) in vec2 texture_raw_pos;
+layout (location = 13) flat in int glowRadius;
+layout (location = 14) flat in int blendMode;
+layout (location = 15) in vec2 decayPoint;
+layout (location = 16) in float decayMaxRadius;
+layout (location = 17) in float decayMinRadius;
+layout (location = 18) in vec2 canvPosition;
 
 out vec4 out_color;
 

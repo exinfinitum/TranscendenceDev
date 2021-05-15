@@ -760,7 +760,22 @@ void CSpaceEnvironmentType::Paint (CG32bitImage &Dest, int x, int y, int xTile, 
 
 	if (dwEdgeMask == 0x0F || m_TileSet.GetCount() == 0)
 		{
-		Dest.Blt(rcTileSource.left,
+		OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+			{
+			int iCanvasHeight = Dest.GetHeight();
+			int iCanvasWidth = Dest.GetWidth();
+			int iTexQuadWidth = RectWidth(rcTileSource);
+			int iTexQuadHeight = RectHeight(rcTileSource);
+			float fScale = float(1.0f / g_ZoomScale);
+			pRenderQueue->addImageToRenderQueue(rcTileSource.left, rcTileSource.top, int(fScale * iTexQuadWidth), int(fScale * iTexQuadHeight),
+				x - int(fScale * float(xCenter)), y - int(fScale * float(yCenter)), 0,
+				TileImage.GetOpenGLTexture(), TileImage.GetWidth(), TileImage.GetHeight(), iTexQuadWidth, iTexQuadHeight, 1, 1, rcTileSource.left, rcTileSource.top,
+				1.0, true, OpenGLRenderLayer::normal, OpenGLRenderLayer::blendScreen);
+			}
+		else
+			{
+			Dest.Blt(rcTileSource.left,
 				rcTileSource.top,
 				RectWidth(rcTileSource),
 				RectHeight(rcTileSource),
@@ -768,6 +783,7 @@ void CSpaceEnvironmentType::Paint (CG32bitImage &Dest, int x, int y, int xTile, 
 				TileImage,
 				x - xCenter,
 				y - yCenter);
+			}
 		}
 
 	//	Otherwise, paint edge through a mask
