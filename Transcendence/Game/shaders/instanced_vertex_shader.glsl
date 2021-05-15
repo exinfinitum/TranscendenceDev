@@ -18,25 +18,24 @@ layout (location = 14) in float aCanvasQuadAspectRatio; // ratio of width to hei
 layout (location = 15) in float aDepth;
 
 layout (location = 0) out vec2 texture_uv;
-layout (location = 1) out vec2 texture_pos;
-layout (location = 2) out vec2 texture_size;
-layout (location = 3) out vec2 fragment_pos;
-layout (location = 4) out vec2 texture_start_point;
-layout (location = 5) flat out ivec2 num_frames;
-layout (location = 6) out float alpha_strength;
-layout (location = 7) out float depth;
-layout (location = 8) out vec4 glow_color;
-layout (location = 9) out float glow_noise;
-layout (location = 10) out vec2 texture_bounds_min;
-layout (location = 11) out vec2 texture_bounds_max;
-layout (location = 12) flat out int render_category;
-layout (location = 13) out vec2 texture_raw_pos;
-layout (location = 14) flat out int glowRadius;
-layout (location = 15) flat out int blendMode;
-layout (location = 16) out vec2 decayPoint;
-layout (location = 17) out float decayMaxRadius;
-layout (location = 18) out float decayMinRadius;
-layout (location = 19) out vec2 canvPosition;
+layout (location = 1) out vec2 texture_size;
+layout (location = 2) out vec2 fragment_pos;
+layout (location = 3) out vec2 texture_start_point;
+layout (location = 4) flat out ivec2 num_frames;
+layout (location = 5) out float alpha_strength;
+layout (location = 6) out float depth;
+layout (location = 7) out vec4 glow_color;
+layout (location = 8) out float glow_noise;
+layout (location = 9) out vec2 texture_bounds_min;
+layout (location = 10) out vec2 texture_bounds_max;
+layout (location = 11) flat out int render_category;
+layout (location = 12) out vec2 texture_raw_pos;
+layout (location = 13) flat out int glowRadius;
+layout (location = 14) flat out int blendMode;
+layout (location = 15) out vec2 decayPoint;
+layout (location = 16) out float decayMaxRadius;
+layout (location = 17) out float decayMinRadius;
+layout (location = 18) out vec2 canvPosition;
 
 uniform vec2 aCanvasAdjustedDimensions;
 
@@ -84,7 +83,6 @@ void main(void)
     gl_Position = vec4(pos2d, aDepth, 1.0);
 	depth = aDepth;
     texture_uv = texPos2d;
-	texture_pos = aTexPositions;
 	texture_size = fixedTexSize;
 	fragment_pos = fragmentPos;
 	alpha_strength = aAlphaStrength;
