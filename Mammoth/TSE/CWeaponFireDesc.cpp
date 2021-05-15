@@ -111,6 +111,8 @@
 #define PROPERTY_DAMAGE_DESC_AT_PREFIX			CONSTLIT("damageDescAt:")
 #define PROPERTY_INTERACTION					CONSTLIT("interaction")
 #define PROPERTY_LIFETIME						CONSTLIT("lifetime")
+#define PROPERTY_MINING_TYPE					CONSTLIT("miningType")
+#define PROPERTY_SHOTS_PER_AMMO_ITEM			CONSTLIT("shotsPerAmmoItem")
 #define PROPERTY_STD_HP							CONSTLIT("stdHP")
 #define PROPERTY_STD_INTERACTION				CONSTLIT("stdInteraction")
 #define PROPERTY_TRACKING						CONSTLIT("tracking")
@@ -320,6 +322,14 @@ int CWeaponFireDesc::CalcDefaultHitPoints (void) const
 		Metric rStdHP = CWeaponClass::HP_ARMOR_RATIO * CArmorClass::GetStdHP(AmmoItem.GetLevel());
 		Metric rMassAdj = AmmoItem.GetMassKg() / CWeaponClass::STD_AMMO_MASS;
 
+		//	Compute how many of these shots are created by one ammo item.
+
+		Metric rShotsPerAmmoItem = CalcShotsPerAmmoItem();
+		if (rShotsPerAmmoItem > 0.0)
+			rMassAdj /= rShotsPerAmmoItem;
+
+		//	Return hit points
+
 		return mathRound(rMassAdj * rStdHP);
 		}
 
@@ -436,6 +446,54 @@ Metric CWeaponFireDesc::CalcMaxEffectiveRange (void) const
 	//  Done
 
 	return rRange;
+	}
+
+Metric CWeaponFireDesc::CalcShotsPerAmmoItem () const
+
+//	CalcShotsPerAmmoItem
+//
+//	Returns the number of shots per ammo item. If no ammo, we return 0.0.
+
+	{
+	if (!m_pAmmoType)
+		return 0.0;
+
+	//	Figure out which weapon launches this shot. We can guarantee that this 
+	//	is set because it is initialized in Prebind.
+
+	auto &Weapons = m_pAmmoType->GetLaunchWeapons();
+	if (Weapons.GetCount() == 0)
+		return 0.0;
+
+	const CWeaponClass *pWeapon = Weapons[0]->AsWeaponClass();
+	if (!pWeapon)
+		return 0.0;
+
+	//	Compute the multiplier.
+
+	auto &Config = pWeapon->GetConfiguration(*this);
+	Metric rShotsPerAmmo = Config.GetMultiplier();
+
+	//	Adjust for repeating
+		
+	if (int iContinuous = pWeapon->GetContinuous(*this))
+		{
+		if (!pWeapon->GetContinuousConsumePerShot(*this))
+			rShotsPerAmmo *= iContinuous;
+		}
+
+	//	If this ammo item is a magazine, then we divide
+
+	if (m_pAmmoType->AreChargesAmmo())
+		{
+		int iMaxCharges = m_pAmmoType->GetMaxCharges();
+		if (iMaxCharges > 0)
+			rShotsPerAmmo /= iMaxCharges;
+		}
+
+	//	Done
+
+	return rShotsPerAmmo;
 	}
 
 Metric CWeaponFireDesc::CalcSpeed (Metric rPercentOfLight, bool bRelativistic)
@@ -837,8 +895,28 @@ ICCItem *CWeaponFireDesc::FindProperty (const CString &sProperty) const
 			return CC.CreateInteger(GetInteraction());
 		}
 
+	else if (strEquals(sProperty, PROPERTY_MINING_TYPE))
+		{
+		if (m_Damage.HasMiningDamage())
+			{
+			EMiningMethod iMethod = CAsteroidDesc::CalcMiningMethod(*this);
+			return CC.CreateString(CAsteroidDesc::MiningMethodID(iMethod));
+			}
+		else
+			return CC.CreateNil();
+		}
+
 	else if (strEquals(sProperty, PROPERTY_LIFETIME))
 		return CC.CreateNumber(m_Lifetime.GetAveValueFloat());
+
+	else if (strEquals(sProperty, PROPERTY_SHOTS_PER_AMMO_ITEM))
+		{
+		Metric rShotsPerAmmo = CalcShotsPerAmmoItem();
+		if (rShotsPerAmmo > 0.0)
+			return CC.CreateNumber(rShotsPerAmmo);
+		else
+			return CC.CreateNil();
+		}
 
 	else if (strEquals(sProperty, PROPERTY_STD_HP))
 		return CC.CreateInteger(CalcDefaultHitPoints());

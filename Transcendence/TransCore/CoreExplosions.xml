@@ -49,7 +49,6 @@
 					damage=			"kinetic:1d6; momentum1; WMD1"
 					missileSpeed=	"25-35"
 					lifetime=		"8-16"
-					hitPoints=		"10"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -62,7 +61,6 @@
 					damage=			"kinetic:1d6; momentum1; WMD1"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"10"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -97,7 +95,6 @@
 					damage=			"kinetic:2d6; momentum1; WMD1"
 					missileSpeed=	"25-35"
 					lifetime=		"8-16"
-					hitPoints=		"10"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -110,7 +107,6 @@
 					damage=			"kinetic:2d12; momentum2; WMD2"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -145,7 +141,6 @@
 					damage=			"kinetic:2d6; momentum1; WMD1"
 					missileSpeed=	"25-35"
 					lifetime=		"8-16"
-					hitPoints=		"10"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -158,7 +153,6 @@
 					damage=			"kinetic:2d12; momentum2; WMD2"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -193,7 +187,6 @@
 					damage=			"kinetic:2d6; momentum1; WMD1"
 					missileSpeed=	"25-35"
 					lifetime=		"8-16"
-					hitPoints=		"10"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -206,7 +199,6 @@
 					damage=			"kinetic:2d12; momentum2; WMD2"
 					missileSpeed=	"25-40"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -241,7 +233,6 @@
 					damage=			"kinetic:2d6; momentum1; WMD1"
 					missileSpeed=	"25-35"
 					lifetime=		"8-16"
-					hitPoints=		"10"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -254,7 +245,6 @@
 					damage=			"kinetic:2d12; momentum2; WMD2"
 					missileSpeed=	"25-40"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efKineticFragmentDefault;"
 					>
@@ -298,7 +288,6 @@
 					damage=			"blast:3d12; momentum1; WMD2"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efBlastFragmentDefault;"
 					>
@@ -342,7 +331,6 @@
 					damage=			"blast:3d12; momentum1; WMD2"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efBlastFragmentDefault;"
 					>
@@ -386,7 +374,6 @@
 					damage=			"blast:3d12; momentum1; WMD2"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efBlastFragmentDefault;"
 					>
@@ -430,7 +417,6 @@
 					damage=			"blast:3d12; momentum2; WMD3"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efBlastFragmentDefault;"
 					>
@@ -474,7 +460,6 @@
 					damage=			"blast:3d12; momentum2; WMD3"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efBlastFragmentDefault;"
 					>
@@ -520,7 +505,6 @@
 					damage=			"blast:2d12; radiation:2; momentum1; WMD:3"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
 					
 					hitEffect=		"&efRadioactiveHitEffect;"
 					>
@@ -615,7 +599,6 @@
 					damage=			"blast:2d12+1; radiation:3; momentum:1; WMD:2"
 					missileSpeed=	"15-25"
 					lifetime=		"12-20"
-					hitPoints=		"50"
 					
 					hitEffect=		"&efRadioactiveHitEffect;"
 					>
@@ -709,7 +692,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"13"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -733,7 +715,6 @@
 					damage=			"thermo:1d12; momentum2; WMD3"
 					missileSpeed=	"15-27"
 					lifetime=		"12-20"
-					hitPoints=		"50"
                     
                     effect=         "&efThermoShellDefault;"
 					>
@@ -778,7 +759,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"20"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -802,7 +782,6 @@
 					damage=			"thermo:1d12; momentum2; WMD3"
 					missileSpeed=	"15-27"
 					lifetime=		"18-24"
-					hitPoints=		"50"
                     
                     effect=         "&efThermoShellDefault;"
 					>
@@ -847,7 +826,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"29"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -873,7 +851,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"22"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -941,7 +918,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"36"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -967,7 +943,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"20"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -991,7 +966,6 @@
 					damage=			"thermo:1d12; momentum2; WMD3"
 					missileSpeed=	"15-27"
 					lifetime=		"18-24"
-					hitPoints=		"50"
                     
                     effect=         "&efThermoShellDefault;"
 					>
@@ -1034,7 +1008,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"46"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1060,7 +1033,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"30"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1084,7 +1056,6 @@
 					damage=			"thermo:1d12; momentum2; WMD3"
 					missileSpeed=	"15-27"
 					lifetime=		"18-24"
-					hitPoints=		"50"
                     
                     effect=         "&efThermoShellDefault;"
 					>
@@ -1374,7 +1345,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"21"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1430,7 +1400,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"31"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1486,7 +1455,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"47"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1542,7 +1510,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"57"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1598,7 +1565,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"57"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1654,7 +1620,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"21"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1710,7 +1675,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"31"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1766,7 +1730,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"47"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1822,7 +1785,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"57"
-					hitPoints=		"50"
 					>
 
 				<Effect>
@@ -1878,7 +1840,6 @@
 					expansionSpeed=	"25"
 					missileSpeed=	"0"
 					lifetime=		"57"
-					hitPoints=		"50"
 					>
 
 				<Effect>
