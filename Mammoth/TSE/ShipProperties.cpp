@@ -75,7 +75,20 @@
 #define STR_NEXT								CONSTLIT("next")
 #define STR_PREV								CONSTLIT("prev")
 
-TPropertyHandler<CShip> CShip::m_PropertyTable = std::array<TPropertyHandler<CShip>::SPropertyDef, 3> {{
+TPropertyHandler<CShip> CShip::m_PropertyTable = std::array<TPropertyHandler<CShip>::SPropertyDef, 4> {{
+		{
+		"inPlayerSquadron",		"True/Nil if we're part of the player's squadron",
+		[](const CShip &ShipObj, const CString &sProperty) 
+			{
+			const CSpaceObject *pPlayerShip = ShipObj.GetPlayerShip();
+			if (!pPlayerShip)
+				return ICCItemPtr::Nil();
+
+			return ICCItemPtr(pPlayerShip->IsInOurSquadron(ShipObj));
+			},
+		NULL,
+		},
+
 		{
 		"squadron",			"Desc of each member of squadron",
 		[](const CShip &ShipObj, const CString &sProperty) 
@@ -208,6 +221,7 @@ TPropertyHandler<CShip> CShip::m_PropertyTable = std::array<TPropertyHandler<CSh
 			{
 			return ICCItemPtr(ShipObj.m_pPowerUse != NULL);
 			},
+		//	LATER: This is not actually hooked up
 		[](CShip &ShipObj, const CString &sProperty, const ICCItem &Value, CString *retsError)
 			{
 			ShipObj.TrackFuel(!Value.IsNil());
@@ -540,6 +554,10 @@ bool CShip::SetProperty (const CString &sName, ICCItem *pValue, CString *retsErr
 	{
 	CCodeChain &CC = GetUniverse().GetCC();
 	ESetPropertyResult iResult;
+
+	//	LATER: Call m_PropertyTable
+	//	LATER: Custom properties should override engine properties (otherwise,
+	//		new engine properties could break existing extensions).
 
 	if (strEquals(sName, PROPERTY_ALWAYS_LEAVE_WRECK))
 		{

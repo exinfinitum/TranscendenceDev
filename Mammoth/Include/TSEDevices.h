@@ -132,7 +132,8 @@ class CDeviceRotationDesc
 			rotUnknown,
 
 			rotNone,							//	Cannot rotate
-			rotSwivel,							//	Can swivel but not 360 degrees
+			rotSwivelIfTargetInArc,				//	Swivels < 360 degrees, if target reachable
+			rotSwivelAlways,					//	Swivels < 360 degrees, always (e.g., tracking weapons)
 			rotOmnidirectional,					//	Omnidirectional
 			};
 
@@ -145,14 +146,6 @@ class CDeviceRotationDesc
 class CDeviceClass
 	{
 	public:
-		enum CounterTypes
-			{
-			cntNone,							//	No counter
-			cntTemperature,						//	Current device temperature (0-100)
-			cntRecharge,						//	Current recharge level (0-100)
-			cntCapacitor,						//	Current capacitor level (0-100)
-			};
-
 		enum DeviceNotificationTypes
 			{
 			statusDisruptionRepaired,
@@ -341,7 +334,7 @@ class CDeviceClass
 		virtual ICCItem *FindItemProperty (CItemCtx &Ctx, const CString &sName);
 		virtual int GetActivateDelay (CItemCtx &ItemCtx) const { return 0; }
 		virtual int GetAmmoVariant (const CItemType *pItem) const { return -1; }
-		virtual int GetCounter (CInstalledDevice *pDevice, CSpaceObject *pSource, CounterTypes *retiType = NULL, int *retiLevel = NULL) { return 0; }
+		virtual int GetCounter (const CInstalledDevice *pDevice, const CSpaceObject *pSource, EDeviceCounterType *retiType = NULL, int *retiLevel = NULL) const { return 0; }
 		virtual const CCargoDesc *GetCargoDesc (CItemCtx &Ctx) const { return NULL; }
 		virtual const DamageDesc *GetDamageDesc (CItemCtx &Ctx) { return NULL; }
 		virtual int GetDamageEffectiveness (CSpaceObject *pAttacker, CInstalledDevice *pWeapon) { return 0; }
@@ -393,7 +386,7 @@ class CDeviceClass
 		virtual void Reset (CInstalledDevice *pDevice, CSpaceObject *pSource) { }
 		virtual bool SelectFirstVariant (CSpaceObject *pSource, CInstalledDevice *pDevice) { return false; }
 		virtual bool SelectNextVariant (CSpaceObject *pSource, CInstalledDevice *pDevice, int iDir = 1) { return false; }
-		virtual bool SetCounter (CInstalledDevice *pDevice, CSpaceObject *pSource, CounterTypes iCounter, int iLevel) { return false; }
+		virtual bool SetCounter (CInstalledDevice *pDevice, CSpaceObject *pSource, EDeviceCounterType iCounter, int iLevel) { return false; }
 		virtual void SetHitPoints (CItemCtx &ItemCtx, int iHP) { }
 		virtual ESetPropertyResult SetItemProperty (CItemCtx &Ctx, const CString &sName, const ICCItem *pValue, CString *retsError);
 		virtual bool ShowActivationDelayCounter (CSpaceObject *pSource, CInstalledDevice *pDevice) { return false; }
@@ -685,7 +678,7 @@ class CInstalledDevice
 		void Deplete (CSpaceObject *pSource) { m_pClass->Deplete(this, pSource); }
 		int GetActivateDelay (CSpaceObject *pSource) const;
 		ItemCategories GetCategory (void) const { return m_pClass->GetCategory(); }
-		int GetCounter (CSpaceObject *pSource, CDeviceClass::CounterTypes *retiCounter = NULL, int *retiLevel = NULL) { return m_pClass->GetCounter(this, pSource, retiCounter, retiLevel); }
+		int GetCounter (const CSpaceObject &SourceObj, EDeviceCounterType *retiCounter = NULL, int *retiLevel = NULL) const { return m_pClass->GetCounter(this, &SourceObj, retiCounter, retiLevel); }
 		const DamageDesc *GetDamageDesc (CItemCtx &Ctx) { return m_pClass->GetDamageDesc(Ctx); }
 		int GetDamageEffectiveness (CSpaceObject *pAttacker, CInstalledDevice *pWeapon) { return m_pClass->GetDamageEffectiveness(pAttacker, pWeapon); }
 		int GetDamageType (CItemCtx &Ctx, const CItem &Ammo = CItem()) { return m_pClass->GetDamageType(Ctx, Ammo); }
