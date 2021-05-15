@@ -581,6 +581,7 @@ ICCItem *fnSystemOrbit (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData);
 #define FN_VECTOR_POLAR_VELOCITY		8
 #define FN_VECTOR_PIXEL_OFFSET			9
 #define FN_VECTOR_DISTANCE_EXACT		10
+#define FN_VECTOR_IN_POLYGON			11
 
 ICCItem *fnSystemVectorMath (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData);
 
@@ -680,7 +681,8 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'showFacingsAngle\n"
 			"   'showLineOfFire\n"
 			"   'showNavPaths\n"
-			"   'showNodeInfo\n",
+			"   'showNodeInfo\n"
+			"   'showOrderInfo\n",
 
 			"s",	0, },
 
@@ -706,7 +708,8 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'showFacingsAngle True/Nil\n"
 			"   'showLineOfFire True/Nil\n"
 			"   'showNavPaths True/Nil\n"
-			"   'showNodeInfo True/Nil\n",
+			"   'showNodeInfo True/Nil\n"
+			"   'showOrderInfo True/Nil\n",
 
 			"sv",	PPFLAG_SIDEEFFECTS, },
 
@@ -849,7 +852,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   0x1000 'countAlways     always prefix with count\n"
 			"  0x40000 'noDeterminer    no prefix, but pluralize if necessary\n"
 			"  0x80000 'noQuotes        replace double-quotes with single-quotes\n"
-			" 0x100000 'escapeQuotes    use for dock screens",
+			" 0x100000 'escapeQuotes    use for dock screens\n",
 
 			"v*",	0,	},
 
@@ -948,7 +951,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"vs",	0,	},
 
 		{	"itmGetProperty",				fnItemGet,		FN_ITEM_PROPERTY,
-			"RENAMED: Use (itm@ ...) instead.",
+			"DEPRECATED: Use (itm@ ...) instead.",
 			"vs",	0,	},
 
 		{	"itmGetStaticData",				fnItemGet,		FN_ITEM_GET_STATIC_DATA,
@@ -997,7 +1000,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"comparison criteria supported: < <= = => >\n"
 			"   < x                Only items with level less than x\n"
 			"   <$ x               Only items costing less than x\n"
-			"   <# x               Only items massing less than x",
+			"   <# x               Only items massing less than x\n",
 
 			"s",	0,	},
 
@@ -1026,7 +1029,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'ignoreData\n"
 			"   'ignoreDisruption\n"
 			"   'ignoreEnhancements\n"
-			"   'ignoreInstalled",
+			"   'ignoreInstalled\n",
 
 			"vv*",	0,	},
 
@@ -1070,14 +1073,14 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'damaged [True|Nil]\n"
 			"   'disrupted [True|Nil|ticks]\n"
 			"   'incCharges charges\n"
-			"   'installed [True|Nil]"
-			"   'level level"
+			"   'installed [True|Nil]\n"
+			"   'level level\n"
 			"   'shotSeparationScale separation\n",
 
 			"vs*",	0,	},
 
 		{	"itmSetProperty",				fnItemSet,		FN_ITEM_PROPERTY,
-			"RENAMED: Use (itmSet@ ...) instead.",
+			"DEPRECATED: Use (itmSet@ ...) instead.",
 			"vs*",	0,	},
 
 		{	"itmSetReference",				fnItemGet,		FN_ITEM_SET_REFERENCE,
@@ -1114,7 +1117,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'power\n"
 			"   'real\n"
 			"   'regenRate\n"
-			"   'speed",
+			"   'speed\n",
 
 			"v*",	0, },
 
@@ -1154,7 +1157,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   1        Too much cargo to remove cargo hold\n"
 			"   2        Device not installed\n"
 			"   3        Replace only\n"
-			"   string   custom fail reason",
+			"   string   custom fail reason\n",
 			"iv",	0,	},
 
 		{	"shpConsumeFuel",				fnShipSet,			FN_SHIP_CONSUME_FUEL,
@@ -1163,7 +1166,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"useType:\n\n"
 			
 			"   'consume\n"
-			"   'drain",
+			"   'drain\n",
 
 			"iv*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -1391,6 +1394,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'mine           obj               Mine asteroids [base]\n"
 			"   'navPath        navID             Follow nav path ID\n"
 			"   'orbit          obj dist [time]   Orbit target\n"
+			"   'orbitExact     obj [options]     Orbit target\n"
 			"   'patrol         obj [dist]        Patrol around target\n"
 			"   'scavenge                         Scavenge for scraps\n"
 			"   'sendMessage    obj msg           Send message to target\n"
@@ -1403,7 +1407,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'waitForTarget  obj [dist] [time] Wait until target in range\n"
 			"   'waitForThreat  [time]\n"
 			"   'waitForUndock  obj [time]        Wait for target to undock\n"
-			"   'wander                           Wander, avoiding enemies",
+			"   'wander                           Wander, avoiding enemies\n",
 
 			"is*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -1455,6 +1459,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'noNavPaths (True/Nil)\n"
 			"   'noOrderGiver (True/Nil)\n"
 			"   'noTargetsOfOpportunity (True/Nil)\n"
+			"   'targetsStations (True/Nil)\n"
 			"   'useAllPrimaryWeapons (True/Nil)\n"
 			"\n"
 			"   'combatSeparation {pixels}\n"
@@ -1503,8 +1508,8 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 
 			"   'hinge\n"
 			"   'rod\n"
-			"   'spine\n\n"
-			
+			"   'spine\n"
+			"\n"
 			"options:\n\n"
 			
 			"   'pos1: position relative to obj1\n"
@@ -1642,7 +1647,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'reactorOverloaded\n"
 			"   'reactorTooWeak\n"
 			"   'replacementRequired\n"
-			"   'tooMuchCargo",
+			"   'tooMuchCargo\n",
 
 			"iv*",	0,	},
 
@@ -1682,20 +1687,20 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'SRSEnhancer\n"
 			"   'SystemMap\n"
 			"   'TargetingComputer\n"
-			"   'TradingComputer\n\n"
-			
+			"   'TradingComputer\n"
+			"\n"
 			"command\n\n"
 			
 			"   'damage\n"
 			"   'install\n"
 			"   'remove\n"
-			"   'repair\n\n"
-			
+			"   'repair\n"
+			"\n"
 			"duration is in ticks\n\n"
 			
 			"options\n\n"
 			
-			"   'noMessage",
+			"   'noMessage\n",
 
 			"iss*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -1718,9 +1723,10 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			
 			"   'AbortAttack\n"
 			"   'AttackTarget\n"
+			"   'BreakAndAttack\n"
 			"   'FormUp\n"
 			"   'QueryAttackStatus\n"
-			"   'Wait",
+			"   'Wait\n",
 
 			"iiv*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -1741,14 +1747,14 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'absorbedByShields\n"
 			"   'armorHit\n"
 			"   'structuralHit\n"
-			"   'destroyed\n\n"
-
+			"   'destroyed\n"
+			"\n"
 			"options:\n\n"
 
 			"   'fullResult           Return result as struct\n"
 			"   'ignoreOverlays       Hit shields and below\n"
 			"   'ignoreShields        Hit armor and below\n"
-			"   'noHitEffect          No hit effect created",
+			"   'noHitEffect          No hit effect created\n",
 
 			"ivv*",		PPFLAG_SIDEEFFECTS,	},
 
@@ -1847,7 +1853,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			
 			"options:\n\n"
 			
-			"   'noDonations",
+			"   'noDonations\n",
 
 			"il*",	0,	},
 
@@ -1876,7 +1882,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'radioactive\n"
 			"   'shieldBlocked\n"
 			"   'spinning\n"
-			"   'timeStopped",
+			"   'timeStopped\n",
 
 			"i*",	0,	},
 
@@ -1903,7 +1909,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			
 			"   'enemy\n"
 			"   'friend\n"
-			"   'neutral",
+			"   'neutral\n",
 
 			"ii",	0,	},
 
@@ -1926,13 +1932,13 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'SRSEnhancer\n"
 			"   'SystemMap\n"
 			"   'TargetingComputer\n"
-			"   'TradingComputer\n\n"
-			
+			"   'TradingComputer\n"
+			"\n"
 			"status\n\n"
 			
 			"   'damaged\n"
 			"   'notInstalled\n"
-			"   'ready",
+			"   'ready\n",
 
 			"is",	0,	},
 
@@ -1953,7 +1959,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			NULL,	0,	},
 
 		{	"objGetItemProperty",			fnObjGet,		FN_OBJ_GET_ITEM_PROPERTY,
-			"RENAMED: Use (obj@ obj item property) instead.",
+			"DEPRECATED: Use (obj@ obj item property) instead.",
 			"ivs",	0,	},
 
 		{	"objGetItems",					fnObjItemOld,		FN_OBJ_ENUM_ITEMS,
@@ -1965,7 +1971,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   D                  Only damaged items\n"
 			"   N                  Only undamaged items\n"
 			"   S                  Only usable items\n"
-			"   U                  Only uninstalled items",
+			"   U                  Only uninstalled items\n",
 
 			NULL,	0,	},
 
@@ -1990,7 +1996,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   0x020 'noModifiers   no modifiers ('damaged' etc)\n"
 			"   0x040 'demonstrative prefix with 'the' or 'this' or 'these'\n"
 			"   0x080 'short         use short name\n"
-			"   0x100 'actual        actual name (not unidentified name)",
+			"   0x100 'actual        actual name (not unidentified name)\n",
 
 			"i*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -2036,7 +2042,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"iis",	0,	},
 
 		{	"objGetOverlayProperty",			fnObjGet,		FN_OBJ_GET_OVERLAY_PROPERTY,
-			"RENAMED: Use (ovr@ ...) instead.",
+			"DEPRECATED: Use (ovr@ ...) instead.",
 			"iis",	0,	},
 
 		{	"objGetOverlayRotation",	fnObjGet,		FN_OBJ_GET_OVERLAY_ROTATION,
@@ -2104,6 +2110,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"\n"
 			"property (ships)\n\n"
 			
+			"   'ai.waitingForShields\n"
 			"   'alwaysLeaveWreck\n"
 			"   'armorCount\n"
 			"   'autoTarget\n"
@@ -2157,11 +2164,14 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'selectedWeapon\n"
 			"   'shatterImmune\n"
 			"   'showMapLabel\n"
+			"   'squadron\n"
+			"   'squadronCommsStatus\n"
 			"   'stealthAdj\n"
 			"   'stealthAdjAtMaxHeat\n"
 			"   'target\n"
 			"   'thrust -> in GN\n"
 			"   'thrustToWeight -> acceleration, 1 = 500 m/s^2 (ships stats show this / 1000)\n"
+			"   'trackFuel\n"
 			"\n"
 			"property (stations)\n\n"
 
@@ -2197,9 +2207,11 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"property (missiles)\n\n"
 
 			"   'lifeLeft\n"
+			"   'reaction\n"
 			"   'rotation\n"
-			"   'sourceObj\n"
+			"   'source\n"
 			"   'target\n"
+			"   'tracking\n"
 			"\n"
 			"property (markers)\n\n"
 
@@ -2236,7 +2248,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"i*s",	0,	},
 
 		{	"objGetProperty",				fnObjGet,		FN_OBJ_GET_ITEM_PROPERTY,
-			"RENAMED: Use (obj@ ...) instead.",
+			"DEPRECATED: Use (obj@ ...) instead.",
 			"is",	0,	},
 
 		{	"objGetRefuelItemAndPrice",		fnObjGet,		FN_OBJ_GET_REFUEL_ITEM,	
@@ -2254,7 +2266,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			
 			"   'actual\n"
 			"   'allowFree\n"
-			"   'noInventoryCheck",
+			"   'noInventoryCheck\n",
 
 			"il*",		PPFLAG_SIDEEFFECTS,	},
 
@@ -2334,7 +2346,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"iis*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objIncOverlayProperty",		fnObjGet,		FN_OBJ_INC_OVERLAY_PROPERTY,
-			"RENAMED: Use (ovrInc@ ...) instead.",
+			"DEPRECATED: Use (ovrInc@ ...) instead.",
 			"iis*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objInc@",				fnObjSet,		FN_OBJ_INC_PROPERTY,
@@ -2343,7 +2355,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"i*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objIncProperty",				fnObjSet,		FN_OBJ_INC_PROPERTY,
-			"RENAMED: Use (objInc@ ...) instead.",
+			"DEPRECATED: Use (objInc@ ...) instead.",
 			"is*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objIncVel",					fnObjSet,		FN_OBJ_INCREMENT_VELOCITY,	
@@ -2494,7 +2506,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"ivsv*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objSetItemProperty",			fnObjSet,		FN_OBJ_SET_ITEM_PROPERTY,
-			"RENAMED: Use (objSet@ obj item ...) instead.",
+			"DEPRECATED: Use (objSet@ obj item ...) instead.",
 			"ivs*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objSetKnown",					fnObjGetOld,		FN_OBJ_SET_KNOWN,
@@ -2513,7 +2525,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   0x0010 Pluralize second word\n"
 			"   0x0020 Reverse 'a' vs 'an'\n"
 			"   0x0040 No article\n"
-			"   0x0080 Personal name",
+			"   0x0080 Personal name\n",
 
 			NULL,	PPFLAG_SIDEEFFECTS,	},
 
@@ -2541,12 +2553,12 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'counter\n"
 			"   'counterLabel\n"
 			"   'pos position\n"
-			"   'rotation angle",
+			"   'rotation angle\n",
 
 			"iisv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objSetOverlayProperty",			fnObjGet,		FN_OBJ_SET_OVERLAY_PROPERTY,
-			"RENAMED: Use (ovrSet@ ...) instead.",
+			"DEPRECATED: Use (ovrSet@ ...) instead.",
 			"iisv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objSetOverlayRotation",		fnObjGet,		FN_OBJ_SET_OVERLAY_ROTATION,
@@ -2608,7 +2620,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"property\n\n"
 
 			"   'charges charges\n"
-			"   'cycleFire [True|Nil]"
+			"   'cycleFire [True|Nil]\n"
 			"   'damaged [True|Nil]\n"
 			"   'disrupted [True|Nil|ticks]\n"
 			"   'enabled [True|Nil|'silentDisabled|'silentEnabled]\n"
@@ -2617,13 +2629,13 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'incCharges charges\n"
 			"   'linkedFireOptions list-of-options\n"
 			"   'pos (angle radius [z])\n"
-			"   'secondary [True|Nil]"
-			"   'unknownTypeIndex [integer|Nil]",
+			"   'secondary [True|Nil]\n"
+			"   'unknownTypeIndex [integer|Nil]\n",
 
 			"i*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objSetProperty",				fnObjSet,		FN_OBJ_SET_ITEM_PROPERTY,
-			"RENAMED: Use (objSet@ ...) instead.",
+			"DEPRECATED: Use (objSet@ ...) instead.",
 			"isv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"objSetShowAsDestination",			fnObjSet,		FN_OBJ_SET_AS_DESTINATION,
@@ -2636,7 +2648,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'autoClearOnDock      Clear when player docks\n"
 			"   'autoClearOnGate      Clear when player gates into object\n"
 			"   'showDistance         Show distance\n"
-			"   'showHighlight        Show target highlight",
+			"   'showHighlight        Show target highlight\n",
 
 			"i*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -2828,7 +2840,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   S                  Only missions owned by source\n"
 			"   +/-{attrib}        Require/exclude missions with given attribute\n"
 			"   +/-ownerID:{id}    Require/exclude missions with given owner\n"
-			"   +/-unid:{unid}     Require/exclude missions of given unid",
+			"   +/-unid:{unid}     Require/exclude missions of given unid\n",
 			"*s",	0,	},
 
 		{	"msnFireEvent",					fnObjSet,		FN_OBJ_FIRE_EVENT,
@@ -2876,12 +2888,12 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'summary           A summary description of the mission\n"
 			"   'totalAccepted     Count of this type accepted by player\n"
 			"   'totalExisting     Count of this type currently existing in universe\n"
-			"   'unid              Mission type UNID",
+			"   'unid              Mission type UNID\n",
 
 			"is",	0,	},
 
 		{	"msnGetProperty",				fnObjGet,		FN_OBJ_GET_ITEM_PROPERTY,
-			"RENAMED: Use (msn@ ...) instead.",
+			"DEPRECATED: Use (msn@ ...) instead.",
 			"is",	0,	},
 
 		{	"msnGetStaticData",				fnObjData,		FN_OBJ_GET_STATIC_DATA,
@@ -2901,7 +2913,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"is*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"msnIncProperty",				fnObjSet,		FN_OBJ_INC_PROPERTY,
-			"RENAMED: Use (msnInc@ ...) instead.",
+			"DEPRECATED: Use (msnInc@ ...) instead.",
 			"is*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"msnRefreshSummary",			fnMissionSet,		FN_MISSION_REFRESH_SUMMARY,
@@ -2938,12 +2950,12 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'isDeclined True|Nil\n"
 			"   'isIntroShown True|Nil\n"
 			"   'name newName\n"
-			"   'summary newSummary",
+			"   'summary newSummary\n",
 
 			"isv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"msnSetProperty",				fnObjSet,		FN_OBJ_SET_ITEM_PROPERTY,
-			"RENAMED: Use (msnSet@ ...) instead.",
+			"DEPRECATED: Use (msnSet@ ...) instead.",
 			"isv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"msnSetTypeData",				fnObjData,		FN_OBJ_SET_GLOBAL_DATA,
@@ -2969,7 +2981,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(sysAddEncounterEvent delay target encounterID gateObj|pos)\n\n"
 
 			"target: obj or list of objs\n"
-			"delay: in ticks",
+			"delay: in ticks\n",
 
 			"iviv",	PPFLAG_SIDEEFFECTS,	},
 
@@ -2977,7 +2989,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(sysAddEncounterEventAtDist delay target encounterID distance)\n\n"
 
 			"target: obj or list of objs\n"
-			"delay: in ticks",
+			"delay: in ticks\n",
 
 			"ivii",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3002,7 +3014,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 				
 			"   'center            Fire event when target gets close to this point\n"
 			"   'radius            Within this radius (light-seconds)\n"
-			"   'criteria          Objects that will trigger. If Nil, player triggers",
+			"   'criteria          Objects that will trigger. If Nil, player triggers\n",
 
 			"isv",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3060,7 +3072,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 				
 				"   'distance      Encounter distance (light-seconds), if gate is Nil\n"
 				"   'gate          Gate to appear at (if Nil, use distance)\n"
-				"   'target        Target of encounter",
+				"   'target        Target of encounter\n",
 
 			"i*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3099,7 +3111,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'ferian           Ferian\n"
 			"   'fleet            fleet member\n"
 			"   'fleetcommand     fleet squad leader\n"
-			"   'gaianprocessor   Gaian processor",
+			"   'gaianprocessor   Gaian processor\n",
 
 			"ivi*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3129,7 +3141,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			
 			"   'detonateNow\n"
 			"   'fireEffect\n"
-			"   'soundEffect",
+			"   'soundEffect\n",
 
 			"vvviii*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3154,8 +3166,8 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   t:xyz;      Same as \"t +xyz;\"\n"
 			"   T:xyz;      Same as \"T +xyz;\"\n"
 			"   x           Include missiles where targetable='true'\n"
-			"   z           Include the player\n\n"
-			
+			"   z           Include the player\n"
+			"\n"
 			"and may contain any number of the following options:\n\n"
 			
 			"   A           Active objects only (i.e., objects that can attack)\n"
@@ -3190,15 +3202,15 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   +xyz;       Only objects with attribute 'xyz'\n"
 			"   -xyz;       Exclude objects with attribute 'xyz'\n"
 			"   =n;         Only objects of level n. You can also replace = with >, <, >=, or <=,\n"
-			"				but they need to be escaped in XML.\n\n"
-			
+			"				but they need to be escaped in XML.\n"
+			"\n"
 			"   +/-data:xyz;        Include only/exclude objects with data 'xyz'\n"
 			"   +/-isPlanet:true;   Include only/exclude planets\n"
 			"   +/-property:xyz;    Include only/exclude objects with property 'xyz'\n"
-			"   +/-unid:xyz;        Include only/exclude objects with UNID 'xyz'\n\n"
-			
+			"   +/-unid:xyz;        Include only/exclude objects with UNID 'xyz'\n"
+			"\n"
 			"Order doesn't matter as long as multi-character items end with semicolons.\n"
-			"If the source is nil, the center of the system is used for position, "
+			"If the source is nil, the center of the system is used for position,\n"
 			"and other criteria related to the source are ignored.",
 
 			"is",	0,	},
@@ -3279,13 +3291,13 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'level               The level of the system\n"
 			"   'name                The name of the system\n"
 			"   'pos                 Node position on map (x y)\n"
-			"   'stdChallengeRating  Standard challenge rating for level"
-			"	'stdTreasureValue    Std treasure value for level (default currency)",
+			"   'stdChallengeRating  Standard challenge rating for level\n"
+			"	'stdTreasureValue    Std treasure value for level (default currency)\n",
 
 			"*s",	0,	},
 
 		{	"sysGetProperty",	fnSystemGet,	FN_SYS_GET_PROPERTY,
-			"RENAMED: Use (sys@ ...) instead.",
+			"DEPRECATED: Use (sys@ ...) instead.",
 			"*s",	0,	},
 
 		{	"sysGetPOV",					fnSystemGet,	FN_SYS_GET_POV,
@@ -3298,13 +3310,13 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"options:\n\n"
 			
 			"   'objType           Type (UNID) of object to place (optional)\n"
-			"   'remove            If True, remove location\n\n"
-			
+			"   'remove            If True, remove location\n"
+			"\n"
 			"location:\n\n"
 			
 			"   'attribs           The attributes for the location\n"
 			"   'orbit             The orbital parameters\n"
-			"   'pos               The location position",
+			"   'pos               The location position\n",
 
 			"s*",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3354,7 +3366,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 				
 			"options\n\n"
 				
-			"   'excludeWorlds",
+			"   'excludeWorlds\n",
 
 			"ivv*",	0,	},
 
@@ -3364,7 +3376,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"options\n\n"
 				
 			"   'excludeWorlds\n"
-			"   'sourceOnly",
+			"   'sourceOnly\n",
 
 			"iv*",	0,	},
 
@@ -3392,12 +3404,12 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			
 			"   'angleOffset:n              +/- n degrees along orbit arc\n"
 			"   'arcOffset:n                +/- n light-seconds along orbit arc\n"
-			"   'radiusOffset:n             +/- n light-seconds radius\n\n"
-			
+			"   'radiusOffset:n             +/- n light-seconds radius\n"
+			"\n"
 			"For arcOffset and radiusOffset, n may also be a list with the following"
 			"formats:\n\n"
 			
-			"   (list 'gaussian min max)",
+			"   (list 'gaussian min max)\n",
 
 			"v*",	0,	},
 
@@ -3439,7 +3451,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 
 			"         'center: The center position of the patch.\n"
 			"         'height: The height of the patch (in light-seconds).\n"
-			"         'width: The width of the patch (in light-seconds).",
+			"         'width: The width of the patch (in light-seconds).\n",
 
 			"isv",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3457,12 +3469,12 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"property:\n\n"
 
 			"   'known             Known to player\n"
-			"   'pos               Node position on map (x y)",
+			"   'pos               Node position on map (x y)\n",
 
 			"*sv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"sysSetProperty",	fnSystemGet,	FN_SYS_SET_PROPERTY,
-			"RENAMED: Use (sysSet@ ...) instead.",
+			"DEPRECATED: Use (sysSet@ ...) instead.",
 			"*sv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"sysStartTime",					fnSystemMisc,	FN_SYS_START_TIME,
@@ -3495,6 +3507,10 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(sysVectorDivide vector scalar) -> vector",
 			"vn",	0,	},
 
+		{	"sysVectorInPolygon",			fnSystemVectorMath,		FN_VECTOR_IN_POLYGON,
+			"(sysVectorInPolygon vector list-of-points) -> True/Nil",
+			"vl",	0,	},
+
 		{	"sysVectorMultiply",			fnSystemVectorMath,		FN_VECTOR_MULTIPLY,
 			"(sysVectorMultiply vector scalar) -> vector",
 			"vn",	0,	},
@@ -3510,7 +3526,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"(sysVectorPolarOffset center angle radius) -> vector\n\n"
 
 			"center is either Nil, an object, or a vector\n"
-			"radius in light-seconds",
+			"radius in light-seconds\n",
 
 			NULL,	PPFLAG_SIDEEFFECTS,	},
 
@@ -3524,7 +3540,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"center is either Nil, an object, or a vector\n"
 			"radius in light-seconds from center (or a function)\n"
 			"minSeparation is the min distance from other objects (in light-seconds)\n"
-			"filter defines the set of objects to be away from",
+			"filter defines the set of objects to be away from\n",
 
 			"vv*",	0,	},
 
@@ -3598,7 +3614,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   +/-{attrib}        Require/exclude types with given attribute\n"
 			"   +/-event:xyz;      Require/exclude types with given event\n"
 			"   +/-isEnemyOf:xyz;  Require/exclude types which are enemy of sovereign\n"
-			"   =n;                Level comparisons (also supports < etc.)",
+			"   =n;                Level comparisons (also supports < etc.)\n",
 
 			"s",	0,	},
 
@@ -3764,8 +3780,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"field (missions):\n\n"
 			"   'level\n"
 			"   'maxLevel\n"
-			"   'minLevel\n\n"
-
+			"   'minLevel\n"
 			"",
 			"is",	0,	},
 
@@ -3797,8 +3812,8 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'playerThreatLevel     0 to 4 representing: None minorPiracy minorRaiding major existential\n"
 			"   'plural\n"
 			"   'shipsDestroyedByPlayer\n"
-			"   'stationsDestroyedByPlayer\n\n"
-
+			"   'stationsDestroyedByPlayer\n"
+			"\n"
 			"property (ships):\n\n"
 
 			"   'currency\n"
@@ -3824,20 +3839,20 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   'thrustRatio\n"
 			"   'thrustToWeight\n"
 			"   'thrusterPower\n"
-			"   'wreckStructuralHP\n\n"
-
+			"   'wreckStructuralHP\n"
+			"\n"
 			"property (stations):\n\n"
 
 			"   'challengeRating\n"
 			"   'sovereign\n"
-			"   'sovereignName\n\n"
-
+			"   'sovereignName\n"
+			"\n"
 			"NOTE: All data fields (accessed via typGetDataField) are also valid properties.",
 
 			"is",	0,	},
 
 		{	"typGetProperty",				fnDesignGet,		FN_DESIGN_GET_PROPERTY,
-			"RENAMED: Use (typ@ ...) instead.",
+			"DEPRECATED: Use (typ@ ...) instead.",
 			"is",	0,	},
 
 		{	"typGetStaticData",				fnDesignGet,		FN_DESIGN_GET_STATIC_DATA,
@@ -3880,7 +3895,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"is*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"typIncProperty",			fnDesignGet,		FN_DESIGN_INC_PROPERTY,
-			"RENAMED: Use (typInc@ ...) instead.",
+			"DEPRECATED: Use (typInc@ ...) instead.",
 			"is*",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"typMarkImages",				fnDesignGet,		FN_DESIGN_MARK_IMAGES,
@@ -3900,7 +3915,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"isv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"typSetProperty",			fnDesignGet,		FN_DESIGN_SET_PROPERTY,
-			"RENAMED: Use (typSet@ ...) instead.",
+			"DEPRECATED: Use (typSet@ ...) instead.",
 			"isv",	PPFLAG_SIDEEFFECTS,	},
 
 		{	"typTranslate",				fnDesignGet,		FN_DESIGN_TRANSLATE,
@@ -3927,7 +3942,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 
 			"   'enemy\n"
 			"   'neutral\n"
-			"   'friend",
+			"   'friend\n",
 
 			"ii",	0,	},
 
@@ -3950,7 +3965,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 
 				"   0 / 'enemy\n"
 				"   1 / 'neutral\n"
-				"   2 / 'friend",
+				"   2 / 'friend\n",
 
 			"iiv",	PPFLAG_SIDEEFFECTS,	},
 
@@ -3971,7 +3986,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"property\n\n"
 			
 			"   'height\n"
-			"   'width",
+			"   'width\n",
 
 			"vs",	0,	},
 
@@ -3996,11 +4011,11 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"   V                  Include virtual objects\n"
 			"   +/-{attrib}        Require/exclude types with given attribute\n"
 			"   +/-unid:{unid}     Require/exclude types of given unid\n"
-			"   =n;                Level comparisons (also supports < etc.)\n\n"
-
+			"   =n;                Level comparisons (also supports < etc.)\n"
+			"\n"
 			"entry\n\n"
 			
-			"   ({objID} {type} {nodeID} {objName} {objNameFlags})",
+			"   ({objID} {type} {nodeID} {objName} {objNameFlags})\n",
 
 			"*s",	0,	},
 
@@ -4014,7 +4029,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"format\n\n"
 			
 			"   display:           Elapsed time in display format.\n"
-			"   seconds:           Elapsed time in game seconds.",
+			"   seconds:           Elapsed time in game seconds.\n",
 
 			"*is",	0,	},
 
@@ -4032,7 +4047,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 			"s",	0,	},
 
 		{	"unvGetProperty",				fnUniverseGet,	FN_UNIVERSE_GET_PROPERTY,
-			"RENAMED: Use (unv@ ...) instead.",
+			"DEPRECATED: Use (unv@ ...) instead.",
 			"s",	0,	},
 
 		{	"unvGetRealDate",				fnUniverseGet,	FN_UNIVERSE_REAL_DATE,
@@ -4050,7 +4065,7 @@ static PRIMITIVEPROCDEF g_Extensions[] =
 
 			"   'local\n"
 			"   'serviceExtension\n"
-			"   'serviceUser",
+			"   'serviceUser\n",
 
 			"ssv",	0,	},
 
@@ -8957,6 +8972,8 @@ ICCItem *fnObjSet (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwData)
 			{
 			DWORD dwPowerUNID = pArgs->GetElement(1)->GetIntegerValue();
 			CPower *pPower = pCtx->GetUniverse().FindPower(dwPowerUNID);
+			if (!pPower)
+				return pCC->CreateError(CONSTLIT("Invalid power UNID"), pArgs->GetElement(1));
 
 			//If we don't specify a target, get the object's target
 			CSpaceObject *pTarget;
@@ -13137,11 +13154,12 @@ ICCItem *fnSystemCreateMarker (CEvalContext *pEvalCtx, ICCItem *pArguments, DWOR
 
 	//	Evaluate the arguments and validate them
 
-	ICCItem *pArgs = pCC->EvaluateArgs(pEvalCtx, pArguments, CONSTLIT("svi"));
+	ICCItemPtr pArgs(pCC->EvaluateArgs(pEvalCtx, pArguments, CONSTLIT("svv")));
 	if (pArgs->IsError())
-		return pArgs;
+		return pArgs->Reference();
 
-	CString sName = pArgs->GetElement(0)->GetStringValue();
+	CMarker::SCreateOptions Options;
+	Options.sName = pArgs->GetElement(0)->GetStringValue();
 
 	//	The position can be either a list (in which case it is a position)
 	//	or an integer (in which case it is a gate object)
@@ -13150,12 +13168,26 @@ ICCItem *fnSystemCreateMarker (CEvalContext *pEvalCtx, ICCItem *pArguments, DWOR
 	if (GetPosOrObject(pEvalCtx, pArgs->GetElement(1), &vPos) != NOERROR)
 		return pCC->CreateError(CONSTLIT("Invalid pos"), pArgs->GetElement(1));
 
-	//	Sovereign
+	//	Options
 
-	DWORD dwSovereignID = pArgs->GetElement(2)->GetIntegerValue();
-	CSovereign *pSovereign = pCtx->GetUniverse().FindSovereign(dwSovereignID);
+	ICCItem *pOptions = pArgs->GetElement(2);
+	if (pOptions->IsSymbolTable())
+		{
+		DWORD dwSovereignID = pOptions->GetIntegerAt(CONSTLIT("sovereign"));
+		if (dwSovereignID)
+			Options.pSovereign = pCtx->GetUniverse().FindSovereign(dwSovereignID);
 
-	pArgs->Discard();
+		Options.iLifetime = pOptions->GetIntegerAt(CONSTLIT("lifetime"), -1);
+
+		Options.iStyle = CMarker::ParseStyle(pOptions->GetStringAt(CONSTLIT("style")));
+		if (Options.iStyle == CMarker::EStyle::Error)
+			return pCC->CreateError(CONSTLIT("Unknown style"), pOptions);
+		}
+	else
+		{
+		DWORD dwSovereignID = pOptions->GetIntegerValue();
+		Options.pSovereign = pCtx->GetUniverse().FindSovereign(dwSovereignID);
+		}
 
 	//	Create
 
@@ -13165,10 +13197,9 @@ ICCItem *fnSystemCreateMarker (CEvalContext *pEvalCtx, ICCItem *pArguments, DWOR
 
 	CMarker *pObj;
 	if (error = CMarker::Create(*pSystem,
-			pSovereign,
 			vPos,
 			NullVector,
-			sName,
+			Options,
 			&pObj))
 		return pCC->CreateError(CONSTLIT("Error creating marker"), pCC->CreateInteger(error));
 
@@ -15159,6 +15190,30 @@ ICCItem *fnSystemVectorMath (CEvalContext *pEvalCtx, ICCItem *pArgs, DWORD dwDat
 				return pCC->CreateError(CONSTLIT("division by zero"), NULL);
 
 			return CreateListFromVector(vPos1 / rFactor);
+			}
+
+		case FN_VECTOR_IN_POLYGON:
+			{
+			CVector vPos1;
+			if (GetPosOrObject(pEvalCtx, pArgs->GetElement(0), &vPos1) != NOERROR)
+				return pCC->CreateError(CONSTLIT("Invalid pos"), pArgs->GetElement(0));
+
+			ICCItem *pPoints = pArgs->GetElement(1);
+			if (pPoints->GetCount() < 3)
+				return pCC->CreateError(CONSTLIT("Polygon must have at least 3 points"), pPoints);
+
+			TArray<CVector> PolygonPoints;
+			for (int i = 0; i < pPoints->GetCount(); i++)
+				{
+				CVector vPos2;
+				if (GetPosOrObject(pEvalCtx, pPoints->GetElement(i), &vPos2) != NOERROR)
+					return pCC->CreateError(CONSTLIT("Invalid pos"), pArgs->GetElement(0));
+
+				PolygonPoints.Insert(vPos2);
+				}
+
+			CPolygon Polygon(std::move(PolygonPoints));
+			return pCC->CreateBool(Polygon.PointIntersects(vPos1));
 			}
 
 		case FN_VECTOR_MULTIPLY:
