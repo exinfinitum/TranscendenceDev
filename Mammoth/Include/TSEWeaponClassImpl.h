@@ -287,8 +287,6 @@ class CWeaponClass : public CDeviceClass
 							 int iRepeatingCount,
 							 int iShotNumber);
 		int GetChargeTime(const CWeaponFireDesc& Shot) const;
-		const CConfigurationDesc &GetConfiguration (const CWeaponFireDesc &ShotDesc) const;
-		int GetContinuous (const CWeaponFireDesc &Shot) const;
 		int GetContinuousFireDelay (const CWeaponFireDesc &Shot) const;
 		int GetFireDelay (const CWeaponFireDesc &ShotDesc) const;
 		const CWeaponFireDesc *GetReferenceShotData (const CWeaponFireDesc *pShot, int *retiFragments = NULL) const;
