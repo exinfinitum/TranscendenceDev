@@ -118,7 +118,7 @@ class CG32bitPixel
 //
 //	AAAAAAAA RRRRRRRR GGGGGGGG BBBBBBBB
 
-class CG32bitImage : public TImagePlane<CG32bitImage>
+class CG32bitImage : public TImagePlane<CG32bitImage> // TODO(heliogenesis): Split into the standard CG32bitimage and a canvas class which hosts OpenGL render queues, etc.
 	{
 	public:
 		enum EAlphaTypes
