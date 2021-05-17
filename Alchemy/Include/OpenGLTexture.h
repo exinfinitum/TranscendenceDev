@@ -92,12 +92,21 @@ public:
 	static void incrementNumPixels(int numPixels) { m_iNumPixelsAllocd = uint32_t(numPixels + m_iNumPixelsAllocd); }
 	static int getNumPixels() { return int(m_iNumPixelsAllocd); }
 	void printDebugInit() {
+		if (m_sType == "") {
+			throw std::exception("Bad type for OpenGL Texture!");
+		}
 		::kernelDebugLogPattern(("[OpenGL] Inited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x, thread %d").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this, GetCurrentThreadId());
 	}
 	void printDebugDeInit() {
+		if (m_sType == "") {
+			throw std::exception("Bad type for OpenGL Texture!");
+		}
 		::kernelDebugLogPattern(("[OpenGL] DeInited texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x, thread %d").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this, GetCurrentThreadId());
 	}
 	void printPrepDebugDeInit() {
+		if (m_sType == "") {
+			throw std::exception("Bad type for OpenGL Texture!");
+		}
 		::kernelDebugLogPattern(("[OpenGL] Preparing to DeInit texture of size: %d x %d; type " + m_sType + ", total %d pixels alloc'd, addr: %x, thread %d").c_str(), m_iHeight, m_iWidth, m_iNumPixelsAllocd, (int)this, GetCurrentThreadId());
 	}
 protected:
@@ -110,7 +119,7 @@ private:
 	GLint m_pixelFormat;
 	GLint m_pixelType;
 	void* m_pTextureToInitFrom = nullptr;
-	bool m_isOpaque;
+	bool m_isOpaque; // TODO(heliogenesis): Remove m_isOpaque
 	bool m_bIsInited = false;
 	std::string m_sType;
 };
@@ -255,3 +264,25 @@ public:
 		return "RGB16";
 	}
 };
+class OpenGLTextureR8 : public OpenGLTexture {
+public:
+	OpenGLTextureR8(void* texture, int width, int height) : OpenGLTexture(texture, width, height, false) {}
+	OpenGLTextureR8(int width, int height) : OpenGLTexture(width, height) {}
+	~OpenGLTextureR8(void) {};
+	GLint getInternalFormat() override {
+		return GL_RGBA8;
+	}
+	GLenum getTexSubImageFormat() override {
+		return GL_RED;
+	}
+	GLenum getTexSubImageType() override {
+		return GL_UNSIGNED_BYTE;
+	}
+	int getNumberOfChannels() override {
+		return 4;
+	}
+	std::string getTextureName() override {
+		return "R8(Grayscale)";
+	}
+};
+

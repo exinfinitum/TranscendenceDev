@@ -39,6 +39,7 @@ class CG8bitImage : public TImagePlane<CG8bitImage>
 		void SetPixel (int x, int y, BYTE Value) 
 			{ if (x >= m_rcClip.left && y >= m_rcClip.top && x < m_rcClip.right && y < m_rcClip.bottom) *GetPixelPos(x, y) = Value; }
 		void SetPixelTrans (int x, int y, BYTE Value, BYTE byOpacity);
+		OpenGLTexture* GetOpenGLTexture(void) { if (!m_pOpenGLTexture) { CreateOpenGLTexture(); } return m_pOpenGLTexture.get(); }
 
 		//	Debug
 
@@ -47,7 +48,9 @@ class CG8bitImage : public TImagePlane<CG8bitImage>
 	private:
 		static int CalcBufferSize (int cxWidth, int cyHeight) { return (cxWidth * cyHeight); }
 		void Copy (const CG8bitImage &Src);
+		void CreateOpenGLTexture(void) { m_pOpenGLTexture = std::make_unique<OpenGLTextureR8>(m_pChannel, GetWidth(), GetHeight()); }
 
 		BYTE *m_pChannel;
 		bool m_bMarked;						//	Mark/sweep flag (for use by caller)
+		std::unique_ptr<OpenGLTextureR8> m_pOpenGLTexture = nullptr;
 	};

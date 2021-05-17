@@ -757,11 +757,12 @@ void CSpaceEnvironmentType::Paint (CG32bitImage &Dest, int x, int y, int xTile, 
 		}
 
 	//	If this is a solid tile, paint it
+	OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
+	const bool useOpenGL = pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas());
 
 	if (dwEdgeMask == 0x0F || m_TileSet.GetCount() == 0)
 		{
-		OpenGLMasterRenderQueue* pRenderQueue = Dest.GetMasterRenderQueue();
-		if (pRenderQueue && (&(Dest) == pRenderQueue->getPointerToCanvas()))
+		if (useOpenGL)
 			{
 			int iCanvasHeight = Dest.GetHeight();
 			int iCanvasWidth = Dest.GetWidth();
@@ -771,7 +772,7 @@ void CSpaceEnvironmentType::Paint (CG32bitImage &Dest, int x, int y, int xTile, 
 			pRenderQueue->addImageToRenderQueue(rcTileSource.left, rcTileSource.top, int(fScale * iTexQuadWidth), int(fScale * iTexQuadHeight),
 				x - int(fScale * float(xCenter)), y - int(fScale * float(yCenter)), 0,
 				TileImage.GetOpenGLTexture(), TileImage.GetWidth(), TileImage.GetHeight(), iTexQuadWidth, iTexQuadHeight, 1, 1, rcTileSource.left, rcTileSource.top,
-				1.0, true, OpenGLRenderLayer::normal, OpenGLRenderLayer::blendScreen);
+				1.0, true, OpenGLRenderLayer::normal, OpenGLRenderLayer::blendNormal);
 			}
 		else
 			{
@@ -790,9 +791,22 @@ void CSpaceEnvironmentType::Paint (CG32bitImage &Dest, int x, int y, int xTile, 
 
 	else
 		{
-		STileDesc &Desc = m_TileSet[GetVariantOffset(xTile, yTile) + (int)dwEdgeMask];
-
-		Desc.Region.Blt(Dest,
+		STileDesc& Desc = m_TileSet[GetVariantOffset(xTile, yTile) + (int)dwEdgeMask];
+		if (useOpenGL)
+			{
+			int iCanvasHeight = Dest.GetHeight();
+			int iCanvasWidth = Dest.GetWidth();
+			int iTexQuadWidth = RectWidth(rcTileSource);
+			int iTexQuadHeight = RectHeight(rcTileSource);
+			float fScale = float(1.0f / g_ZoomScale);
+			pRenderQueue->addImageToRenderQueue(rcTileSource.left, rcTileSource.top, int(fScale * iTexQuadWidth), int(fScale * iTexQuadHeight),
+				x - int(fScale * float(xCenter)), y - int(fScale * float(yCenter)), 0,
+				TileImage.GetOpenGLTexture(), TileImage.GetWidth(), TileImage.GetHeight(), iTexQuadWidth, iTexQuadHeight, 1, 1, rcTileSource.left, rcTileSource.top,
+				1.0, true, OpenGLRenderLayer::withmask, OpenGLRenderLayer::blendNormal, 0.0f, Desc.Mask.GetOpenGLTexture());
+			}
+		else
+			{
+			Desc.Region.Blt(Dest,
 				x - xCenter,
 				y - yCenter,
 				TileImage,
@@ -800,6 +814,7 @@ void CSpaceEnvironmentType::Paint (CG32bitImage &Dest, int x, int y, int xTile, 
 				rcTileSource.top,
 				m_iTileSize,
 				m_iTileSize);
+			}
 		}
 	}
 

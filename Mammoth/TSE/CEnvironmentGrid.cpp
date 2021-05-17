@@ -605,14 +605,22 @@ void CEnvironmentGrid::Paint (SViewportPaintCtx &Ctx, CG32bitImage &Dest)
 	int cyTotal = yEnd - yStart;
 	int cyChunk = Max(1, cyTotal / Ctx.pThreadPool->GetThreadCount());
 
-	//	Start async tasks
+	//	Start async tasks if we are not using OpenGL
+	const bool bUseOpenGL = Dest.GetMasterRenderQueue() && (&(Dest) == Dest.GetMasterRenderQueue()->getPointerToCanvas());
 
 	int y = yStart;
 	while (y < yEnd)
 		{
 		int yChunkEnd = Min(yEnd, y + cyChunk);
-		Ctx.pThreadPool->AddTask(new CEnvironmentTilePainter(Ctx, Dest, this, xStart, y, xEnd, yChunkEnd));
-
+		if (bUseOpenGL) 
+			{
+			CEnvironmentTilePainter tilePainter = CEnvironmentTilePainter(Ctx, Dest, this, xStart, y, xEnd, yChunkEnd);
+			tilePainter.Run();
+			}
+		else 
+			{
+			Ctx.pThreadPool->AddTask(new CEnvironmentTilePainter(Ctx, Dest, this, xStart, y, xEnd, yChunkEnd));
+			}
 		y = yChunkEnd;
 		}
 

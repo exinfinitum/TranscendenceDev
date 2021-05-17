@@ -679,7 +679,7 @@ void CDXScreen::Render (void)
 				m_pOGLContext->ackResize();
 				}
 			if (!m_pOpenGLTextureBG) {
-				m_pOpenGLTextureBG = new OpenGLTextureRGBA32(pPixelArrayBG, Layer.cxWidth, Layer.cyHeight, false);
+				m_pOpenGLTextureBG = new OpenGLTextureRGBA32(pPixelArrayBG, Layer.cxWidth, Layer.cyHeight, false); // TODO(heliogenesis): Use unique_ptr for BG and FG CPU layers
 				m_pOpenGLTextureFG = new OpenGLTextureRGBA32(pPixelArrayFG, Layer.cxWidth, Layer.cyHeight, false);
 				m_pOpenGLTextureBG->initTextureFromOpenGLThread();
 				m_pOpenGLTextureFG->initTextureFromOpenGLThread();
