@@ -23,6 +23,7 @@ out vec4 out_color;
 
 uniform sampler2D obj_texture;
 uniform sampler2D glow_map;
+uniform sampler2D env_mask;
 uniform int current_tick;
 uniform int glowmap_pad_size;
 uniform sampler3D perlin_noise;
@@ -32,6 +33,7 @@ const int renderCategoryObjectCartesian = 0;
 const int renderCategoryText = 1;
 const int renderCategoryObjectPolar = 2;
 const int renderCategoryObjectCartesianGrayscale = 3;
+const int renderCategoryObjectCartesianWithMask = 4;
 const float PI = 3.14159;
 
 // This should match enum blendMode in opengl.h.
@@ -256,7 +258,7 @@ void main(void)
 	vec4 realColorCartesian = texture(obj_texture, vec2(texture_uv[0], texture_uv[1]));
 	vec4 realColorPolar = sampleCircular(obj_texture);
 	vec4 realColor = (
-		(realColorCartesian * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectCartesianGrayscale)) +
+		(realColorCartesian * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectCartesianGrayscale || render_category == renderCategoryObjectCartesianWithMask)) +
         (realColorPolar * float(render_category == renderCategoryObjectPolar))
 	);
 
@@ -288,16 +290,17 @@ void main(void)
 	);
 
     vec4 finalColor = (
-        (objectColor * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar)) +
+        (objectColor * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar || render_category == renderCategoryObjectCartesianWithMask)) +
         (textColor * float(render_category == renderCategoryText)) +
 		(grayscaleColor * float(render_category == renderCategoryObjectCartesianGrayscale))
 	);
-	finalColor[3] += (alphaNoise * realColor[3]) * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar) * float(!useGlow);
+	finalColor[3] += (alphaNoise * realColor[3]) * float(render_category == renderCategoryObjectCartesian || render_category == renderCategoryObjectPolar || render_category == renderCategoryObjectCartesianWithMask) * float(!useGlow);
 
 	bool alphaIsZero = finalColor[3] < epsilon;
 	gl_FragDepth = depth + float(alphaIsZero && (glowColor[3] < epsilon));
 
 	vec3 finalColorRGB = (vec3(finalColor[0], finalColor[1], finalColor[2]) * float(!usePreMultipliedAlpha)) + (vec3(finalColor[0], finalColor[1], finalColor[2]) * float(usePreMultipliedAlpha) * finalColor[3]);
+	vec4 mask_multiplier = (render_category == renderCategoryObjectCartesianWithMask) ? (texture(env_mask, vec2(fragment_pos[0], -fragment_pos[1]))) : vec4(1.0f);
 
-	out_color = vec4(finalColorRGB[0], finalColorRGB[1], finalColorRGB[2], finalColor[3]);
+	out_color = vec4(finalColorRGB[0], finalColorRGB[1], finalColorRGB[2], finalColor[3] * mask_multiplier[0]);
 }

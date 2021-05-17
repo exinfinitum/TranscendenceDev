@@ -15,7 +15,7 @@ OpenGLRenderLayer::~OpenGLRenderLayer(void)
 
 void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::vec2 vSpriteSheetPositions, glm::vec2 vCanvasQuadSizes, glm::vec2 vCanvasPositions, float rotationInDegrees, glm::vec2 vTextureQuadSizes, glm::vec4 glowColor, float alphaStrength,
 	float glowNoise, int numFramesPerRow, int numFramesPerCol, OpenGLTexture* image, bool useDepthTesting, float startingDepth, float canvasQuadAspectRatio, textureRenderCategory textureRenderType,
-	blendMode blendMode, int glowRadius, glm::vec4 glowDecay)
+	blendMode blendMode, int glowRadius, glm::vec4 glowDecay, OpenGLTexture* mask)
 {
 	// Note, image is a pointer to the CG32bitPixel* we want to use as a texture. We can use CG32bitPixel->GetPixelArray() to get this pointer.
 	// To get the width and height, we can use pSource->GetWidth() and pSource->GetHeight() respectively.
@@ -39,7 +39,7 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 		numFramesPerCol,
 		glowRadius * 2
 	);
-	auto imageAndGlowMap = std::pair(image, image->getGlowMap(glowmapTile));
+	auto imageAndGlowMap = std::make_tuple(image, image->getGlowMap(glowmapTile), mask ? mask : image); // TODO(heliogenesis): Change mask to a white pixel if there is no mask passed
 	if (!texRenderBatchToUse.count(imageAndGlowMap))
 	{
 		// If we don't have a render queue with that texture loaded, then add one.
@@ -338,15 +338,17 @@ void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
 	{
 		OpenGLBatchShaderPairList& renderBatchToUse = (m_renderOrder == renderOrder::renderOrderTextureFirst && !noDepthTesting) ? texRenderBatchesForDepthTesting : texRenderBatchesForNoDepthTesting;
 		auto textureAndGlowMap = p.first;
-		OpenGLTexture* pTextureToUse = textureAndGlowMap.first;
-		OpenGLTexture* glowMap = textureAndGlowMap.second;
+		OpenGLTexture* pTextureToUse = std::get<0>(textureAndGlowMap);
+		OpenGLTexture* glowMap = std::get<1>(textureAndGlowMap);
+		OpenGLTexture* envMask = std::get<2>(textureAndGlowMap);
 		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
 		pTextureToUse->initTextureFromOpenGLThread();
+		envMask->initTextureFromOpenGLThread();
 		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
-		std::array<std::string, 7> textureUniformNames = { "obj_texture", "glow_map", "current_tick", "perlin_noise", "glowmap_pad_size", "pixel_decimal_place_per_channel_for_linear_glowmap", "aCanvasAdjustedDimensions" };
+		std::array<std::string, 8> textureUniformNames = { "obj_texture", "glow_map", "env_mask", "current_tick", "perlin_noise", "glowmap_pad_size", "pixel_decimal_place_per_channel_for_linear_glowmap", "aCanvasAdjustedDimensions" };
 		glowMap = glowMap ? glowMap : pTextureToUse;
-		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, currentTick, perlinNoise, glowMap->getPadSize(), OpenGLTexture::PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP, canvasDimensions);
+		pInstancedRenderQueue->setUniforms(textureUniformNames, pTextureToUse, glowMap, envMask, currentTick, perlinNoise, glowMap->getPadSize(), OpenGLTexture::PIXEL_DECIMAL_PLACE_PER_CHANNEL_FOR_LINEAR_GLOWMAP, canvasDimensions);
 		pInstancedRenderQueue->setBlendMode(blendMode);
 		renderBatchToUse.push_back(std::pair(objectTextureShader, pInstancedRenderQueue));
 	}

@@ -102,10 +102,10 @@ void OpenGLMasterRenderQueue::deinitCanvasVAO(void)
 }
 
 void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int startPixelY, int sizePixelX,
- int sizePixelY, int posPixelX, int posPixelY, float rotationInDegrees, OpenGLTexture *image, int texWidth, int texHeight, 
+	int sizePixelY, int posPixelX, int posPixelY, float rotationInDegrees, OpenGLTexture* image, int texWidth, int texHeight,
 	int texQuadWidth, int texQuadHeight, int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength,
 	float glowR, float glowG, float glowB, float glowA, float glowNoise, int glowRadius, bool useDepthTesting, OpenGLRenderLayer::textureRenderCategory textureRenderType, OpenGLRenderLayer::blendMode blendMode,
-	glm::ivec4 glowDecay)
+	glm::ivec4 glowDecay, OpenGLTexture* mask)
 	{
 	glm::vec2 vTexPositions((float)startPixelX / (float)texWidth, (float)startPixelY / (float)texHeight);
 	glm::vec2 vSpriteSheetPositions((float)spriteSheetStartX / (float)texWidth, (float)spriteSheetStartY / (float)texHeight);
@@ -151,7 +151,7 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 	//	m_bPrevObjAddedIsParticle = false;
 	//}
 	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, rotationInDegrees, vTextureQuadSizes, glowColor, alphaStrength,
-		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel, aspectRatio, textureRenderType, blendMode, glowRadius, relativeGlowDecay);
+		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel, aspectRatio, textureRenderType, blendMode, glowRadius, relativeGlowDecay, mask);
 	m_fDepthLevel -= m_fDepthDelta;
 	}
 
