@@ -276,6 +276,9 @@ void CGameSession::OnCleanUp (void)
 	if (!Stack.IsEmpty())
 		m_Model.ExitScreenSession(true);
 
+	g_pTrans->SetZoomScale(1.0);
+	g_ZoomScale = 1.0;
+
 	DEBUG_CATCH
 	}
 
