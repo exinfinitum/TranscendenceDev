@@ -373,6 +373,14 @@ void CGameSession::ExecuteCommand (CPlayerShipController *pPlayer, CGameKeys::Ke
 				}
 			break;
 
+		case CGameKeys::keyZoomIn:
+			g_pTrans->DecZoomScale();
+			break;
+
+		case CGameKeys::keyZoomOut:
+			g_pTrans->IncZoomScale();
+			break;
+
 		default:
 			{
 			if (iCommand >= CGameKeys::keyEnableDeviceToggle00 

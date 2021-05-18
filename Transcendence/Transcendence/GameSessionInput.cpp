@@ -1011,6 +1011,14 @@ void CGameSession::OnMouseWheel (int iDelta, int x, int y, DWORD dwFlags)
 						else
 							ExecuteCommand(pPlayer, CGameKeys::keyVolumeDown);
 						break;
+
+					case CGameKeys::keyZoomIn:
+					case CGameKeys::keyZoomOut:
+						if (iDelta > 0)
+							ExecuteCommand(pPlayer, CGameKeys::keyZoomIn);
+						else
+							ExecuteCommand(pPlayer, CGameKeys::keyZoomOut);
+						break;
 					}
 				}
 

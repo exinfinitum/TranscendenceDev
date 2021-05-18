@@ -181,6 +181,18 @@ void CGameSession::OnAnimate (CG32bitImage &ScreenFG, CG32bitImage &ScreenBG, bo
 					iUpdateMode = CUniverse::updateNormal;
 
 				//	Update the universe
+				Metric fDeltaZoomScale = g_pTrans->GetZoomScale() - g_ZoomScale;
+				if (ScreenBG.GetMasterRenderQueue())
+					{
+					if (abs(fDeltaZoomScale) > 0.01)
+						{
+						g_ZoomScale += fDeltaZoomScale * 0.5;
+						}
+					else if (abs(fDeltaZoomScale) > 0.0)
+						{
+						g_ZoomScale = g_pTrans->GetZoomScale();
+						}
+					}
 
 				SetProgramState(psUpdating);
 				bool bUpdated = g_pUniverse->Update(UpdateCtx, iUpdateMode);
@@ -390,6 +402,8 @@ void CGameSession::OnAnimate (CG32bitImage &ScreenFG, CG32bitImage &ScreenBG, bo
 
             case CTranscendenceWnd::gsEndGame:
 				{
+				g_pTrans->SetZoomScale(1.0);
+				g_ZoomScale = 1.0;
 				g_pHI->HICommand(CONSTLIT("gameEndGame"));
 				break;
 				}
