@@ -33,6 +33,7 @@ const CHelpSession::SHelpLine CHelpSession::m_HelpDesc[] =
 		{	CGameKeys::keyShowGalacticMap,		CGameKeys::keyNone,					0,	"Show stargate network (if galactic map installed)",	},
 		{	CGameKeys::keyPause,				CGameKeys::keyNone,					0,	"Pauses the game",								},
 		{	CGameKeys::keyVolumeUp,				CGameKeys::keyVolumeDown,			0,	"Increase/decrease volume",						},
+		{	CGameKeys::keyZoomIn,				CGameKeys::keyZoomOut,				0,	"Zoom in/out",						},
 		{	CGameKeys::keyNone,					CGameKeys::keyNone,					VK_ESCAPE,		"Game menu (save, self-destruct)", }
 	};
 

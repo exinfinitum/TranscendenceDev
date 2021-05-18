@@ -31,6 +31,9 @@ const int g_iColorDepth =					16;		//	Desired color depth
 
 const int g_iFramesPerSecond =				30;		//	Desired frames per second
 const int FRAME_RATE_COUNT =				51;		//	number of statistics to keep (for debugging)
+const Metric MIN_ZOOM_SCALE =				1.0;
+const Metric MAX_ZOOM_SCALE =				10.0;
+const Metric ZOOM_DELTA =					0.25;
 
 #define OBJID_CPLAYERSHIPCONTROLLER	MakeOBJCLASSID(100)
 
@@ -544,6 +547,10 @@ class CTranscendenceWnd : public CUniverse::IHost, public IAniCommand
 		inline CHighScoreList *GetHighScoreListOld (void);
 		inline CTranscendenceModel &GetModel (void);
 		void GetMousePos (POINT *retpt);
+		Metric GetZoomScale () { return m_fTargetZoom; }
+		void SetZoomScale (Metric targetZoom) { m_fTargetZoom = max(MIN_ZOOM_SCALE, min(MAX_ZOOM_SCALE, targetZoom)); }
+		void IncZoomScale() { SetZoomScale(GetZoomScale() + ZOOM_DELTA); }
+		void DecZoomScale() { SetZoomScale(GetZoomScale() - ZOOM_DELTA); }
 		CReanimator &GetReanimator (void) { return m_Reanimator; }
 		inline CGameSettings &GetSettings (void);
 		const CUIResources &GetUIRes (void) { return m_UIRes; }
@@ -680,6 +687,7 @@ class CTranscendenceWnd : public CUniverse::IHost, public IAniCommand
 		bool m_bPausedStep;					//	Step one frame
 		char m_chKeyDown;					//	Processed a WM_KEYDOWN (skip WM_CHAR)
 		bool m_bDockKeyDown;				//	Used to de-bounce dock key (so holding down 'D' does not select a dock action).
+		Metric m_fTargetZoom = 1.0;			//	Target zoom level
 		AGScreen *m_pCurrentScreen;
 		CMenuData m_MenuData;
 
