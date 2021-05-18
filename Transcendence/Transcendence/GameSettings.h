@@ -115,8 +115,10 @@ class CGameKeys
 			keyCycleTarget =			84,
 			keySquadronUI =				85,
 			keyToggleHUD =				86,
+			keyZoomIn =					87,
+			keyZoomOut =				88,
 
-			keyCount =					87,
+			keyCount =					89,
 			};
 
 		struct SBindingDesc
