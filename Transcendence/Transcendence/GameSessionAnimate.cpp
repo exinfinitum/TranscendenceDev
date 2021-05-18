@@ -402,8 +402,6 @@ void CGameSession::OnAnimate (CG32bitImage &ScreenFG, CG32bitImage &ScreenBG, bo
 
             case CTranscendenceWnd::gsEndGame:
 				{
-				g_pTrans->SetZoomScale(1.0);
-				g_ZoomScale = 1.0;
 				g_pHI->HICommand(CONSTLIT("gameEndGame"));
 				break;
 				}
