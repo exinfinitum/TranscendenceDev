@@ -621,7 +621,7 @@ class CStationType : public CDesignType
 		void MarkImages (const CCompositeImageSelector &Selector, const CCompositeImageModifiers &Modifiers);
 		void OnShipEncounterCreated (SSystemCreateCtx &CreateCtx, CSpaceObject *pObj, const COrbit &Orbit);
 		bool OverrideEncounterDesc (const CXMLElement &Override, CString *retsError = NULL);
-		void PaintAnimations (CG32bitImage &Dest, int x, int y, int iTick);
+		void PaintAnimations (CG32bitImage &Dest, int x, int y, int iTick, float fScale);
 		void PaintDevicePositions (CG32bitImage &Dest, int x, int y);
 		void PaintDockPortPositions (CG32bitImage &Dest, int x, int y);
 		void SetImageSelector (SSelectorInitCtx &InitCtx, CCompositeImageSelector *retSelector);
