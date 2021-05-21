@@ -2403,7 +2403,7 @@ bool CStationType::OverrideEncounterDesc (const CXMLElement &Override, CString *
 	return true;
 	}
 
-void CStationType::PaintAnimations (CG32bitImage &Dest, int x, int y, int iTick)
+void CStationType::PaintAnimations (CG32bitImage &Dest, int x, int y, int iTick, float fScale)
 
 //	PaintAnimations
 //
@@ -2415,10 +2415,13 @@ void CStationType::PaintAnimations (CG32bitImage &Dest, int x, int y, int iTick)
 	for (i = 0; i < m_iAnimationsCount; i++)
 		{
 		m_pAnimations[i].m_Image.PaintImage(Dest,
-				x + m_pAnimations[i].m_x,
-				y - m_pAnimations[i].m_y,
+				x + int(fScale * m_pAnimations[i].m_x),
+				y - int(fScale * m_pAnimations[i].m_y),
 				iTick,
-				0);
+				0,
+				false,
+				0.0f,
+				fScale);
 		}
 	}
 
