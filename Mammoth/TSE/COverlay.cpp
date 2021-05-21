@@ -1052,8 +1052,8 @@ void COverlay::Paint (CG32bitImage &Dest, int iScale, int x, int y, SViewportPai
 	int xOffset, yOffset, iRotationOrigin;
 	CalcOffset(*Ctx.pObj, iScale, Ctx.iRotation, &xOffset, &yOffset, &iRotationOrigin);
 
-	x = x + xOffset;
-	y = y + yOffset;
+	x = x + int(xOffset * (1.0f / Ctx.rZoomScale));
+	y = y + int(yOffset * (1.0f / Ctx.rZoomScale));
 
 	//	Adjust rotation
 

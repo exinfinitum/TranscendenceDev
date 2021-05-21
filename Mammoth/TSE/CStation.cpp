@@ -3506,7 +3506,7 @@ void CStation::OnPaint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &Ctx
 	//	Paint animations
 
 	if (!IsAbandoned() && m_pType->HasAnimations())
-		m_pType->PaintAnimations(Dest, x, y, iTick);
+		m_pType->PaintAnimations(Dest, x, y, iTick, float(1.0f / Ctx.rZoomScale));
 
 	//	If this is a sign, then paint the name of the station
 
