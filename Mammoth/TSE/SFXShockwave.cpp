@@ -749,7 +749,7 @@ void CShockwavePainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaintC
 
 		//	Paint
 
-		PaintRing(Ctx, Dest, x, y, iRadius, byOpacity);
+		PaintRing(Ctx, Dest, x, y, int(iRadius * float(1.0f / Ctx.rZoomScale)), byOpacity);
 		}
 
 	//	Otherwise, we paint multiple rings.
@@ -765,7 +765,7 @@ void CShockwavePainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaintC
 
 			//	Paint
 
-			PaintRing(Ctx, Dest, x, y, iRadius, byOpacity);
+			PaintRing(Ctx, Dest, x, y, int(iRadius * float(1.0f / Ctx.rZoomScale)), byOpacity);
 
 			//	Next ring is offset
 
@@ -823,7 +823,7 @@ void CShockwavePainter::PaintRing (SViewportPaintCtx &Ctx, CG32bitImage &Dest, i
 				pRenderQueue->addOrbToEffectRenderQueue(
 					x, y, iRadius * 2, iRadius * 2, Dest.GetWidth(), Dest.GetHeight(),
 					0.0,
-					float(m_iGradientCount) / float(iRadius),
+					float(m_iGradientCount * float(1.0f / Ctx.rZoomScale)) / float(iRadius),
 					float(byOpacity / 255.0),
 					0,
 					-1, // TODO(heliogenesis): move to an enum; an orb with a style of -1 is a glow ring
