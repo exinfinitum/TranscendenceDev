@@ -105,7 +105,7 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 	int sizePixelY, int posPixelX, int posPixelY, float rotationInDegrees, OpenGLTexture* image, int texWidth, int texHeight,
 	int texQuadWidth, int texQuadHeight, int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength,
 	float glowR, float glowG, float glowB, float glowA, float glowNoise, int glowRadius, bool useDepthTesting, OpenGLRenderLayer::textureRenderCategory textureRenderType, OpenGLRenderLayer::blendMode blendMode,
-	glm::ivec4 glowDecay, OpenGLTexture* mask)
+	glm::ivec4 glowDecay, OpenGLTexture* mask, glm::vec2 scale)
 	{
 	glm::vec2 vTexPositions((float)startPixelX / (float)texWidth, (float)startPixelY / (float)texHeight);
 	glm::vec2 vSpriteSheetPositions((float)spriteSheetStartX / (float)texWidth, (float)spriteSheetStartY / (float)texHeight);
@@ -115,7 +115,6 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 	glm::vec4 glowColor(glowR, glowG, glowB, glowA);
 
 	// If this is a glow color, and a glowmap is defined, then adjust coordinates
-
 	if (glowColor[3] > 0.0) {
 		auto glowmapTile = GlowmapTile(
 			vSpriteSheetPositions[0],
@@ -131,7 +130,7 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 		glm::vec2 vPadSizes(float(2 * padSize), float(2 * padSize));
 
 		vCanvasQuadSizes = vCanvasQuadSizes + vPadSizesInPixels;
-		vCanvasPositions = vCanvasPositions - (vPadSizes / 2.0f);
+		vCanvasPositions = vCanvasPositions - (vPadSizes / 2.0f) + ((vCanvasQuadSizes - (vCanvasQuadSizes * scale)) / 2.0f);
 	}
 	float aspectRatio = vCanvasQuadSizes[0] / vCanvasQuadSizes[1];
 	glm::vec4 relativeGlowDecay(
@@ -150,7 +149,7 @@ void OpenGLMasterRenderQueue::addTextureToRenderQueue(int startPixelX, int start
 	//	m_fDepthLevel -= m_fDepthDelta;
 	//	m_bPrevObjAddedIsParticle = false;
 	//}
-	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes, vCanvasPositions, rotationInDegrees, vTextureQuadSizes, glowColor, alphaStrength,
+	m_pActiveRenderLayer->addTextureToRenderQueue(vTexPositions, vSpriteSheetPositions, vCanvasQuadSizes * scale, vCanvasPositions, rotationInDegrees, vTextureQuadSizes, glowColor, alphaStrength,
 		glowNoise, numFramesPerRow, numFramesPerCol, image, useDepthTesting, m_fDepthLevel, aspectRatio, textureRenderType, blendMode, glowRadius, relativeGlowDecay, mask);
 	m_fDepthLevel -= m_fDepthDelta;
 	}

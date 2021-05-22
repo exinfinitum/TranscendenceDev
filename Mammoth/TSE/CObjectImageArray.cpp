@@ -1734,11 +1734,11 @@ void CObjectImageArray::PaintImageGlowUsingOpenGL(CG32bitImage& Dest, int x, int
 		float fRed = float(rgbGlowColor.GetRed()) / 255.0f;
 		float fBlue = float(rgbGlowColor.GetBlue()) / 255.0f;
 		float fGreen = float(rgbGlowColor.GetGreen()) / 255.0f;
-		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, int(xScaleDest * float(iQuadWidth)), int(yScaleDest * float(iQuadHeight)),
-			x - int((xScaleDest * float(iQuadWidth)) / 2), y - int((yScaleDest * float(iQuadHeight)) / 2), rotationInDegrees,
+		pRenderQueue->addTextureToRenderQueue(xSrc, ySrc, iQuadWidth, iQuadHeight,
+			x - int(iQuadWidth / 2), y - int(iQuadHeight / 2), rotationInDegrees,
 			pSource->GetOpenGLTexture(), pSource->GetWidth(), pSource->GetHeight(), iGlowTexQuadWidth, iGlowTexQuadHeight, iNumCols, iNumRows,
 			m_rcImage.left, m_rcImage.top, glowAlpha, fRed, fGreen, fBlue, glowStrength, glowNoise, glowRadius, false,
-			OpenGLRenderLayer::normal, OpenGLRenderLayer::blendMode(blendMode), integerGlowDecay);
+			OpenGLRenderLayer::normal, OpenGLRenderLayer::blendMode(blendMode), integerGlowDecay, nullptr, glm::vec2(xScaleDest, yScaleDest));
 		}
 }
 

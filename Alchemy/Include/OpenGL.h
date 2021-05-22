@@ -348,7 +348,7 @@ public:
 		int posPixelX, int posPixelY, float rotationInDegrees, OpenGLTexture* image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight,
 		int numFramesPerRow, int numFramesPerCol, int spriteSheetStartX, int spriteSheetStartY, float alphaStrength = 1.0, float glowR = 0.0, float glowG = 0.0,
 		float glowB = 0.0, float glowA = 0.0, float glowNoise = 0.0, int glowRadius = 0, bool useDepthTesting = true, OpenGLRenderLayer::textureRenderCategory textureRenderType = OpenGLRenderLayer::textureRenderCategory::normal,
-		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal, glm::ivec4 glowDecay = glm::vec4(-1, -1, -1, -1), OpenGLTexture* mask = nullptr);
+		OpenGLRenderLayer::blendMode blendMode = OpenGLRenderLayer::blendMode::blendNormal, glm::ivec4 glowDecay = glm::vec4(-1, -1, -1, -1), OpenGLTexture* mask = nullptr, glm::vec2 scale = glm::vec2(1.0, 1.0));
 	void addTextToRenderQueue(int startPixelX, int startPixelY, int sizePixelX, int sizePixelY,
 		int posPixelX, int posPixelY, OpenGLTexture* image, int texWidth, int texHeight, int texQuadWidth, int texQuadHeight,
 		std::tuple<int, int, int> textColor, bool useDepthTesting = true);

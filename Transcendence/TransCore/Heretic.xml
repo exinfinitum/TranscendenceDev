@@ -65,10 +65,11 @@
 					</ParticleEffect>
 				</SmokeTrail>
 
-				<Starburst
+				<Orb
 						style=			"flare"
-						spikeCount=		"8"
-						spikeLength=	"8-15"
+						animate=		"flicker"
+						radius=			"15"
+						intensity=		"100"
 						primaryColor=	"0xff, 0xc0, 0xff"
 						secondaryColor=	"0xff, 0x80, 0xff"
 						/>
