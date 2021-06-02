@@ -55,7 +55,7 @@ void CGameSession::DismissMenu (void)
 
 		//	Mouse controls the ship again
 
-		if (IsMouseAimEnabled())
+		if (IsMouseAimConfigured())
 			{
 			ShowCursor(false);
 			SyncMouseToPlayerShip();
@@ -464,7 +464,7 @@ void CGameSession::OnShowDockScreen (bool bShow)
 
 		if (g_pTrans->m_State == CTranscendenceWnd::gsInGame)
 			{
-			if (IsMouseAimEnabled())
+			if (IsMouseAimConfigured())
 				ShowCursor(true);
 			}
 
@@ -481,7 +481,7 @@ void CGameSession::OnShowDockScreen (bool bShow)
 
 		//	Hide the cursor
 
-		if (IsMouseAimEnabled())
+		if (IsMouseAimConfigured())
 			{
 			ShowCursor(false);
 			SyncMouseToPlayerShip();
@@ -664,7 +664,7 @@ bool CGameSession::ShowMenu (EMenuTypes iMenu)
 
 	//	Show our cursor, in case the menus have mouse UI
 
-	if (IsMouseAimEnabled())
+	if (IsMouseAimConfigured())
 		ShowCursor(true);
 
 	//	Set state

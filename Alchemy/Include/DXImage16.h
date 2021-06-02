@@ -459,6 +459,7 @@ class CG16bitFont
 		void Destroy (void) { m_FontImage.Destroy(); m_Metrics.DeleteAll(); if (CG32bitImage::GetMasterRenderQueue()) { CG32bitImage::GetMasterRenderQueue()->handOffTextureForDeletion(std::move(m_OpenGLFontImage.second)); } }
 
 		int BreakText (const CString &sText, int cxWidth, TArray<CString> *retLines = NULL, DWORD dwFlags = 0) const;
+		int CalcHeight (const CString &sText, int cxWidth, DWORD dwFlags = 0) const;
 		void DrawText (CG16bitImage &Dest, int x, int y, WORD wColor, const CString &sText, DWORD dwFlags = 0, int *retx = NULL) const
 			{ DrawText(Dest, x, y, wColor, 255, sText, dwFlags, retx); }
 		void DrawText (CG16bitImage &Dest, const RECT &rcRect, WORD wColor, const CString &sText, int iLineAdj = 0, DWORD dwFlags = 0, int *retcyHeight = NULL) const
@@ -486,15 +487,36 @@ class CG16bitFont
 					   int y, 
 					   CG32bitPixel rgbColor, 
 					   const CString &sText, 
-					   DWORD dwFlags = 0, 
+					   float scale,
+					   DWORD dwFlags,
 					   int *retx = NULL) const;
 		void DrawText (CG32bitImage &Dest, 
 					   const RECT &rcRect, 
 					   CG32bitPixel rgbColor,
 					   const CString &sText, 
-					   int iLineAdj = 0, 
-					   DWORD dwFlags = 0,
+					   float scale,
+					   int iLineAdj,
+					   DWORD dwFlags,
 					   int *retcyHeight = NULL) const;
+
+		void DrawText(CG32bitImage& Dest,
+					   int x,
+					   int y,
+					   CG32bitPixel rgbColor,
+					   const CString& sText,
+					   DWORD dwFlags = 0,
+					   int* retx = NULL) const {
+			DrawText(Dest, x, y, rgbColor, sText, 1.0, dwFlags, retx);
+		};
+		void DrawText(CG32bitImage& Dest,
+					   const RECT& rcRect,
+					   CG32bitPixel rgbColor,
+					   const CString& sText,
+					   int iLineAdj = 0,
+					   DWORD dwFlags = 0,
+					   int* retcyHeight = NULL) const {
+			DrawText(Dest, rcRect, rgbColor, sText, 1.0, iLineAdj, dwFlags, retcyHeight);
+		};
         void DrawText (CG32bitImage &Dest, int x, int y, CG32bitPixel rgbColor, const TArray<CString> &Lines, int iLineAdj = 0, DWORD dwFlags = 0, int *rety = NULL) const;
 
 		void DrawTextEffect (CG16bitImage &Dest,

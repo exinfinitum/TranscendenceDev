@@ -721,6 +721,38 @@ CString CBaseShipAI::GetAISettingString (const CString &sSetting)
 	return m_AICtx.GetAISetting(sSetting); 
 	}
 
+ICCItemPtr CBaseShipAI::GetAIStatus () const
+
+//	GetAIStatus
+//
+//	Returns AI status, mostly for debugging.
+
+	{
+	ICCItemPtr pResult(ICCItem::SymbolTable);
+
+	if (m_Orders.GetCount() > 0)
+		{
+		pResult->SetAt(CONSTLIT("order"), GetCurrentOrderDesc().AsCCItem());
+		}
+
+	if (m_pOrderModule)
+		{
+		pResult->SetAt(CONSTLIT("orderModule"), m_pOrderModule->GetAIStatus(*m_pShip, m_AICtx));
+		}
+
+	if (m_DeterModule.IsEnabled())
+		{
+		pResult->SetAt(CONSTLIT("deterModule"), m_DeterModule.GetAIStatus());
+		}
+
+	if (!m_Blacklist.IsEmpty())
+		{
+		pResult->SetAt(CONSTLIT("blacklistModule"), m_Blacklist.AsCCItem());
+		}
+
+	return pResult;
+	}
+
 CSpaceObject *CBaseShipAI::GetBase (void) const
 
 //	GetBase
@@ -2272,17 +2304,18 @@ void CBaseShipAI::UpgradeWeaponBehavior (void)
 
 			if (!BestItem.IsEmpty())
 				{
-				int iSlot = DeviceItem.GetInstalledDevice()->GetDeviceSlot();
+				CDeviceSystem::SSlotDesc Slot;
+				Slot.iIndex = DeviceItem.GetInstalledDevice()->GetDeviceSlot();
 
 				//	Uninstall the previous weapon
 
-				m_pShip->SetCursorAtDevice(ItemList, iSlot);
+				m_pShip->SetCursorAtDevice(ItemList, Slot.iIndex);
 				m_pShip->RemoveItemAsDevice(ItemList);
 
 				//	Install the new item
 
 				ItemList.SetCursorAtItem(BestItem);
-				m_pShip->InstallItemAsDevice(ItemList, iSlot);
+				m_pShip->InstallItemAsDevice(ItemList, Slot);
 
 				bWeaponsInstalled = true;
 				}

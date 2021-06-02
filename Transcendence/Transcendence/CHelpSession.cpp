@@ -466,7 +466,7 @@ void CHelpSession::PaintEntry (CG32bitImage &Dest, int x, int y, int cxWidth, co
 
 	for (int i = 0; i < Lines.GetCount(); i++)
 		{
-		TextFont.DrawText(Dest, xText, yText, rgbText, Lines[i], 0, 0);
+		TextFont.DrawText(Dest, xText, yText, rgbText, Lines[i], 0UL, nullptr);
 		yText += TextFont.GetHeight();
 		}
 
