@@ -459,6 +459,7 @@ class CG16bitFont
 		void Destroy (void) { m_FontImage.Destroy(); m_Metrics.DeleteAll(); if (CG32bitImage::GetMasterRenderQueue()) { CG32bitImage::GetMasterRenderQueue()->handOffTextureForDeletion(std::move(m_OpenGLFontImage.second)); } }
 
 		int BreakText (const CString &sText, int cxWidth, TArray<CString> *retLines = NULL, DWORD dwFlags = 0) const;
+		int CalcHeight (const CString &sText, int cxWidth, DWORD dwFlags = 0) const;
 		void DrawText (CG16bitImage &Dest, int x, int y, WORD wColor, const CString &sText, DWORD dwFlags = 0, int *retx = NULL) const
 			{ DrawText(Dest, x, y, wColor, 255, sText, dwFlags, retx); }
 		void DrawText (CG16bitImage &Dest, const RECT &rcRect, WORD wColor, const CString &sText, int iLineAdj = 0, DWORD dwFlags = 0, int *retcyHeight = NULL) const
