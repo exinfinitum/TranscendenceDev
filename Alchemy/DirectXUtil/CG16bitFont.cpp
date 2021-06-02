@@ -584,6 +584,7 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 							int y, 
 							CG32bitPixel rgbColor, 
 							const CString &sText,
+							float scale,
 							DWORD dwFlags,
 							int *retx) const
 
@@ -599,16 +600,16 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 	int cxWidth = -1;
 	if (dwFlags & AlignCenter)
 		{
-		cxWidth = MeasureText(sText);
+		cxWidth = int(MeasureText(sText) / scale);
 		xPos -= cxWidth / 2;
 		}
 	else if (dwFlags & AlignRight)
 		{
-		cxWidth = MeasureText(sText);
+		cxWidth = int(MeasureText(sText) / scale);
 		xPos -= cxWidth;
 		}
 	else if (dwFlags & AdjustToFit)
-		cxWidth = MeasureText(sText);
+		cxWidth = int(MeasureText(sText) / scale);
 
 	//	If necessary, adjust our position so we can fit inside the clip region 
 	//	of the destination.
@@ -646,13 +647,9 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 			int iCanvasWidth = Dest.GetWidth();
 			int iQuadWidth = Metrics.cxWidth;
 			int iQuadHeight = m_cyHeight;
-			pRenderQueue->addTextToRenderQueue(0, iIndex * m_cyHeight, iQuadWidth, iQuadHeight, xPos, y,
+			pRenderQueue->addTextToRenderQueue(0, iIndex * m_cyHeight, int(scale * iQuadWidth), int(scale * iQuadHeight), xPos, y,
 				m_OpenGLFontImage.second.get(), m_FontImage.GetWidth(), m_FontImage.GetHeight(), Metrics.cxWidth, m_cyHeight,
 				std::tuple<int, int, int>(int(rgbColor.GetRed()), int(rgbColor.GetGreen()), int(rgbColor.GetBlue())));
-			//pRenderQueue->addTextureToRenderQueue(0, iIndex * m_cyHeight, iQuadWidth, iQuadHeight, xPos - (iQuadWidth / 2), y - (iQuadHeight / 2), iCanvasHeight,
-				//iCanvasWidth,
-				//m_OpenGLFontImage.second.get(), m_FontImage.GetWidth(), m_FontImage.GetHeight(), Metrics.cxWidth, m_cyHeight, 1, 1, 0, 0);
-
 			}
 		else
 			{
@@ -667,7 +664,7 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 			}
 
 		pPos++;
-		xPos += Metrics.cxAdvance;
+		xPos += int(Metrics.cxAdvance * scale);
 		}
 	
 	if (retx)
@@ -678,6 +675,7 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 							const RECT &rcRect, 
 							CG32bitPixel rgbColor,
 							const CString &sText, 
+							float scale,
 							int iLineAdj, 
 							DWORD dwFlags,
 							int *retcyHeight) const
@@ -758,6 +756,9 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 
     //  Compute alignment
 
+	cxWidth = int(cxWidth * scale);
+	cyHeight = int(cyHeight * scale);
+
 	int xPos;
 	if (dwFlags & AlignCenter)
 		xPos = rcRect.left + RectWidth(rcRect) / 2;
@@ -802,18 +803,18 @@ void CG16bitFont::DrawText (CG32bitImage &Dest,
 		int x;
 
 		if (dwFlags & AlignCenter)
-			x = xPos - (LineWidths[i] / 2);
+			x = xPos - int(scale * (LineWidths[i] / 2));
 
 		else if (dwFlags & AlignRight)
-			x = xPos - LineWidths[i];
+			x = xPos - int(scale * LineWidths[i]);
 
 		else
 			x = xPos;
 
 		if (!(dwFlags & MeasureOnly))
-			DrawText(Dest, x, y, rgbColor, Lines[i]);
+			DrawText(Dest, x, y, rgbColor, Lines[i], scale, 0UL, nullptr);
 
-		y += m_cyHeight + iLineAdj;
+		y += int((m_cyHeight + iLineAdj) * scale);
 		}
 
     //  Done

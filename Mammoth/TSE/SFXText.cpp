@@ -221,7 +221,7 @@ void CTextPainter::Paint (CG32bitImage &Dest, int x, int y, SViewportPaintCtx &C
 
 	//	Paint
 
-	pFont->DrawText(Dest, rcRect, CG32bitPixel(rgbColor, byOpacity), m_sText, 0, dwFlags);
+	pFont->DrawText(Dest, rcRect, CG32bitPixel(rgbColor, byOpacity), m_sText, float(1.0 / Ctx.rZoomScale), 0, dwFlags);
 	}
 
 bool CTextPainter::PointInImage (int x, int y, int iTick, int iVariant, int iRotation) const
