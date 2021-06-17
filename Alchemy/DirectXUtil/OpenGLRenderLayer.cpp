@@ -44,7 +44,7 @@ void OpenGLRenderLayer::addTextureToRenderQueue(glm::vec2 vTexPositions, glm::ve
 	{
 		// If we don't have a render queue with that texture loaded, then add one.
 		// Note, we clear after every render, in order to prevent seg fault issues; also creating an instanced batch is not very expensive anymore.
-		texRenderBatchToUse[imageAndGlowMap] = new OpenGLInstancedBatchTexture();
+		texRenderBatchToUse[imageAndGlowMap] = std::make_unique<OpenGLInstancedBatchTexture>();
 	}
 
 	// Initialize a glowmap tile request here, and save it in the MRQ. We consume this when we generate textures, to render glowmaps.
@@ -344,7 +344,7 @@ void OpenGLRenderLayer::PrepareTextureRenderBatchesForRendering(
 		// Initialize the texture if necessary; we do this here because all OpenGL calls must be made on the same thread
 		pTextureToUse->initTextureFromOpenGLThread();
 		envMask->initTextureFromOpenGLThread();
-		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second;
+		OpenGLInstancedBatchTexture* pInstancedRenderQueue = p.second.get();
 		// TODO: Set the depths here before rendering. This will ensure that we always render from back to front, which should solve most issues with blending.
 		std::array<std::string, 8> textureUniformNames = { "obj_texture", "glow_map", "env_mask", "current_tick", "perlin_noise", "glowmap_pad_size", "pixel_decimal_place_per_channel_for_linear_glowmap", "aCanvasAdjustedDimensions" };
 		glowMap = glowMap ? glowMap : pTextureToUse;
