@@ -129,7 +129,7 @@ protected:
 	HWND m_windowID;
 };
 
-typedef std::map<std::tuple<OpenGLTexture*, OpenGLTexture*, OpenGLTexture*>, OpenGLInstancedBatchTexture*> OpenGLInstancedTextureBatchMapping;
+typedef std::map<std::tuple<OpenGLTexture*, OpenGLTexture*, OpenGLTexture*>, std::unique_ptr<OpenGLInstancedBatchTexture>> OpenGLInstancedTextureBatchMapping;
 typedef std::vector<std::pair<OpenGLShader*, OpenGLInstancedBatchInterface*>> OpenGLBatchShaderPairList;
 
 class OpenGLRenderLayer {
@@ -204,11 +204,11 @@ public:
 	int getNumObjects() {
 		int numObjs = 0;
 		for (auto& batch_pair : m_texRenderBatchesBlendNormal) {
-			auto batch = batch_pair.second;
+			auto batch = batch_pair.second.get();
 			numObjs = numObjs + batch->getNumObjectsToRender();
 		}
 		for (auto& batch_pair : m_texRenderBatchesBlendScreen) {
-			auto batch = batch_pair.second;
+			auto batch = batch_pair.second.get();
 			numObjs = numObjs + batch->getNumObjectsToRender();
 		}
 		numObjs = numObjs + m_rayRenderBatchBlendNormal.getNumObjectsToRender();
